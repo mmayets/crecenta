@@ -10,20 +10,6 @@ def test_salud(client):
     assert response.json() == {"estado": "ok"}
 
 
-def test_inicio_requiere_sesion(client):
-    response = client.get(reverse("core:home"))
-    assert response.status_code == 302
-    assert reverse("account_login") in response["Location"]
-
-
-def test_inicio_con_sesion(client, django_user_model):
-    user = django_user_model.objects.create_user("ana@example.com", "clave-segura-123")
-    client.force_login(user)
-    response = client.get(reverse("core:home"))
-    assert response.status_code == 200
-    assert "Hola, ana" in response.content.decode()
-
-
 def test_cabeceras_de_seguridad(client):
     response = client.get(reverse("core:health"))
     assert "frame-ancestors 'none'" in response["Content-Security-Policy"]

@@ -51,3 +51,12 @@ Decisiones tomadas donde el encargo no especifica. Formato: decisión · motivo.
 30. **CSP estricta sin CDN** (`script-src 'self'`): se usará la build CSP de Alpine.js para no requerir `unsafe-eval`.
 31. **Tests contra PostgreSQL real** (no SQLite) para que restricciones, `UniqueConstraint` condicionales y tipos coincidan con producción. Caché local en memoria y Celery en modo *eager* en tests.
 32. **`split_proportionally`** usa el método del mayor residuo: las partes siempre suman exactamente el total, sin centavos perdidos.
+
+## Paso 2 — espacios y aislamiento
+
+33. **Todas las rutas de dominio se montan en `config/workspace_urls.py`** bajo `/e/<uuid:ws>/`; cada app agrega su `ws_urls.py` con un namespace propio (`espacio`, `ledger`, …). El test `tests/test_aislamiento.py` recorre ese módulo y comprueba, para cada ruta y para GET y POST, que un espacio ajeno o inexistente responde 404 y que un anónimo va al login. · Una vista nueva queda protegida y probada sin escribir un test extra.
+34. **`WorkspaceScopedQuerySet.for_workspace(ws)`** falla si no recibe un espacio guardado, para que un olvido no devuelva datos de todos los espacios.
+35. **Rol único `owner`** en `Membership` durante la Fase 1; la tabla ya permite compartir un espacio (p. ej. con un socio o contador) más adelante sin migrar datos.
+36. **`WorkspaceTransfer` se implementa en la Fase 2** junto con los movimientos del propietario (el encargo ubica las transferencias entre espacios en esa fase y dependen de `ledger`).
+37. **Orden de espacios**: primero el personal, luego los negocios por antigüedad. La app recuerda el último espacio abierto en la sesión.
+38. **El Paso 0 del onboarding ("¿Para qué usarás la app?") vive en `workspaces`** porque su único efecto es crear los espacios; es idempotente (repetirlo no duplica espacios). El resto del wizard llega en el paso 9.

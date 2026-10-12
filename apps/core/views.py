@@ -1,15 +1,7 @@
-from django.contrib.auth.decorators import login_required
 from django.db import connection
-from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.http import HttpRequest, JsonResponse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET
-
-
-@login_required
-def home(request: HttpRequest) -> HttpResponse:
-    # Provisional: en el paso 2 redirige al espacio activo del usuario.
-    return render(request, "core/home.html")
 
 
 @never_cache

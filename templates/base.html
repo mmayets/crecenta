@@ -8,6 +8,15 @@
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900">
+  {% if user.is_authenticated and current_workspace %}
+    <header class="border-b bg-white">
+      <nav class="mx-auto flex max-w-xl items-center justify-between px-4 py-3" aria-label="Espacio">
+        <a href="{% url 'workspaces:selector' %}" class="font-medium" data-testid="espacio-activo">
+          {{ current_workspace.name }} · {{ current_workspace.get_kind_display }}
+        </a>
+      </nav>
+    </header>
+  {% endif %}
   <main class="mx-auto max-w-xl px-4 py-6">
     {% if messages %}
       <ul class="mb-4 space-y-2">

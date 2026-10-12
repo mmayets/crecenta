@@ -59,4 +59,4 @@ def test_inicio_de_sesion_con_correo(client):
         reverse("account_login"), {"login": "ana@example.com", "password": "Clave-Segura-2026"}
     )
     assert response.status_code == 302
-    assert response["Location"] == reverse("core:home")
+    assert response["Location"] == reverse("home")
