@@ -52,7 +52,7 @@ crecenta/
 │   │   ├── services/classification.py   # qué cuenta como gasto/ingreso
 │   │   ├── services/sync.py        # alta idempotente por client_uuid (offline)
 │   │   ├── services/quick_entry.py # texto libre / voz → borrador de movimiento
-│   │   └── fixtures/categorias_sistema.json
+│   │   └── system_categories.py     # catálogo de categorías del sistema
 │   ├── personal/
 │   │   ├── models.py               # IncomeSource, Commitment, Debt, SavingsGoal, Preference, BudgetPeriod, BudgetLine
 │   │   └── services/

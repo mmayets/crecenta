@@ -60,3 +60,13 @@ Decisiones tomadas donde el encargo no especifica. Formato: decisión · motivo.
 36. **`WorkspaceTransfer` se implementa en la Fase 2** junto con los movimientos del propietario (el encargo ubica las transferencias entre espacios en esa fase y dependen de `ledger`).
 37. **Orden de espacios**: primero el personal, luego los negocios por antigüedad. La app recuerda el último espacio abierto en la sesión.
 38. **El Paso 0 del onboarding ("¿Para qué usarás la app?") vive en `workspaces`** porque su único efecto es crear los espacios; es idempotente (repetirlo no duplica espacios). El resto del wizard llega en el paso 9.
+
+## Paso 3 — ledger
+
+39. **Clasificación de movimientos** (`ledger/services/classification.py`): ingreso/venta son ingreso; gasto, pago de deuda y compra de inventario son gasto; transferencia interna, retiro de efectivo y préstamo (recibido u otorgado) son neutros. El pago de deuda cuenta como gasto en el **presupuesto personal** porque consume la cuota comprometida; en el negocio (Fase 2) el abono a capital no será gasto del resultado.
+40. **Transferencias = dos movimientos enlazados** (`transfer_pair`), salida en la cuenta origen y entrada en la destino. El total de las cuentas no cambia. Una transferencia puede llevar la categoría "Ahorro" para medir aportes a la meta sin contarlos como gasto.
+41. **Tarjeta de crédito como cuenta con saldo negativo** (lo que se debe). Gastar con tarjeta es gasto; pagar la tarjeta desde el banco es transferencia interna (no se cuenta dos veces).
+42. **Solo los movimientos confirmados mueven saldos y presupuesto.** Los borradores `pendiente_revision` (comprobantes leídos por IA, texto/voz) esperan la confirmación del usuario.
+43. **No se guardan números de cuenta ni de tarjeta**: la cuenta solo tiene nombre y tipo.
+44. **Catálogo de categorías del sistema en código** (`ledger/system_categories.py`) y creación automática al crear el espacio (señal `post_save`), junto con una cuenta "Efectivo" para que el registro rápido siempre tenga cuenta. Las categorías del sistema se pueden renombrar y reclasificar pero no eliminar (se archivan).
+45. **Sincronización offline**: endpoint `POST /e/<ws>/movimientos/sync/` con `{"items": [...]}` (máx. 100). Cada elemento responde `creado`, `existente` o `error` con mensajes por campo, para que el dispositivo vacíe su cola. Gana la primera escritura: un reenvío con el mismo `client_uuid` y datos distintos devuelve el original sin modificarlo. La pata de entrada de una transferencia usa un UUID derivado (uuid5) del `client_uuid`. Cuentas y categorías se buscan solo dentro del espacio de la URL: un id de otro usuario se trata como inexistente. El endpoint exige token CSRF.
