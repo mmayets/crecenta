@@ -3,6 +3,7 @@ import uuid
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
+from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -14,6 +15,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from apps.ai.services.client import AIUnavailable
 from apps.alerts.services.evaluate import purchase_warnings
+from apps.core.ratelimit import hit
 from apps.onboarding.forms import AccountForm
 from apps.workspaces.mixins import workspace_required
 from apps.workspaces.models import Workspace
@@ -48,6 +50,8 @@ def sync(request: HttpRequest, workspace: Workspace) -> JsonResponse:
     Responde 200 con el resultado de cada elemento (creado / existente / error) para que el
     dispositivo elimine de su cola los que ya quedaron guardados.
     """
+    if not hit(f"sync:{request.user.pk}", settings.SYNC_RATE_LIMITS):
+        return JsonResponse({"error": "Demasiados envíos. Intenta en un momento."}, status=429)
     try:
         body = json.loads(request.body or b"{}")
     except (json.JSONDecodeError, UnicodeDecodeError):

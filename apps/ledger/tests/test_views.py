@@ -61,3 +61,10 @@ def test_exige_csrf(user, personal_ws):
     client = Client(enforce_csrf_checks=True)
     client.force_login(user)
     assert post(client, personal_ws, {"items": [item(personal_ws)]}).status_code == 403
+
+
+def test_limite_de_sincronizacion(client, user, personal_ws, settings):
+    settings.SYNC_RATE_LIMITS = [(1, 60)]
+    client.force_login(user)
+    assert post(client, personal_ws, {"items": []}).status_code == 200
+    assert post(client, personal_ws, {"items": []}).status_code == 429

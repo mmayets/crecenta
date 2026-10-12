@@ -158,3 +158,18 @@ def test_no_hay_url_publica_de_archivos(personal_ws, user):
 
     with pytest.raises(Resolver404):
         resolve(f"/media/comprobantes/{personal_ws.pk}/x.png")
+
+
+def test_limite_de_subidas(logged, personal_ws, settings):
+    settings.UPLOAD_RATE_LIMITS = [(1, 3600)]
+    assert (
+        logged.post(
+            url("index", personal_ws), {"file": upload(PDF, "a.pdf", "application/pdf")}
+        ).status_code
+        == 302
+    )
+    response = logged.post(
+        url("index", personal_ws), {"file": upload(PDF, "b.pdf", "application/pdf")}
+    )
+    assert response.status_code == 400
+    assert "muchos comprobantes" in response.content.decode()

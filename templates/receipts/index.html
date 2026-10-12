@@ -5,6 +5,7 @@
   <h1>Comprobantes</h1>
   <form method="post" enctype="multipart/form-data" class="mt-4 card">
     {% csrf_token %}
+    {% if form.non_field_errors %}<div class="mb-3 rounded-xl bg-red-50 p-3 text-sm text-red-800" role="alert">{{ form.non_field_errors }}</div>{% endif %}
     <label for="{{ form.file.id_for_label }}" class="font-medium">{{ form.file.label }}</label>
     {{ form.file }}
     {{ form.file.errors }}

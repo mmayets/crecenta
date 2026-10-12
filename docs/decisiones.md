@@ -154,3 +154,9 @@ Decisiones tomadas donde el encargo no especifica. Formato: decisión · motivo.
 103. **Un `client_uuid` nuevo cada vez que se muestra un formulario** (también al volver atrás desde la caché): dos gastos distintos nunca comparten id y un doble toque sí (no se duplica).
 104. **Íconos PWA** generados por `scripts/build_pwa_icons.py` (192, 512, maskable 512, Apple 180 y favicon); manifest en español (`es-DO`), `standalone`, con atajo "Registrar gasto" (`/registrar/` abre el registro en el espacio activo). Metas de Apple para instalar en iOS.
 105. **Prueba E2E** (`make e2e`, Chromium + Playwright de Node): instala el service worker, corta la red de la página **y del service worker**, registra dos gastos sin conexión, reconecta, comprueba que la cola se vacía, reenvía uno a propósito y verifica que cada gasto aparece una sola vez. Chrome no reporta errores de instalabilidad (`Page.getInstallabilityErrors`).
+
+## Paso 12 — cierre de la Fase 1
+
+106. **`seed_demo`** crea la persona del caso RD$50,000 (con movimientos del mes en curso, ahorro apartado, perfil completo y plan aceptado) y el negocio "Dulces Ana" con el producto de costo RD$600 a RD$857.14 (margen 30 %). Es idempotente (`--reset` para recrear) y se niega a borrar una cuenta que no sea de demostración. Corre la explicación del plan en el mismo proceso, sin depender de Redis ni de un worker.
+107. **Precio por margen y por recargo** (`pricing/services/margins.py`) con desglose de ITBIS; se adelantan a la Fase 2 porque `seed_demo` los usa.
+108. **Refuerzos de la revisión de seguridad**: contraseña obligatoria para eliminar la cuenta, ruta del admin configurable, límites de subida de comprobantes (60/h) y de sincronización (120/min). Detalle en `docs/seguridad.md`.

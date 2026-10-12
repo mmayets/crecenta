@@ -48,6 +48,7 @@ LOCAL_APPS = [
     "apps.onboarding",
     "apps.reports",
     "apps.pwa",
+    "apps.business",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -148,6 +149,12 @@ TIME_ZONE = env("TIME_ZONE", default="America/Santo_Domingo")
 USE_I18N = True
 USE_TZ = True
 LOCALE_PATHS = [BASE_DIR / "locale"]
+
+# Ruta del panel de administración (en producción conviene no usar la predeterminada).
+ADMIN_URL = env("DJANGO_ADMIN_URL", default="admin/")
+# Límites de uso por persona: (cantidad, ventana en segundos).
+UPLOAD_RATE_LIMITS = [(60, 3600)]
+SYNC_RATE_LIMITS = [(120, 60)]
 
 # Versión de la app (también invalida la caché del service worker).
 APP_VERSION = env("APP_VERSION", default="1")

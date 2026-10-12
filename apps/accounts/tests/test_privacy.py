@@ -92,12 +92,23 @@ def test_eliminar_cuenta(
 ):
     client.force_login(user)
     assert "no se puede deshacer" in client.get(reverse("accounts:delete")).content.decode()
-    response = client.post(reverse("accounts:delete"), {"confirm_email": "otro@example.com"})
+    response = client.post(
+        reverse("accounts:delete"),
+        {"confirm_email": "otro@example.com", "password": "Clave-Segura-2026"},
+    )
     assert response.status_code == 200 and User.objects.filter(pk=user.pk).exists()
+    response = client.post(
+        reverse("accounts:delete"), {"confirm_email": "ana@example.com", "password": "incorrecta"}
+    )
+    assert "La contraseña no es correcta" in response.content.decode()
+    assert User.objects.filter(pk=user.pk).exists()
     file_path = media / datos.file.name
     assert file_path.exists()
     with django_capture_on_commit_callbacks(execute=True):
-        response = client.post(reverse("accounts:delete"), {"confirm_email": "ANA@example.com"})
+        response = client.post(
+            reverse("accounts:delete"),
+            {"confirm_email": "ANA@example.com", "password": "Clave-Segura-2026"},
+        )
     assert response["Location"] == reverse("account_login")
     assert not User.objects.filter(pk=user.pk).exists()
     assert not Workspace.objects.filter(owner_id=user.pk).exists()
@@ -106,3 +117,12 @@ def test_eliminar_cuenta(
     assert Transaction.objects.filter(description="Secreto de Beto").exists()
     assert User.objects.filter(pk=other_user.pk).exists()
     assert client.get(reverse("accounts:settings")).status_code == 302  # sesión cerrada
+
+
+def test_cuenta_sin_contrasena_solo_confirma_correo(client, user):
+    user.set_unusable_password()
+    user.save()
+    client.force_login(user)
+    assert "Tu contraseña" not in client.get(reverse("accounts:delete")).content.decode()
+    client.post(reverse("accounts:delete"), {"confirm_email": "ana@example.com"})
+    assert not User.objects.filter(pk=user.pk).exists()

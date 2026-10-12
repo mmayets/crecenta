@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse
@@ -7,6 +8,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.alerts.services.evaluate import purchase_warnings
+from apps.core.ratelimit import hit
 from apps.workspaces.mixins import workspace_required
 from apps.workspaces.models import Workspace
 
@@ -34,7 +36,11 @@ def _get(workspace: Workspace, receipt_id) -> Receipt:
 @require_http_methods(["GET", "POST"])
 def index(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     form = UploadForm(request.POST or None, request.FILES or None)
-    if request.method == "POST" and form.is_valid():
+    if request.method == "POST" and not hit(
+        f"upload:{request.user.pk}", settings.UPLOAD_RATE_LIMITS
+    ):
+        form.add_error(None, "Subiste muchos comprobantes en poco tiempo. Intenta más tarde.")
+    elif request.method == "POST" and form.is_valid():
         try:
             receipt = ingest_receipt(workspace, request.user, form.cleaned_data["file"])
         except ValidationError as exc:

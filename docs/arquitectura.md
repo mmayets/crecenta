@@ -62,9 +62,9 @@ crecenta/
 │   │       ├── alternatives.py     # alternativas por reglas cuando no es viable
 │   │       ├── savings.py          # aportes diarios/semanales/… con días reales
 │   │       └── availability.py     # "Disponible en cuentas" vs "Disponible para gastar"
-│   ├── business/                   # Fase 1: solo modelos mínimos (BusinessProfile, Product) para seed_demo
+│   ├── business/                   # Fase 1: modelos mínimos (BusinessProfile, Product) para seed_demo
 │   ├── pricing/
-│   │   └── services/margins.py     # Fase 1: funciones puras precio por margen / markup (con tests)
+│   │   └── services/margins.py     # precio por margen / recargo e ITBIS (funciones puras)
 │   ├── planning/
 │   │   ├── models.py               # PlanVersion
 │   │   ├── services/snapshot.py    # inputs_snapshot anonimizado
@@ -496,3 +496,14 @@ Al cierre de cada paso: `ruff check .`, `ruff format --check .`, `pytest`, y
 - Comprobante repetido → duplicado sospechoso → paso 8.
 - Ninguna cifra de la IA difiere del motor → paso 5 (`verify_narrative`) y paso 6 (test end-to-end con proveedor falso que intenta inventar cifras).
 - Cobertura ≥ 90 % en `services/` → `--cov-fail-under=90` sobre `apps/*/services`.
+
+
+---
+
+## Estado al cierre de la Fase 1
+
+Los 12 pasos están implementados. Diferencias con esta propuesta inicial (todas documentadas en
+`decisiones.md`): servicios de IA en `ai/services/`; app `pwa/` para manifest y service worker;
+`WorkspaceTransfer` pasa a la Fase 2; `BudgetPeriod` es el ciclo mensual con su reparto por cobro;
+estado adicional `generando` en `PlanVersion`. Evidencia de los criterios de aceptación en
+[`fase1.md`](fase1.md) y revisión de seguridad en [`seguridad.md`](seguridad.md).
