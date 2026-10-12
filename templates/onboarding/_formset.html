@@ -1,0 +1,14 @@
+{{ formset.management_form }}
+{{ formset.non_form_errors }}
+{% for f in formset %}
+  <fieldset class="rounded-xl border bg-white p-4">
+    {{ f.non_field_errors }}
+    {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+    {% for field in f.visible_fields %}
+      <p>{{ field.label_tag }} {{ field }}
+        {% if field.field.widget.attrs.class == "dudoso" %}<span class="text-sm text-amber-700">Revisa este dato.</span>{% endif %}
+        {% if field.help_text %}<small class="text-slate-500">{{ field.help_text }}</small>{% endif %}
+        {{ field.errors }}</p>
+    {% endfor %}
+  </fieldset>
+{% endfor %}

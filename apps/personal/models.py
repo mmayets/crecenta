@@ -116,7 +116,9 @@ class Commitment(WorkspaceScopedModel):
 
     def clean(self) -> None:
         errors = {}
-        if self.frequency == Frequency.SEMANAL:
+        if self.due_day is None:
+            pass  # el campo obligatorio ya reporta el error
+        elif self.frequency == Frequency.SEMANAL:
             if not 0 <= self.due_day <= 6:
                 errors["due_day"] = "Para pagos semanales use 0 (lunes) a 6 (domingo)."
         elif not 1 <= self.due_day <= 31:

@@ -1,0 +1,12 @@
+<div class="mb-6" aria-label="Completitud del perfil">
+  <div class="flex justify-between text-sm"><span>Tu perfil está al {{ progress.percent }}%</span>
+    {% if progress.minimum_ready %}<a class="underline" href="{% url 'onboarding:done' ws=workspace.pk %}">Ya puedo generar mi plan</a>{% endif %}</div>
+  <div class="mt-1 h-2 rounded-full bg-slate-200" role="progressbar" aria-valuenow="{{ progress.percent }}" aria-valuemin="0" aria-valuemax="100">
+    <div class="h-2 rounded-full bg-teal-600" style="width: {{ progress.percent }}%"></div>
+  </div>
+  <ol class="mt-3 flex flex-wrap gap-2 text-xs">
+    {% for item in progress.steps %}
+      <li><a href="{% url 'onboarding:step' ws=workspace.pk step=item.step.key %}" class="rounded-full border px-2 py-1 {% if item.done %}bg-teal-50{% endif %}">{% if item.done %}✓ {% endif %}{{ item.step.title }}</a></li>
+    {% endfor %}
+  </ol>
+</div>

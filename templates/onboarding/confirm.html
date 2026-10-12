@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Confirma tus datos · Crecenta{% endblock %}
+{% block content %}
+  <h1 class="text-2xl font-semibold">¿Entendimos bien?</h1>
+  <p class="mt-1 text-slate-600">Revisa y corrige antes de guardar. {% if has_doubts %}Los campos marcados no los pudimos entender con seguridad.{% endif %}</p>
+  <form method="post" class="mt-4 space-y-6">
+    {% csrf_token %}
+    {% for section, formset in formsets.items %}
+      {% if formset.forms %}
+        <section><h2 class="font-semibold">{{ section|capfirst }}</h2>{% include "onboarding/_formset.html" %}</section>
+      {% else %}{{ formset.management_form }}{% endif %}
+    {% endfor %}
+    <section><h2 class="font-semibold">Gastos esenciales</h2>
+      {% for item in unmatched %}<p class="dudoso text-amber-700" role="note">No supimos en qué categoría va "{{ item.nombre }}" ({{ item.monto }}). Súmalo a la que corresponda.</p>{% endfor %}
+      {% for field in essentials %}<p>{{ field.label_tag }} {{ field }} {{ field.errors }}</p>{% endfor %}
+    </section>
+    {% if extraction.ocio_deseado %}<p>Ocio deseado: {{ extraction.ocio_deseado }}</p>{% endif %}
+    <button type="submit" class="w-full rounded-xl bg-teal-700 p-3 font-semibold text-white">Confirmar y guardar</button>
+  </form>
+  <a class="mt-4 inline-block underline" href="{% url 'onboarding:conversation' ws=workspace.pk %}">Volver a escribir</a>
+{% endblock %}

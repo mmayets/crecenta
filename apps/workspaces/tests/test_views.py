@@ -27,8 +27,16 @@ def test_elegir_uso_crea_espacios(client, user):
         {"usage": "ambos", "currency": "DOP", "business_name": "Dulces Ana"},
     )
     personal = Workspace.objects.get(owner=user, kind="personal")
-    assert response["Location"] == reverse("espacio:dashboard", kwargs={"ws": personal.pk})
+    # Un espacio personal nuevo continúa con el onboarding.
+    assert response["Location"] == reverse("onboarding:index", kwargs={"ws": personal.pk})
     assert Workspace.objects.get(owner=user, kind="business").name == "Dulces Ana"
+
+
+def test_elegir_solo_negocio_va_al_tablero(client, user):
+    client.force_login(user)
+    response = client.post(reverse("workspaces:usage"), {"usage": "negocio", "currency": "USD"})
+    negocio = Workspace.objects.get(owner=user, kind="business")
+    assert response["Location"] == reverse("espacio:dashboard", kwargs={"ws": negocio.pk})
 
 
 def test_elegir_uso_repetido_redirige_al_existente(client, user, personal_ws):

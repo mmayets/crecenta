@@ -31,6 +31,8 @@ def usage(request: HttpRequest) -> HttpResponse:
             business_name=form.cleaned_data["business_name"] or None,
         )
         target = created[0] if created else default_workspace(request.user)
+        if created and target.is_personal:
+            return redirect("onboarding:index", ws=target.pk)
         return redirect("espacio:dashboard", ws=target.pk)
     return render(request, "workspaces/usage.html", {"form": form})
 
