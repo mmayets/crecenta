@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
@@ -12,8 +11,5 @@ urlpatterns = [
     path("", include("apps.workspaces.urls")),
     path("e/<uuid:ws>/", include("config.workspace_urls")),
 ]
-
-if settings.DEBUG:
-    from django.conf.urls.static import static
-
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Los archivos subidos (comprobantes) nunca se sirven como estáticos públicos: solo a través de la
+# vista autenticada de cada comprobante.

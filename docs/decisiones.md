@@ -114,3 +114,12 @@ Decisiones tomadas donde el encargo no especifica. Formato: decisión · motivo.
 75. **Aviso previo al registrar un gasto** (`purchase_warnings`): si el gasto usa dinero comprometido o supera el presupuesto de su categoría. No se guarda como alerta: la persona decide si registra el gasto.
 76. **Acciones sugeridas** (`revisar_plan`, `limite_diario`, `mover_dinero`, `repartir_ahorro`) se guardan como datos; aplicarlas siempre requiere que la persona lo apruebe desde la interfaz.
 77. **Notificaciones**: en la Fase 1 las alertas se muestran dentro de la app (con contador de nuevas). Las notificaciones push se evaluarán junto con la PWA.
+
+## Paso 8 — comprobantes
+
+78. **Tipo real del archivo por sus primeros bytes** (JPEG, PNG, WEBP, HEIC, PDF), no por el nombre ni por lo que dice el navegador. Máximo 10 MB. Se guarda con una ruta aleatoria por espacio (`comprobantes/<espacio>/<uuid>.<ext>`), sin el nombre original.
+79. **Los archivos subidos nunca se sirven como estáticos**: se quitó el servicio de `MEDIA_URL` incluso en desarrollo. Solo se entregan por `/e/<espacio>/comprobantes/<id>/archivo/` a miembros del espacio, con `Cache-Control: private, no-store`, `nosniff` y `Content-Security-Policy: sandbox` (un PDF malicioso no puede ejecutar nada en el sitio). En producción con S3 el bucket es privado.
+80. **Duplicado exacto** (mismo sha256 en el espacio): se marca `duplicado_sospechoso` al subirlo y **no se vuelve a leer con IA** (ahorra costo). **Duplicado por contenido** (tras la lectura): mismo comercio (comparación normalizada, uno contiene al otro) + mismo total + fecha ±1 día, contra otros comprobantes y contra gastos confirmados.
+81. **Opciones ante un duplicado**: vincular el comprobante al movimiento existente (no se crea otro gasto), descartarlo (se borra con su archivo) o, si no es duplicado, revisar y confirmar normalmente.
+82. **Revisión obligatoria**: la lectura de la IA es un borrador; el gasto (fuente `comprobante`, confirmado, enlazado al comprobante) solo se crea al confirmar. Se resaltan los campos vacíos o con confianza < 0.6. La cuenta se sugiere por el medio de pago (efectivo/tarjeta) y la categoría por el nombre propuesto. La pantalla muestra el aviso previo si el gasto usaría dinero comprometido.
+83. **Sin IA** (sin consentimiento, límite o falla): el comprobante queda en `error` con el motivo y la persona puede completar los datos a mano y confirmar, o pedir que se lea de nuevo.

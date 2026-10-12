@@ -6,6 +6,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
+from typing import Any
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -74,6 +75,7 @@ class TxData:
     source: str = TxSource.MANUAL
     status: str = TxStatus.CONFIRMADO
     client_uuid: uuid.UUID | None = None
+    receipt: Any = None  # receipts.Receipt (comprobante que respalda el movimiento)
 
 
 def record_transaction(workspace: Workspace, user: User | None, data: TxData) -> Transaction:
@@ -92,6 +94,7 @@ def record_transaction(workspace: Workspace, user: User | None, data: TxData) ->
         source=data.source,
         status=data.status,
         client_uuid=data.client_uuid,
+        receipt=data.receipt,
         created_by=user,
     )
     tx.full_clean(validate_constraints=False)

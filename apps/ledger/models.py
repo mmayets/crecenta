@@ -103,6 +103,14 @@ class Transaction(WorkspaceScopedModel):
     transfer_pair = models.OneToOneField(
         "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
+    receipt = models.ForeignKey(
+        "receipts.Receipt",
+        verbose_name="comprobante",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="transactions",
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )

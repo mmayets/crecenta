@@ -11,4 +11,5 @@ urlpatterns = [
     path("", include("apps.ledger.ws_urls")),
     path("", include("apps.planning.ws_urls")),
     path("", include("apps.alerts.ws_urls")),
+    path("", include("apps.receipts.ws_urls")),
 ]

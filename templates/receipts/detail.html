@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Revisar comprobante · Crecenta{% endblock %}
+{% block content %}
+  <a class="underline" href="{% url 'receipts:index' ws=workspace.pk %}">← Comprobantes</a>
+  {% include "receipts/_detail.html" %}
+{% endblock %}
