@@ -8,4 +8,5 @@ from django.urls import include, path
 
 urlpatterns = [
     path("", include("apps.workspaces.ws_urls")),
+    path("", include("apps.ledger.ws_urls")),
 ]
