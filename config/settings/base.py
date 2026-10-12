@@ -40,6 +40,7 @@ LOCAL_APPS = [
     "apps.workspaces",
     "apps.ledger",
     "apps.personal",
+    "apps.ai",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -176,7 +177,17 @@ CELERY_BEAT_SCHEDULE: dict = {}
 
 # ------------------------------------------------------------------ IA
 AI_PROVIDER = env("AI_PROVIDER", default="fake")  # gemini | openai | fake
-AI_DEBUG_LOG = env.bool("AI_DEBUG_LOG", default=False)
+AI_DEBUG_LOG = env.bool("AI_DEBUG_LOG", default=False)  # guarda prompts y respuestas (solo depurar)
+GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
+GEMINI_MODEL = env("GEMINI_MODEL", default="gemini-2.5-flash")
+OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
+OPENAI_MODEL = env("OPENAI_MODEL", default="gpt-4.1-mini")
+OPENAI_TRANSCRIBE_MODEL = env("OPENAI_TRANSCRIBE_MODEL", default="gpt-4o-mini-transcribe")
+# Límite de llamadas de IA por usuario: (cantidad, ventana en segundos).
+AI_RATE_LIMITS = [
+    (env.int("AI_LIMIT_PER_HOUR", default=30), 3600),
+    (env.int("AI_LIMIT_PER_DAY", default=200), 86400),
+]
 
 # ------------------------------------------------------------------ seguridad común
 SESSION_COOKIE_HTTPONLY = True

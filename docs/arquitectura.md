@@ -83,14 +83,15 @@ crecenta/
 │   │   ├── views.py                # revisión + descarga autenticada
 │   │   └── tasks.py
 │   ├── ai/
-│   │   ├── providers/base.py       # interfaz AIProvider
-│   │   ├── providers/gemini.py
-│   │   ├── providers/openai.py
+│   │   ├── providers/base.py       # interfaz AIProvider, Attachment, ProviderError
+│   │   ├── providers/gemini_provider.py
+│   │   ├── providers/openai_provider.py
 │   │   ├── providers/fake.py       # determinístico, para tests y desarrollo sin claves
 │   │   ├── schemas.py              # Pydantic: PlanNarrative, OnboardingExtraction, ReceiptExtraction, QuickEntry
-│   │   ├── client.py               # llamar → validar → reintentar 1 vez → degradar
-│   │   ├── guards.py               # verificación de cifras de la narrativa contra el motor
-│   │   ├── fallback.py             # narrativa genérica basada en reglas
+│   │   ├── services/client.py      # consentimiento → límite → llamar → validar → 1 reintento → reglas
+│   │   ├── services/guards.py      # verificación de cifras de la narrativa contra el motor
+│   │   ├── services/fallback.py    # narrativa genérica basada en reglas
+│   │   ├── services/prompts.py     # carga y render de plantillas versionadas
 │   │   ├── models.py               # AIInteraction
 │   │   └── prompts/
 │   │       ├── plan_personal.v1.md
