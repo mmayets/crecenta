@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Confirma tus datos · Crecenta{% endblock %}
 {% block content %}
-  <h1 class="text-2xl font-semibold">¿Entendimos bien?</h1>
+  <h1>¿Entendimos bien?</h1>
   <p class="mt-1 text-slate-600">Revisa y corrige antes de guardar. {% if has_doubts %}Los campos marcados no los pudimos entender con seguridad.{% endif %}</p>
   <form method="post" class="mt-4 space-y-6">
     {% csrf_token %}
@@ -15,7 +15,7 @@
       {% for field in essentials %}<p>{{ field.label_tag }} {{ field }} {{ field.errors }}</p>{% endfor %}
     </section>
     {% if extraction.ocio_deseado %}<p>Ocio deseado: {{ extraction.ocio_deseado }}</p>{% endif %}
-    <button type="submit" class="w-full rounded-xl bg-teal-700 p-3 font-semibold text-white">Confirmar y guardar</button>
+    <button type="submit" class="btn-primary w-full">Confirmar y guardar</button>
   </form>
   <a class="mt-4 inline-block underline" href="{% url 'onboarding:conversation' ws=workspace.pk %}">Volver a escribir</a>
 {% endblock %}

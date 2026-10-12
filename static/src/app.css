@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-tap-highlight-color: transparent; }
+  body { @apply bg-slate-50 text-slate-900 antialiased; }
+  h1 { @apply text-2xl font-bold tracking-tight; }
+  h2 { @apply text-lg font-semibold; }
+  a { @apply text-marca-700; }
+  label { @apply mb-1 block text-sm font-medium text-slate-700; }
+  input[type="text"], input[type="email"], input[type="password"], input[type="number"],
+  input[type="date"], input[type="file"], select, textarea {
+    @apply w-full rounded-xl border-slate-300 bg-white text-base shadow-sm focus:border-marca-600 focus:ring-marca-600;
+  }
+  input[type="checkbox"], input[type="radio"] { @apply text-marca-700 focus:ring-marca-600; }
+  .errorlist { @apply mt-1 text-sm text-red-700; }
+  [x-cloak] { display: none !important; }
+}
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold no-underline transition focus:outline-none focus:ring-2 focus:ring-marca-600 focus:ring-offset-2 disabled:opacity-50; }
+  .btn-primary { @apply btn bg-marca-700 text-white hover:bg-marca-800; }
+  .btn-secondary { @apply btn border border-slate-300 bg-white text-slate-800 hover:bg-slate-50; }
+  .btn-danger { @apply btn bg-red-700 text-white hover:bg-red-800; }
+  .btn-sm { @apply px-3 py-2 text-sm; }
+  .card { @apply rounded-2xl border border-slate-200 bg-white p-4 shadow-sm; }
+  .badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold; }
+  .badge-viable { @apply badge bg-emerald-100 text-emerald-800; }
+  .badge-ajustado { @apply badge bg-amber-100 text-amber-800; }
+  .badge-no_viable { @apply badge bg-red-100 text-red-800; }
+  .badge-info { @apply badge bg-sky-100 text-sky-800; }
+  .badge-media { @apply badge bg-amber-100 text-amber-800; }
+  .badge-alta { @apply badge bg-red-100 text-red-800; }
+  .amount { @apply font-semibold tabular-nums; }
+  .muted { @apply text-sm text-slate-500; }
+  .field { @apply space-y-1; }
+  /* Campo que la IA no leyó con seguridad: revisar antes de confirmar. */
+  .dudoso { @apply border-amber-500 bg-amber-50 ring-1 ring-amber-400; }
+  .bar { @apply h-2 w-full overflow-hidden rounded-full bg-slate-200; }
+  .bar > span { @apply block h-2 rounded-full bg-marca-600; }
+  .bar.over > span { @apply bg-red-600; }
+  .bar.warn > span { @apply bg-amber-500; }
+  .choice-list ul, ul.choice-list, .choice-list > div { @apply grid gap-2; }
+  .choice-inline > div { @apply grid-cols-3; }
+  .choice-list label { @apply mb-0 flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 font-normal; }
+  .choice-list label:has(input:checked) { @apply border-marca-600 bg-marca-50 font-semibold text-marca-800; }
+  .nav-item { @apply flex flex-1 flex-col items-center gap-0.5 py-2 text-xs text-slate-600 no-underline; }
+  .nav-item[aria-current="page"] { @apply font-semibold text-marca-700; }
+}

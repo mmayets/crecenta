@@ -7,13 +7,13 @@ from apps.ai.providers import FakeProvider
 from apps.ai.schemas import ReceiptExtraction
 from apps.ledger.choices import Direction, TxKind
 from apps.ledger.models import Account
+from apps.ledger.services.categories import normalize
 from apps.ledger.services.recording import TxData, record_transaction
 from apps.receipts.models import Receipt
 from apps.receipts.services.ingest import (
     detect_mime,
     find_content_duplicate,
     ingest_receipt,
-    normalize,
 )
 from apps.receipts.services.ocr import doubtful_fields, read_receipt
 

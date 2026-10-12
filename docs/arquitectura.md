@@ -10,6 +10,7 @@
 
 ```
 crecenta/
+├── scripts/build_icons.py         # genera el sprite SVG de íconos
 ├── docker-compose.yml              # web, db (postgres:16), redis, worker, beat
 ├── Dockerfile                      # python:3.12-slim + Tailwind CLI standalone (stage de build)
 ├── .env.example
@@ -98,7 +99,7 @@ crecenta/
 │   │       ├── onboarding_extraccion.v1.md
 │   │       ├── comprobante_ocr.v1.md
 │   │       └── registro_rapido.v1.md
-│   ├── reports/                    # Fase 1: tablero de inicio persona + exportación CSV/JSON/ZIP
+│   ├── reports/                    # Fase 1: tablero de inicio persona (services/dashboard.py)
 │   └── pwa/
 │       ├── views.py                # manifest, service worker (servido en / para su scope), offline
 │       └── templates/pwa/

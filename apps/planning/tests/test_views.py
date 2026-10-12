@@ -132,3 +132,26 @@ def test_plan_de_otro_espacio_da_404(
 
 def test_espacio_de_negocio_no_tiene_plan_personal(logged, business_ws):
     assert logged.get(url("index", business_ws)).status_code == 404
+
+
+def test_aplicar_alternativa(client, user, personal_ws, django_capture_on_commit_callbacks):
+    load_caso_50000(personal_ws, salary="40000")
+    client.force_login(user)
+    plan, _ = generar(client, personal_ws, django_capture_on_commit_callbacks)
+    html = client.get(url("detail", personal_ws, plan_id=plan.pk)).content.decode()
+    assert "Aplicar esta alternativa" in html and "Fechas en que no alcanza" in html
+    with django_capture_on_commit_callbacks(execute=True):
+        response = client.post(
+            url("apply", personal_ws, plan_id=plan.pk), {"alternativa": "bajar_ahorro"}
+        )
+    nuevo = PlanVersion.objects.for_workspace(personal_ws).latest("created_at")
+    assert response["Location"] == url("detail", personal_ws, plan_id=nuevo.pk)
+    assert nuevo.plan_status == "ajustado"
+    response = client.post(
+        url("apply", personal_ws, plan_id=nuevo.pk), {"alternativa": "inventada"}, follow=True
+    )
+    assert "no aplica" in response.content.decode()
+    response = client.post(
+        url("apply", personal_ws, plan_id=plan.pk), {"alternativa": "bajar_ahorro"}, follow=True
+    )
+    assert "reemplazado" in response.content.decode()

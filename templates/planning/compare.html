@@ -2,7 +2,7 @@
 {% load money %}
 {% block title %}Comparar planes · Crecenta{% endblock %}
 {% block content %}
-  <h1 class="text-2xl font-semibold">Comparar versiones</h1>
+  <h1>Comparar versiones</h1>
   <table class="mt-4 w-full text-left">
     <thead><tr><th>Concepto</th><th class="text-right">{{ a.created_at|date:"d/m H:i" }}</th><th class="text-right">{{ b.created_at|date:"d/m H:i" }}</th><th class="text-right">Diferencia</th></tr></thead>
     <tbody>

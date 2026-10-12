@@ -16,6 +16,7 @@ from django.forms import BaseModelFormSet, modelformset_factory
 from apps.core.periods import Frequency
 from apps.ledger.choices import CategoryGroup
 from apps.ledger.models import Account, Category
+from apps.ledger.services.categories import normalize
 from apps.personal.models import (
     Commitment,
     Debt,
@@ -26,7 +27,6 @@ from apps.personal.models import (
     SavingsGoal,
 )
 from apps.personal.services.types import Priority
-from apps.receipts.services.ingest import normalize
 from apps.workspaces.models import Workspace
 
 WEEKDAYS = [
@@ -160,7 +160,7 @@ class DebtForm(WorkspaceModelForm):
         model = Debt
         fields = ["name", "installment", "balance", "due_day", "interest_rate", "end_date"]
         labels = {"name": "Préstamo o tarjeta", "balance": "Lo que debes hoy"}
-        widgets = {"end_date": forms.DateInput(attrs={"type": "date"})}
+        widgets = {"end_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")}
 
 
 class SavingsGoalForm(WorkspaceModelForm):
@@ -184,7 +184,7 @@ class SavingsGoalForm(WorkspaceModelForm):
             "contribution_amount": "¿Cuánto apartarás cada vez?",
             "deadline": "¿Para cuándo? (opcional)",
         }
-        widgets = {"deadline": forms.DateInput(attrs={"type": "date"})}
+        widgets = {"deadline": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")}
 
 
 class WorkspaceFormSet(BaseModelFormSet):

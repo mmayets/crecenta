@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 {% block title %}¿Para qué usarás la app? · Crecenta{% endblock %}
 {% block content %}
-  <h1 class="text-2xl font-semibold">¿Para qué usarás la app?</h1>
+  <h1>¿Para qué usarás la app?</h1>
   <form method="post" class="mt-6 space-y-4">
     {% csrf_token %}
     {{ form.non_field_errors }}
     <fieldset class="space-y-2">
       <legend class="sr-only">{{ form.usage.label }}</legend>
       {% for radio in form.usage %}
-        <label class="flex items-center gap-3 rounded-xl border bg-white p-4">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
+        <label class="flex items-center gap-3 card">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
       {% endfor %}
       {{ form.usage.errors }}
     </fieldset>
     <p><label for="{{ form.currency.id_for_label }}">{{ form.currency.label }}</label> {{ form.currency }}</p>
     <p><label for="{{ form.business_name.id_for_label }}">{{ form.business_name.label }} (opcional)</label> {{ form.business_name }}</p>
-    <button type="submit" class="w-full rounded-xl bg-teal-700 p-3 font-semibold text-white">Continuar</button>
+    <button type="submit" class="btn-primary w-full">Continuar</button>
   </form>
 {% endblock %}

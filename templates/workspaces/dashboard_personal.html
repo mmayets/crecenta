@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load static icons money %}
+{% block title %}Inicio · Crecenta{% endblock %}
+{% block content %}
+{% with cur=workspace.currency %}
+  <div class="flex items-end justify-between">
+    <div>
+      <p class="muted">Hola, {{ user.get_short_name }}</p>
+      <h1>¿Cómo voy este mes?</h1>
+    </div>
+    {% if d.plan_status %}<span class="badge-{{ d.plan_status }}">{% if d.plan_status == "viable" %}Plan viable{% elif d.plan_status == "ajustado" %}Plan ajustado{% else %}Plan no viable{% endif %}</span>{% endif %}
+  </div>
+
+  {% if not d.ready %}
+    <section class="card mt-5">
+      <div class="flex items-center gap-3">{% icon "sparkles" "h-6 w-6 text-marca-700" %}<h2>Organiza tu dinero en minutos</h2></div>
+      <p class="mt-2 text-slate-600">Organiza tu dinero, conoce cuánto puedes gastar y recibe orientación antes de que tu presupuesto se salga de control.</p>
+      <div class="bar mt-3"><span style="width: {{ d.profile.percent }}%"></span></div>
+      <p class="muted mt-1">Tu perfil está al {{ d.profile.percent }}%</p>
+      <a class="btn-primary mt-4 w-full" href="{% url 'onboarding:index' ws=workspace.pk %}">Completar mi perfil</a>
+    </section>
+  {% else %}
+    <p class="muted mt-1">Del {{ d.period.start|date:"j \d\e F" }} al {{ d.period.end|date:"j \d\e F" }} · quedan {{ d.days_left }} días</p>
+
+    <section class="mt-4 grid grid-cols-2 gap-3" aria-label="Tu dinero">
+      <div class="card">
+        <p class="flex items-center gap-1 text-sm text-slate-600">{% icon "landmark" "h-4 w-4" %}Disponible en tus cuentas</p>
+        <p class="amount mt-2 text-xl" data-testid="en-cuentas">{{ d.availability.in_accounts|money:cur }}</p>
+      </div>
+      <div class="card {% if d.availability.is_short %}border-red-200 bg-red-50{% else %}border-marca-200 bg-marca-50{% endif %}">
+        <p class="flex items-center gap-1 text-sm text-slate-700">{% icon "wallet" "h-4 w-4" %}Disponible para gastar</p>
+        <p class="amount mt-2 text-xl {% if d.availability.is_short %}text-red-700{% else %}text-marca-800{% endif %}" data-testid="para-gastar">{{ d.availability.spendable|money:cur }}</p>
+        <p class="muted">según tu plan</p>
+      </div>
+    </section>
+    <details class="card mt-3 text-sm">
+      <summary class="cursor-pointer font-medium">¿Por qué es distinto?</summary>
+      <dl class="mt-3 space-y-1">
+        <div class="flex justify-between"><dt>En tus cuentas</dt><dd class="amount">{{ d.availability.in_accounts|money:cur }}</dd></div>
+        {% if d.availability.in_savings_accounts %}<div class="flex justify-between"><dt>− En cuentas de ahorro</dt><dd class="amount">{{ d.availability.in_savings_accounts|money:cur }}</dd></div>{% endif %}
+        <div class="flex justify-between"><dt>− Pagos pendientes</dt><dd class="amount">{{ d.availability.pending_commitments|money:cur }}</dd></div>
+        <div class="flex justify-between"><dt>− Ahorro por apartar</dt><dd class="amount">{{ d.availability.pending_savings|money:cur }}</dd></div>
+        <div class="flex justify-between"><dt>− Reserva para imprevistos</dt><dd class="amount">{{ d.availability.reserves|money:cur }}</dd></div>
+        <div class="flex justify-between border-t pt-1 font-semibold"><dt>Disponible para gastar</dt><dd class="amount">{{ d.availability.spendable|money:cur }}</dd></div>
+      </dl>
+      {% if d.availability.next_pay_date %}<p class="muted mt-2">Próximo cobro: {{ d.availability.next_pay_date|date:"j \d\e F" }}.</p>{% endif %}
+    </details>
+
+    {% if d.plan_source == "calculado" %}
+      <a href="{% url 'planning:index' ws=workspace.pk %}" class="card mt-3 flex items-center gap-3 text-slate-800 no-underline">
+        {% icon "info" "h-5 w-5 shrink-0 text-sky-700" %}
+        <span class="text-sm">Aún no has aceptado un plan: estas cifras usan tus datos actuales. <span class="text-marca-700 underline">Ver mi plan</span></span>
+      </a>
+    {% endif %}
+    {% if d.pending_proposal %}
+      <a href="{% url 'planning:detail' ws=workspace.pk plan_id=d.pending_proposal.pk %}" class="card mt-3 flex items-center gap-3 text-slate-800 no-underline">
+        {% icon "target" "h-5 w-5 shrink-0 text-marca-700" %}<span class="text-sm">Tienes una propuesta de plan por revisar.</span>{% icon "chevron-right" "ml-auto h-4 w-4" %}
+      </a>
+    {% endif %}
+  {% endif %}
+
+  {% if d.alerts %}
+    <section class="mt-6" aria-labelledby="t-alertas">
+      <div class="flex items-center justify-between"><h2 id="t-alertas">Qué debo ajustar</h2><a class="text-sm" href="{% url 'alerts:index' ws=workspace.pk %}">Ver todas ({{ d.open_alerts }})</a></div>
+      <ul class="mt-2 space-y-2">
+        {% for a in d.alerts %}
+          <li class="card flex gap-3">
+            {% if a.severity == "alta" %}{% icon "triangle-alert" "h-5 w-5 shrink-0 text-red-600" %}{% elif a.severity == "info" %}{% icon "sparkles" "h-5 w-5 shrink-0 text-emerald-600" %}{% else %}{% icon "bell" "h-5 w-5 shrink-0 text-amber-600" %}{% endif %}
+            <div><p class="font-semibold">{{ a.title }}</p><p class="text-sm text-slate-600">{{ a.message|truncatewords:28 }}</p></div>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {% if d.bars %}
+    <section class="mt-6" aria-labelledby="t-grupos">
+      <h2 id="t-grupos">Cuánto llevas</h2>
+      <ul class="card mt-2 space-y-4">
+        {% for b in d.bars %}
+          <li>
+            <div class="flex justify-between text-sm"><span class="font-medium">{{ b.label }}</span><span class="amount">{{ b.used|money:cur }} <span class="font-normal text-slate-500">de {{ b.assigned|money:cur }}</span></span></div>
+            <div class="bar mt-1 {% if b.over %}over{% elif b.percent >= 80 and b.kind != 'compromiso' and b.kind != 'ahorro' %}warn{% endif %}" role="progressbar" aria-valuenow="{{ b.percent }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ b.label }}"><span style="width: {% if b.percent > 100 %}100{% else %}{{ b.percent }}{% endif %}%"></span></div>
+            {% if b.over %}<p class="mt-1 text-xs text-red-700">Te pasaste por {{ b.left|cut:"-"|money:cur }}</p>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {% if d.upcoming %}
+    <section class="mt-6" aria-labelledby="t-pagos">
+      <h2 id="t-pagos">Próximos pagos</h2>
+      <ul class="card mt-2 divide-y">
+        {% for p in d.upcoming %}
+          <li class="flex items-center gap-3 py-2">{% icon "calendar" "h-5 w-5 text-slate-500" %}<span class="flex-1">{{ p.name }}<span class="muted block">{{ p.date|date:"l j \d\e F" }}</span></span><span class="amount">{{ p.pending|money:cur }}</span></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {% if chart.series %}
+    <section class="mt-6" aria-labelledby="t-grafico">
+      <h2 id="t-grafico">¿En qué se va tu dinero?</h2>
+      <div class="card mt-2"><div data-chart="datos-grafico" data-currency="{{ cur }}"></div></div>
+      {{ chart|json_script:"datos-grafico" }}
+    </section>
+  {% endif %}
+
+  {% if d.ready and d.profile.percent < 100 %}
+    <a href="{% url 'onboarding:index' ws=workspace.pk %}" class="card mt-6 block text-slate-800 no-underline">
+      <p class="text-sm font-medium">Tu perfil está al {{ d.profile.percent }}%: complétalo para un plan más preciso</p>
+      <div class="bar mt-2"><span style="width: {{ d.profile.percent }}%"></span></div>
+    </a>
+  {% endif %}
+{% endwith %}
+{% endblock %}
+{% block scripts %}
+  <script src="{% static 'vendor/apexcharts-3.54.1.min.js' %}" defer></script>
+  <script src="{% static 'js/charts.js' %}" defer></script>
+{% endblock %}

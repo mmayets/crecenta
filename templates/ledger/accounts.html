@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load icons money %}
+{% block title %}Cuentas · Crecenta{% endblock %}
+{% block content %}
+  <h1>Cuentas</h1>
+  <p class="muted mt-1">No guardamos números de cuenta ni de tarjeta.</p>
+  <ul class="card mt-4 divide-y p-0">
+    {% for a, balance in rows %}
+      <li class="flex items-center gap-3 p-4 {% if a.is_archived %}opacity-60{% endif %}">
+        {% if a.type == "tarjeta" %}{% icon "credit-card" "h-5 w-5" %}{% elif a.type == "efectivo" %}{% icon "banknote" "h-5 w-5" %}{% elif a.is_savings %}{% icon "piggy-bank" "h-5 w-5" %}{% else %}{% icon "landmark" "h-5 w-5" %}{% endif %}
+        <a class="flex-1 text-slate-800 no-underline" href="{% url 'ledger:account_edit' ws=workspace.pk account_id=a.pk %}">{{ a.name }}<span class="muted block">{{ a.get_type_display }}{% if a.is_savings %} · ahorro{% endif %}{% if a.is_archived %} · archivada{% endif %}</span></a>
+        <span class="amount">{{ balance|money:workspace.currency }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+  <h2 class="mt-6">{% if editing %}Editar {{ editing.name }}{% else %}Agregar cuenta{% endif %}</h2>
+  <form method="post" class="card mt-2 space-y-4">
+    {% csrf_token %}
+    {% include "partials/form.html" %}
+    <button type="submit" class="btn-primary w-full">Guardar</button>
+    {% if editing %}<button type="submit" name="archivar" value="1" class="btn-secondary w-full">{% if editing.is_archived %}Reactivar{% else %}Archivar{% endif %}</button>{% endif %}
+  </form>
+{% endblock %}

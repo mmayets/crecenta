@@ -8,4 +8,5 @@ app_name = "espacio"
 
 urlpatterns = [
     path("", views.dashboard, name="dashboard"),
+    path("ajustes/", views.settings_hub, name="settings"),
 ]

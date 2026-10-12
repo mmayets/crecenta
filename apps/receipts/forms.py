@@ -30,7 +30,9 @@ FIELD_SOURCES = {
 
 class ReviewForm(forms.Form):
     description = forms.CharField(label="Comercio o descripción", max_length=140)
-    date = forms.DateField(label="Fecha", widget=forms.DateInput(attrs={"type": "date"}))
+    date = forms.DateField(
+        label="Fecha", widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
+    )
     amount = forms.DecimalField(label="Total", min_value=0.01, max_digits=14, decimal_places=2)
     category = forms.ModelChoiceField(
         label="Categoría", queryset=Category.objects.none(), required=False

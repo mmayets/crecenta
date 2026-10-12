@@ -1,0 +1,1 @@
+{% load icons %}{% for w in warnings %}<p class="flex gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900" role="note">{% icon "triangle-alert" "h-4 w-4 shrink-0" %}<span><strong>{{ w.title }}.</strong> {{ w.message }}</span></p>{% endfor %}

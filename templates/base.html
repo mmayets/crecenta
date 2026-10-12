@@ -1,29 +1,84 @@
-{% load static %}<!doctype html>
+{% load static icons %}<!doctype html>
 <html lang="es-DO">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f766e">
+  <meta name="csrf-token" content="{{ csrf_token }}">
   <title>{% block title %}Crecenta{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block head %}{% endblock %}
+  <script src="{% static 'vendor/htmx-2.0.4.min.js' %}" defer></script>
+  <script src="{% static 'js/app.js' %}" defer></script>
+  <script src="{% static 'vendor/alpine-csp-3.14.8.min.js' %}" defer></script>
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-900">
-  {% if user.is_authenticated and current_workspace %}
-    <header class="border-b bg-white">
-      <nav class="mx-auto flex max-w-xl items-center justify-between px-4 py-3" aria-label="Espacio">
-        <a href="{% url 'workspaces:selector' %}" class="font-medium" data-testid="espacio-activo">
-          {{ current_workspace.name }} · {{ current_workspace.get_kind_display }}
+<body class="min-h-screen pb-24">
+  {% include "icons/sprite.svg" %}
+  <a href="#contenido" class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-white focus:p-2">Saltar al contenido</a>
+
+  {% if user.is_authenticated %}
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <div class="mx-auto flex max-w-xl items-center gap-3 px-4 py-3">
+        <a href="{% url 'workspaces:selector' %}" class="flex min-w-0 flex-1 items-center gap-2 text-slate-900 no-underline" data-testid="espacio-activo">
+          {% if current_workspace.is_business %}{% icon "briefcase" "h-5 w-5 shrink-0 text-marca-700" %}{% else %}{% icon "wallet" "h-5 w-5 shrink-0 text-marca-700" %}{% endif %}
+          <span class="truncate font-semibold">{% if current_workspace %}{{ current_workspace.name }} · {{ current_workspace.get_kind_display }}{% else %}Crecenta{% endif %}</span>
+          {% icon "chevron-right" "h-4 w-4 shrink-0 text-slate-400" %}
         </a>
-      </nav>
+        {% if current_workspace %}
+          <a href="{% url 'espacio:settings' ws=current_workspace.pk %}" class="rounded-full p-2 text-slate-600 hover:bg-slate-100">{% icon "settings" "h-5 w-5" "Ajustes" %}</a>
+        {% else %}
+          <a href="{% url 'accounts:settings' %}" class="rounded-full p-2 text-slate-600 hover:bg-slate-100">{% icon "user" "h-5 w-5" "Mi cuenta" %}</a>
+        {% endif %}
+      </div>
     </header>
   {% endif %}
-  <main class="mx-auto max-w-xl px-4 py-6">
+
+  <main id="contenido" class="mx-auto max-w-xl px-4 py-5">
     {% if messages %}
-      <ul class="mb-4 space-y-2">
-        {% for message in messages %}<li class="rounded-lg bg-white p-3 shadow-sm">{{ message }}</li>{% endfor %}
+      <ul class="mb-4 space-y-2" role="status">
+        {% for message in messages %}
+          <li class="card flex items-start gap-2 {% if message.level_tag == 'error' %}border-red-200 bg-red-50{% elif message.level_tag == 'success' %}border-emerald-200 bg-emerald-50{% endif %}">
+            {% if message.level_tag == "error" %}{% icon "triangle-alert" "h-5 w-5 shrink-0 text-red-700" %}{% elif message.level_tag == "success" %}{% icon "circle-check" "h-5 w-5 shrink-0 text-emerald-700" %}{% else %}{% icon "info" "h-5 w-5 shrink-0 text-sky-700" %}{% endif %}
+            <span>{{ message }}</span>
+          </li>
+        {% endfor %}
       </ul>
     {% endif %}
     {% block content %}{% endblock %}
   </main>
+
+  {% if user.is_authenticated and current_workspace %}
+    {% with ws=current_workspace.pk name=request.resolver_match.view_name %}
+    <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]" aria-label="Principal">
+      <div class="relative mx-auto flex max-w-xl items-end px-2">
+        <a class="nav-item" href="{% url 'espacio:dashboard' ws=ws %}" {% if name == "espacio:dashboard" %}aria-current="page"{% endif %}>{% icon "house" "h-6 w-6" %}Inicio</a>
+        <a class="nav-item" href="{% url 'ledger:movements' ws=ws %}" {% if "ledger:" in name %}aria-current="page"{% endif %}>{% icon "list" "h-6 w-6" %}Movimientos</a>
+        <div class="flex flex-1 justify-center" x-data="menu" @keydown.escape="close">
+          <button type="button" class="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-marca-700 text-white shadow-lg ring-4 ring-white" @click="toggle" aria-haspopup="true" aria-label="Registrar" data-testid="registrar">
+            {% icon "plus" "h-7 w-7" %}
+          </button>
+          <div x-show="open" x-cloak @click.outside="close" class="absolute bottom-20 left-1/2 w-64 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl" role="menu">
+            <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'ledger:new' ws=ws %}">{% icon "arrow-up-right" "h-5 w-5 text-red-600" %}Gasto</a>
+            <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'ledger:new' ws=ws %}?tipo=ingreso">{% icon "arrow-down-left" "h-5 w-5 text-emerald-600" %}Ingreso</a>
+            <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'ledger:new' ws=ws %}#texto">{% icon "mic" "h-5 w-5" %}Escribir o dictar</a>
+            <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'receipts:index' ws=ws %}">{% icon "camera" "h-5 w-5" %}Foto de comprobante</a>
+            <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'ledger:transfer' ws=ws %}">{% icon "arrow-left-right" "h-5 w-5" %}Transferencia</a>
+          </div>
+        </div>
+        {% if current_workspace.is_personal %}
+          <a class="nav-item" href="{% url 'planning:index' ws=ws %}" {% if "planning:" in name %}aria-current="page"{% endif %}>{% icon "target" "h-6 w-6" %}Plan</a>
+          <a class="nav-item relative" href="{% url 'alerts:index' ws=ws %}" {% if "alerts:" in name %}aria-current="page"{% endif %}>
+            {% icon "bell" "h-6 w-6" %}Alertas
+            {% if new_alerts %}<span class="absolute right-1/4 top-1 rounded-full bg-red-600 px-1.5 text-[10px] font-bold text-white" aria-label="{{ new_alerts }} nuevas">{{ new_alerts }}</span>{% endif %}
+          </a>
+        {% else %}
+          <a class="nav-item" href="{% url 'receipts:index' ws=ws %}">{% icon "receipt" "h-6 w-6" %}Comprobantes</a>
+          <a class="nav-item" href="{% url 'espacio:settings' ws=ws %}">{% icon "settings" "h-6 w-6" %}Ajustes</a>
+        {% endif %}
+      </div>
+    </nav>
+    {% endwith %}
+  {% endif %}
+  {% block scripts %}{% endblock %}
 </body>
 </html>

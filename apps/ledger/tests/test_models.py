@@ -112,3 +112,19 @@ class TestMovimiento:
         assert str(tx) == "2026-10-05 -100.00 Colmado"
         tx2 = TransactionFactory(account=cuenta, kind=TxKind.INGRESO, direction=Direction.IN)
         assert str(tx2) == "2026-10-05 +100.00 Ingreso"
+
+
+def test_borrar_espacio_con_movimientos_pero_no_una_cuenta_usada(personal_ws):
+    from django.db.models import RestrictedError
+
+    from apps.workspaces.models import Workspace
+
+    cuenta = AccountFactory(workspace=personal_ws)
+    TransactionFactory(account=cuenta, category=cat(personal_ws, "Ropa"))
+    with pytest.raises(RestrictedError):
+        cuenta.delete()  # una cuenta con movimientos no se borra (se archiva)
+    with pytest.raises(RestrictedError):
+        cat(personal_ws, "Ropa").delete()
+    personal_ws.delete()  # borrar el espacio completo sí elimina todo
+    assert not Workspace.objects.filter(pk=personal_ws.pk).exists()
+    assert not Transaction.objects.exists()

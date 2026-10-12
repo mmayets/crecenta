@@ -121,3 +121,21 @@ def compare(request: HttpRequest, workspace: Workspace) -> HttpResponse:
         "planning/compare.html",
         {"workspace": workspace, "a": a, "b": b, "rows": compare_plans(a, b)},
     )
+
+
+@workspace_required(kind="personal")
+@require_POST
+def apply_alternative(request: HttpRequest, workspace: Workspace, plan_id) -> HttpResponse:
+    """Crea una nueva propuesta aplicando una alternativa calculada por el motor."""
+    plan = _get_plan(workspace, plan_id)
+    try:
+        new_plan = edit_plan(
+            plan, request.user, {"alternativa": request.POST.get("alternativa", "")}, _today()
+        )
+    except (ValidationError, PlanError) as exc:
+        messages.error(
+            request, " ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc)
+        )
+        return redirect("planning:detail", ws=workspace.pk, plan_id=plan.pk)
+    messages.success(request, "Aplicamos la alternativa: revisa la nueva propuesta.")
+    return redirect("planning:detail", ws=workspace.pk, plan_id=new_plan.pk)

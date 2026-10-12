@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load icons %}
+{% block title %}Inicio · {{ workspace.name }} · Crecenta{% endblock %}
+{% block content %}
+  <p class="muted">Hola, {{ user.get_short_name }}</p>
+  <h1>{{ workspace.name }}</h1>
+  <p class="mt-2 text-slate-600">Conoce tus costos, fija precios rentables y descubre cuánto estás ganando realmente.</p>
+  <section class="mt-5 grid grid-cols-2 gap-3">
+    <div class="card">{% icon "trending-up" "h-5 w-5 text-marca-700" %}<p class="mt-2 font-semibold">¿Cuánto vendí?</p></div>
+    <div class="card">{% icon "receipt" "h-5 w-5 text-marca-700" %}<p class="mt-2 font-semibold">¿Cuánto me costó vender?</p></div>
+    <div class="card">{% icon "hand-coins" "h-5 w-5 text-marca-700" %}<p class="mt-2 font-semibold">¿Cuánto gané?</p></div>
+    <div class="card">{% icon "banknote" "h-5 w-5 text-marca-700" %}<p class="mt-2 font-semibold">¿Cuánto dinero puedo utilizar?</p></div>
+  </section>
+  <p class="card mt-4 text-sm text-slate-600">{% icon "info" "mr-1 inline h-4 w-4" %}El tablero de negocio (ventas, costo de lo vendido, ganancia y flujo de efectivo separados) llega en la siguiente fase. Mientras tanto puedes registrar movimientos y comprobantes de tu negocio.</p>
+{% endblock %}

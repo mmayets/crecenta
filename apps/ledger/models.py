@@ -76,7 +76,7 @@ class Transaction(WorkspaceScopedModel):
     """Movimiento de dinero. El monto siempre es positivo; el sentido lo da `direction`."""
 
     account = models.ForeignKey(
-        Account, verbose_name="cuenta", on_delete=models.PROTECT, related_name="transactions"
+        Account, verbose_name="cuenta", on_delete=models.RESTRICT, related_name="transactions"
     )
     date = models.DateField("fecha")
     amount = money_field("monto")
@@ -84,7 +84,7 @@ class Transaction(WorkspaceScopedModel):
     category = models.ForeignKey(
         Category,
         verbose_name="categoría",
-        on_delete=models.PROTECT,
+        on_delete=models.RESTRICT,
         null=True,
         blank=True,
         related_name="transactions",

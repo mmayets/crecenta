@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load icons %}
+{% block title %}Eliminar cuenta · Crecenta{% endblock %}
+{% block content %}
+  <h1 class="text-red-800">Eliminar mi cuenta</h1>
+  <div class="card mt-4 space-y-2 border-red-200 bg-red-50 text-sm text-red-900" role="alert">
+    <p class="flex items-center gap-2 font-semibold">{% icon "triangle-alert" "h-5 w-5" %}Esta acción no se puede deshacer</p>
+    <p>Se eliminarán tu cuenta, todos tus espacios, movimientos, planes, alertas y comprobantes. Si quieres conservar una copia, <a href="{% url 'accounts:export' %}">exporta tus datos</a> antes.</p>
+  </div>
+  <form method="post" class="card mt-4 space-y-4">
+    {% csrf_token %}
+    {% include "partials/form.html" %}
+    <button type="submit" class="btn-danger w-full">Eliminar definitivamente</button>
+  </form>
+  <a class="mt-4 inline-block" href="{% url 'accounts:settings' %}">Cancelar</a>
+{% endblock %}

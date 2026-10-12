@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Mis espacios · Crecenta{% endblock %}
 {% block content %}
-  <h1 class="text-2xl font-semibold">Mis espacios</h1>
+  <h1>Mis espacios</h1>
   <ul class="mt-6 space-y-2">
     {% for ws in workspaces %}
-      <li><a class="block rounded-xl border bg-white p-4" href="{% url 'espacio:dashboard' ws=ws.pk %}">{{ ws.name }} <span class="text-slate-500">· {{ ws.get_kind_display }} · {{ ws.currency }}</span></a></li>
+      <li><a class="block card" href="{% url 'espacio:dashboard' ws=ws.pk %}">{{ ws.name }} <span class="text-slate-500">· {{ ws.get_kind_display }} · {{ ws.currency }}</span></a></li>
     {% empty %}
       <li>Todavía no tienes espacios.</li>
     {% endfor %}

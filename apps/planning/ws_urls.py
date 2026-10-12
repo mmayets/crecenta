@@ -12,4 +12,5 @@ urlpatterns = [
     path("plan/<uuid:plan_id>/aceptar/", views.accept, name="accept"),
     path("plan/<uuid:plan_id>/descartar/", views.discard, name="discard"),
     path("plan/<uuid:plan_id>/editar/", views.edit, name="edit"),
+    path("plan/<uuid:plan_id>/aplicar/", views.apply_alternative, name="apply"),
 ]

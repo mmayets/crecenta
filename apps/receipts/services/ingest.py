@@ -4,7 +4,6 @@ duplicados exactos y encola la lectura con IA."""
 from __future__ import annotations
 
 import hashlib
-import unicodedata
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -17,6 +16,7 @@ from django.db import transaction
 from apps.accounts.models import User
 from apps.ledger.choices import Direction, TxStatus
 from apps.ledger.models import Transaction
+from apps.ledger.services.categories import normalize
 from apps.receipts.models import Receipt
 from apps.workspaces.models import Workspace
 
@@ -97,11 +97,6 @@ def schedule_ocr(receipt: Receipt) -> None:
 
 
 # ---------------------------------------------------------------- duplicados por contenido
-
-
-def normalize(text: str | None) -> str:
-    text = unicodedata.normalize("NFKD", text or "").encode("ascii", "ignore").decode()
-    return " ".join("".join(c if c.isalnum() else " " for c in text.lower()).split())
 
 
 def _amount(value: Any) -> Decimal | None:

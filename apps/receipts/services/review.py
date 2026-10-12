@@ -12,9 +12,10 @@ from django.db import transaction
 from apps.accounts.models import User
 from apps.ledger.choices import AccountType, Direction, TxKind, TxSource
 from apps.ledger.models import Account, Category, Transaction
+from apps.ledger.services.categories import normalize
 from apps.ledger.services.recording import TxData, record_transaction
 from apps.receipts.models import Receipt
-from apps.receipts.services.ingest import normalize, schedule_ocr
+from apps.receipts.services.ingest import schedule_ocr
 
 _PAYMENT_ACCOUNT = {"efectivo": AccountType.EFECTIVO, "tarjeta": AccountType.TARJETA}
 

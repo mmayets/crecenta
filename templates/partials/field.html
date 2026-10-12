@@ -1,0 +1,11 @@
+<div class="field">
+  {% if field.field.widget.input_type == "checkbox" %}
+    <label class="flex items-center gap-2 font-normal">{{ field }} {{ field.label }}</label>
+  {% else %}
+    {{ field.label_tag }}
+    {% if field.field.widget.input_type == "radio" %}<div class="choice-list{% if field.field.choices|length <= 3 %} choice-inline{% endif %}">{{ field }}</div>{% else %}{{ field }}{% endif %}
+  {% endif %}
+  {% if field.field.widget.attrs.class == "dudoso" %}<p class="text-xs text-amber-700">Revisa este dato: no lo entendimos con seguridad.</p>{% endif %}
+  {% if field.help_text %}<p class="muted">{{ field.help_text }}</p>{% endif %}
+  {{ field.errors }}
+</div>

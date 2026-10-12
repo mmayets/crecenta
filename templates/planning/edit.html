@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Editar plan · Crecenta{% endblock %}
 {% block content %}
-  <h1 class="text-2xl font-semibold">Editar propuesta</h1>
+  <h1>Editar propuesta</h1>
   <p class="mt-1 text-slate-600">Recalcularemos todo el plan con tus cambios.</p>
   <form method="post" class="mt-4 space-y-3">
     {% csrf_token %}
     {{ form.non_field_errors }}
     {% for field in form %}<p>{{ field.label_tag }} {{ field }} {{ field.errors }}</p>{% endfor %}
-    <button type="submit" class="w-full rounded-xl bg-teal-700 p-3 font-semibold text-white">Recalcular</button>
+    <button type="submit" class="btn-primary w-full">Recalcular</button>
   </form>
 {% endblock %}

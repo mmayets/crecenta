@@ -1,4 +1,18 @@
 # syntax=docker/dockerfile:1
+
+# ---------------------------------------------------------------- CSS (Tailwind CLI standalone)
+FROM debian:bookworm-slim AS css
+ARG TAILWIND_VERSION=3.4.17
+ADD --chmod=755 https://github.com/tailwindlabs/tailwindcss/releases/download/v${TAILWIND_VERSION}/tailwindcss-linux-x64 /usr/local/bin/tailwindcss
+WORKDIR /src
+COPY tailwind.config.js ./
+COPY static/src ./static/src
+COPY static/js ./static/js
+COPY templates ./templates
+COPY apps ./apps
+RUN tailwindcss -c tailwind.config.js -i static/src/app.css -o static/css/app.css --minify
+
+# ---------------------------------------------------------------- aplicación
 FROM python:3.12-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -17,6 +31,7 @@ ARG UV_GROUPS="--no-dev"
 RUN uv sync --frozen $UV_GROUPS
 
 COPY . .
+COPY --from=css /src/static/css/app.css static/css/app.css
 
 RUN useradd --create-home --uid 1000 app && mkdir -p /app/media /app/staticfiles \
     && chown -R app:app /app/media /app/staticfiles

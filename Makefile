@@ -27,3 +27,8 @@ check-deploy:
 	uv run python manage.py check --deploy --fail-level WARNING
 
 check: lint typecheck cov-services check-deploy
+
+TAILWIND ?= bin/tailwindcss
+
+css:
+	$(TAILWIND) -c tailwind.config.js -i static/src/app.css -o static/css/app.css --minify

@@ -1,7 +1,7 @@
 {{ formset.management_form }}
 {{ formset.non_form_errors }}
 {% for f in formset %}
-  <fieldset class="rounded-xl border bg-white p-4">
+  <fieldset class="card">
     {{ f.non_field_errors }}
     {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
     {% for field in f.visible_fields %}

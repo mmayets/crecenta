@@ -1,7 +1,10 @@
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+
+from apps.reports.services.dashboard import build_personal_dashboard
 
 from .forms import UsageForm
 from .mixins import SESSION_KEY, workspace_required
@@ -45,5 +48,21 @@ def selector(request: HttpRequest) -> HttpResponse:
 
 @workspace_required
 def dashboard(request: HttpRequest, workspace: Workspace) -> HttpResponse:
-    # Provisional: los tableros de persona y negocio se construyen en el paso 10.
-    return render(request, "workspaces/dashboard.html", {"workspace": workspace})
+    if workspace.is_business:
+        # El tablero de negocio (ventas, costos, ganancia y efectivo) llega en la Fase 2.
+        return render(request, "workspaces/dashboard_business.html", {"workspace": workspace})
+    data = build_personal_dashboard(workspace, timezone.localdate())
+    chart = {
+        "labels": list(data.spending_by_group),
+        "series": [float(v) for v in data.spending_by_group.values()],
+    }
+    return render(
+        request,
+        "workspaces/dashboard_personal.html",
+        {"workspace": workspace, "d": data, "chart": chart},
+    )
+
+
+@workspace_required
+def settings_hub(request: HttpRequest, workspace: Workspace) -> HttpResponse:
+    return render(request, "workspaces/settings.html", {"workspace": workspace})

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load icons %}
+{% block title %}Transferencia · Crecenta{% endblock %}
+{% block content %}
+  <h1>Mover dinero entre mis cuentas</h1>
+  <p class="muted mt-1">No cuenta como gasto ni como ingreso: tu dinero total no cambia.</p>
+  <form method="post" class="card mt-4 space-y-4">
+    {% csrf_token %}
+    {% include "partials/form.html" %}
+    <button type="submit" class="btn-primary w-full">Guardar transferencia</button>
+  </form>
+{% endblock %}

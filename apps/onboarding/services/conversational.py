@@ -11,8 +11,7 @@ from apps.accounts.models import User
 from apps.ai.schemas import OnboardingExtraction
 from apps.ai.services.client import run_structured
 from apps.ledger.choices import CategoryGroup
-from apps.ledger.models import Category
-from apps.receipts.services.ingest import normalize
+from apps.ledger.services.categories import match_category
 from apps.workspaces.models import Workspace
 
 MAX_TEXT = 4000
@@ -31,18 +30,6 @@ FIELD_MAP: dict[str, dict[str, str]] = {
                      "plazo": "deadline"},
 }  # fmt: skip
 SECTION_PREFIX = {"metas_ahorro": "ahorro"}
-# Palabras habituales → categoría del sistema.
-SYNONYMS = {
-    "comida": "Alimentación", "supermercado": "Alimentación", "colmado": "Alimentación",
-    "compra": "Alimentación", "gasolina": "Transporte y combustible",
-    "combustible": "Transporte y combustible", "pasaje": "Transporte y combustible",
-    "guagua": "Transporte y combustible", "transporte": "Transporte y combustible",
-    "farmacia": "Salud y farmacia", "medicina": "Salud y farmacia",
-    "medicinas": "Salud y farmacia", "limpieza": "Aseo y hogar", "aseo": "Aseo y hogar",
-    "luz": "Electricidad", "electricidad": "Electricidad", "renta": "Alquiler o hipoteca",
-    "alquiler": "Alquiler o hipoteca", "telefono": "Internet y teléfono",
-    "internet": "Internet y teléfono", "colegio": "Educación", "universidad": "Educación",
-}  # fmt: skip
 
 
 def extract_from_text(
@@ -58,21 +45,6 @@ def extract_from_text(
         schema=OnboardingExtraction,
     )
     return result.data
-
-
-def _match_category(workspace: Workspace, name: str | None, *groups: str) -> Category | None:
-    target = normalize(name)
-    if not target:
-        return None
-    target = normalize(SYNONYMS.get(target, target))
-    categories = Category.objects.for_workspace(workspace).filter(
-        group__in=groups, is_archived=False
-    )
-    exact = next((c for c in categories if normalize(c.name) == target), None)
-    return exact or next(
-        (c for c in categories if target in normalize(c.name) or normalize(c.name) in target),
-        None,
-    )
 
 
 def to_initial(workspace: Workspace, ext: OnboardingExtraction) -> dict[str, Any]:
@@ -108,7 +80,7 @@ def to_initial(workspace: Workspace, ext: OnboardingExtraction) -> dict[str, Any
 
     commitments = []
     for i, c in enumerate(ext.compromisos):
-        category = _match_category(
+        category = match_category(
             workspace,
             c.categoria or c.nombre,
             CategoryGroup.COMPROMISO_FIJO,
@@ -133,7 +105,7 @@ def to_initial(workspace: Workspace, ext: OnboardingExtraction) -> dict[str, Any
     essentials: dict[str, Any] = {}
     unmatched: list[dict[str, Any]] = []
     for e in ext.esenciales:
-        category = _match_category(workspace, e.categoria, CategoryGroup.ESENCIAL_VARIABLE)
+        category = match_category(workspace, e.categoria, CategoryGroup.ESENCIAL_VARIABLE)
         if category is None:
             unmatched.append({"nombre": e.categoria, "monto": e.monto})
             continue

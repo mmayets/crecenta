@@ -94,7 +94,7 @@ class Commitment(WorkspaceScopedModel):
 
     name = models.CharField("nombre", max_length=60)
     category = models.ForeignKey(
-        Category, verbose_name="categoría", on_delete=models.PROTECT, related_name="+"
+        Category, verbose_name="categoría", on_delete=models.RESTRICT, related_name="+"
     )
     amount = money_field("monto", validators=_POSITIVE)
     frequency = models.CharField(
@@ -141,7 +141,7 @@ class Debt(WorkspaceScopedModel):
     )
     end_date = models.DateField("fecha final", null=True, blank=True)
     category = models.ForeignKey(
-        Category, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+        Category, on_delete=models.RESTRICT, null=True, blank=True, related_name="+"
     )
 
     class Meta:
@@ -156,7 +156,7 @@ class Debt(WorkspaceScopedModel):
 class EssentialEstimate(WorkspaceScopedModel):
     """Presupuesto estimado por el usuario para un esencial variable en un período."""
 
-    category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="+")
+    category = models.ForeignKey(Category, on_delete=models.RESTRICT, related_name="+")
     amount = money_field("monto por período", validators=_NON_NEGATIVE)
 
     class Meta:
@@ -192,7 +192,7 @@ class SavingsGoal(WorkspaceScopedModel):
     saved_initial = money_field("ahorrado antes de empezar", default=0, validators=_NON_NEGATIVE)
     deadline = models.DateField("plazo", null=True, blank=True)
     category = models.ForeignKey(
-        Category, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+        Category, on_delete=models.RESTRICT, null=True, blank=True, related_name="+"
     )
     is_active = models.BooleanField("activa", default=True)
 

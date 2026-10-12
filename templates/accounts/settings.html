@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load icons %}
+{% block title %}Configuración y privacidad · Crecenta{% endblock %}
+{% block content %}
+  <h1>Configuración y privacidad</h1>
+  <form method="post" class="card mt-4 space-y-4">
+    {% csrf_token %}
+    {% include "partials/form.html" %}
+    <div class="rounded-xl bg-slate-50 p-3 text-sm text-slate-700">
+      <p class="font-medium">Qué compartimos con la IA</p>
+      <ul class="mt-1 list-disc pl-5">
+        <li>Solo los datos necesarios: montos, fechas y categorías de tu plan, o el comprobante que subes.</li>
+        <li>Nunca números de cuenta, de tarjeta ni documentos de identidad.</li>
+        <li>La IA no mueve dinero ni cambia tu plan: todo queda como propuesta hasta que lo aceptes.</li>
+        <li>Sin este permiso, la app funciona igual con explicaciones automáticas; no podrás leer comprobantes, dictar ni usar el modo conversacional.</li>
+      </ul>
+    </div>
+    <button type="submit" class="btn-primary w-full">Guardar</button>
+  </form>
+
+  <section class="card mt-6 space-y-3">
+    <h2 class="flex items-center gap-2">{% icon "download" "h-5 w-5" %}Exportar mis datos</h2>
+    <p class="text-sm text-slate-600">Descarga un archivo ZIP con todos tus datos (JSON), tus movimientos (CSV) y tus comprobantes.</p>
+    <a class="btn-secondary w-full" href="{% url 'accounts:export' %}">Descargar todo</a>
+  </section>
+
+  <section class="card mt-6 space-y-3 border-red-200">
+    <h2 class="flex items-center gap-2 text-red-800">{% icon "trash-2" "h-5 w-5" %}Eliminar mi cuenta</h2>
+    <p class="text-sm text-slate-600">Borra tu cuenta, tus espacios, movimientos, planes y comprobantes. No se puede deshacer.</p>
+    <a class="btn-secondary w-full text-red-700" href="{% url 'accounts:delete' %}">Eliminar cuenta y datos</a>
+  </section>
+{% endblock %}

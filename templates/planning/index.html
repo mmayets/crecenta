@@ -2,29 +2,29 @@
 {% load money %}
 {% block title %}Mi plan · Crecenta{% endblock %}
 {% block content %}
-  <h1 class="text-2xl font-semibold">Mi plan</h1>
+  <h1>Mi plan</h1>
   {% if budget %}
-    <section class="mt-4 rounded-xl border bg-white p-4">
+    <section class="mt-4 card">
       <h2 class="font-semibold">Plan vigente: {{ budget }}</h2>
       <a class="underline" href="{% url 'planning:detail' ws=workspace.pk plan_id=budget.plan.pk %}">Ver plan aceptado</a>
     </section>
   {% endif %}
   {% if proposal %}
-    <section class="mt-4 rounded-xl border bg-white p-4">
+    <section class="mt-4 card">
       <h2 class="font-semibold">Tienes una propuesta pendiente</h2>
       <a class="underline" href="{% url 'planning:detail' ws=workspace.pk plan_id=proposal.pk %}">Revisar propuesta</a>
     </section>
   {% endif %}
   <form method="post" action="{% url 'planning:generate' ws=workspace.pk %}" class="mt-6">
     {% csrf_token %}
-    <button type="submit" class="w-full rounded-xl bg-teal-700 p-3 font-semibold text-white">Generar un plan nuevo</button>
+    <button type="submit" class="btn-primary w-full">Generar un plan nuevo</button>
   </form>
   {% if history %}
     <h2 class="mt-8 font-semibold">Historial</h2>
     <form method="get" action="{% url 'planning:compare' ws=workspace.pk %}">
       <ul class="mt-2 space-y-2">
         {% for p in history %}
-          <li class="flex items-center gap-3 rounded-lg border bg-white p-3">
+          <li class="flex items-center gap-3 card">
             <input type="radio" name="a" value="{{ p.pk }}" aria-label="Comparar desde">
             <input type="radio" name="b" value="{{ p.pk }}" aria-label="Comparar con">
             <a class="flex-1" href="{% url 'planning:detail' ws=workspace.pk plan_id=p.pk %}">{{ p.period_start|date:"d/m/Y" }} · {{ p.get_status_display }} · {{ p.plan_status }}</a>

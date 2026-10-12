@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load icons %}
+{% block title %}Categorías · Crecenta{% endblock %}
+{% block content %}
+  <h1>Categorías</h1>
+  <p class="muted mt-1">Puedes cambiar el grupo de una categoría (por ejemplo, Ropa como esencial o discrecional).</p>
+  <ul class="card mt-4 divide-y p-0">
+    {% for c in categories %}
+      {% ifchanged c.group %}<li class="bg-slate-50 px-4 py-2 text-xs font-semibold uppercase text-slate-500">{{ c.get_group_display }}</li>{% endifchanged %}
+      <li><a class="flex items-center justify-between p-3 px-4 text-slate-800 no-underline {% if c.is_archived %}opacity-60{% endif %}" href="{% url 'ledger:category_edit' ws=workspace.pk category_id=c.pk %}">{{ c.name }}{% if c.is_archived %} (archivada){% endif %}{% icon "pencil" "h-4 w-4 text-slate-400" %}</a></li>
+    {% endfor %}
+  </ul>
+  <h2 class="mt-6">{% if editing %}Editar {{ editing.name }}{% else %}Nueva categoría{% endif %}</h2>
+  <form method="post" class="card mt-2 space-y-4">
+    {% csrf_token %}
+    {% include "partials/form.html" %}
+    <button type="submit" class="btn-primary w-full">Guardar</button>
+    {% if editing %}<button type="submit" name="archivar" value="1" class="btn-secondary w-full">{% if editing.is_archived %}Reactivar{% else %}Archivar{% endif %}</button>{% endif %}
+  </form>
+{% endblock %}
