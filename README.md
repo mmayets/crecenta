@@ -32,6 +32,8 @@ make typecheck     # mypy sobre la capa de cálculo
 make cov-services  # pytest + cobertura ≥ 90 % en services/
 make check-deploy  # manage.py check --deploy con settings de producción
 make check         # todo lo anterior
+make css           # compila Tailwind (bin/tailwindcss)
+make e2e           # prueba E2E de la PWA sin conexión (Chromium + Playwright de Node)
 ```
 
 Los tests usan PostgreSQL (`TEST_DATABASE_URL` o `DATABASE_URL`; por defecto

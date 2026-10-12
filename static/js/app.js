@@ -77,3 +77,86 @@ window.crecenta = {
 document.addEventListener("htmx:configRequest", (event) => {
   event.detail.headers["X-CSRFToken"] = window.crecenta.csrf();
 });
+
+/* ---------------------------------------------------------------- PWA y modo sin conexión */
+(function () {
+  const sw = "serviceWorker" in navigator ? navigator.serviceWorker : null;
+
+  if (sw) {
+    window.addEventListener("load", () => {
+      sw.register("/sw.js", { scope: "/" }).catch(() => {});
+    });
+  }
+
+  // Un client_uuid nuevo cada vez que se muestra un formulario (también al volver atrás):
+  // dos movimientos distintos nunca comparten id; un doble toque sí, y no se duplica.
+  function refreshClientIds() {
+    if (!(window.crypto && crypto.randomUUID)) return;
+    document.querySelectorAll('input[name="client_uuid"]').forEach((input) => {
+      input.value = crypto.randomUUID();
+    });
+  }
+
+  async function pendingCount() {
+    try {
+      return await self.CrecentaQueue.count();
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  function setBanner(text) {
+    const banner = document.getElementById("estado-red");
+    if (!banner) return;
+    banner.textContent = text;
+    banner.classList.toggle("hidden", !text);
+  }
+
+  async function refreshStatus(extra) {
+    const pending = await pendingCount();
+    document.querySelectorAll("[data-pending-count]").forEach((el) => { el.textContent = pending; });
+    if (!navigator.onLine) {
+      setBanner("Sin conexión: tus gastos se guardan en el teléfono y se enviarán al reconectar."
+        + (pending ? ` Pendientes: ${pending}.` : ""));
+    } else if (extra) {
+      setBanner(extra);
+    } else if (pending) {
+      setBanner(`Enviando ${pending} movimiento(s) guardado(s) sin conexión…`);
+    } else {
+      setBanner("");
+    }
+  }
+
+  function requestFlush() {
+    if (sw && sw.controller && navigator.onLine) {
+      sw.controller.postMessage({ type: "flush", csrf: window.crecenta.csrf() });
+    }
+  }
+
+  window.addEventListener("pageshow", () => {
+    refreshClientIds();
+    refreshStatus();
+    requestFlush();
+  });
+  window.addEventListener("online", () => { refreshStatus(); requestFlush(); });
+  window.addEventListener("offline", () => refreshStatus());
+
+  if (sw) {
+    sw.addEventListener("message", (event) => {
+      const data = event.data || {};
+      if (data.type === "synced" && data.count) {
+        refreshStatus(`Listo: enviamos ${data.count} movimiento(s) que guardaste sin conexión.`);
+      } else {
+        refreshStatus();
+      }
+    });
+    sw.addEventListener("controllerchange", requestFlush);
+  }
+
+  // Al cerrar sesión se borran las páginas guardadas para uso sin conexión.
+  document.addEventListener("submit", (event) => {
+    if (event.target.matches("form[data-logout]") && sw && sw.controller) {
+      sw.controller.postMessage({ type: "logout" });
+    }
+  });
+})();

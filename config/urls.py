@@ -9,6 +9,7 @@ urlpatterns = [
     path("cuenta/", include("apps.accounts.urls")),
     path("cuenta/", include("allauth.urls")),
     path("", include("apps.core.urls")),
+    path("", include("apps.pwa.urls")),
     path("", include("apps.workspaces.urls")),
     path("e/<uuid:ws>/", include("config.workspace_urls")),
 ]

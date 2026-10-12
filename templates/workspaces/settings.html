@@ -14,5 +14,5 @@
     <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'workspaces:selector' %}">{% icon "arrow-left-right" "h-5 w-5" %}<span class="flex-1">Cambiar de espacio</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
     <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'accounts:settings' %}">{% icon "shield-check" "h-5 w-5" %}<span class="flex-1">Configuración y privacidad</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
   </ul>
-  <form method="post" action="{% url 'account_logout' %}" class="mt-6">{% csrf_token %}<button class="btn-secondary w-full">{% icon "log-out" "h-5 w-5" %}Cerrar sesión</button></form>
+  <form method="post" action="{% url 'account_logout' %}" class="mt-6" data-logout>{% csrf_token %}<button class="btn-secondary w-full">{% icon "log-out" "h-5 w-5" %}Cerrar sesión</button></form>
 {% endblock %}

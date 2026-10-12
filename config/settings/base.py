@@ -47,6 +47,7 @@ LOCAL_APPS = [
     "apps.receipts",
     "apps.onboarding",
     "apps.reports",
+    "apps.pwa",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -147,6 +148,9 @@ TIME_ZONE = env("TIME_ZONE", default="America/Santo_Domingo")
 USE_I18N = True
 USE_TZ = True
 LOCALE_PATHS = [BASE_DIR / "locale"]
+
+# Versión de la app (también invalida la caché del service worker).
+APP_VERSION = env("APP_VERSION", default="1")
 
 # Moneda por defecto de los espacios nuevos (DOP o USD).
 DEFAULT_CURRENCY = env("DEFAULT_CURRENCY", default="DOP")
