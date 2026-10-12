@@ -40,3 +40,14 @@ Decisiones tomadas donde el encargo no especifica. Formato: decisión · motivo.
 ## Alcance
 
 24. **Fase 1 incluye modelos mínimos de negocio** (`BusinessProfile`, `Product`) y las funciones puras de `pricing` (margen/markup) con tests, solo para que la opción "Negocio/Ambos" cree el espacio y `seed_demo` cargue el producto de costo RD$600. La UI de negocio llega en Fase 2.
+
+## Paso 1 — esqueleto
+
+25. **Django 5.2 (LTS)** y `uv` para dependencias (`pyproject.toml` + `uv.lock`). · Versión con soporte extendido; `uv` hace instalaciones reproducibles y rápidas en Docker.
+26. **`IncomeSource.net_amount` es el monto de cada cobro**, no el mensual (quincenal de RD$25,000 → RD$50,000 al mes). · La línea de tiempo de caja necesita el monto real de cada fecha. La interfaz ofrece escribir el total mensual y lo divide.
+27. **Ingreso variable sin fecha** se considera recibido al inicio del período y se marca como estimado; con fechas, se usa cada fecha. Para elegir el ingreso principal (día ancla) se ignoran los ingresos semanales; si solo hay semanales, el período es el mes calendario.
+28. **`LANGUAGE_CODE = "es"`** (Django no trae traducción `es-DO`); el formato de montos (`RD$50,000.00`) lo da `core.money.fmt`, no la localización de Django, para que sea idéntico en todo el sistema. El HTML declara `lang="es-DO"`.
+29. **`ATOMIC_REQUESTS = True`**. · Cada petición que registra dinero es todo-o-nada.
+30. **CSP estricta sin CDN** (`script-src 'self'`): se usará la build CSP de Alpine.js para no requerir `unsafe-eval`.
+31. **Tests contra PostgreSQL real** (no SQLite) para que restricciones, `UniqueConstraint` condicionales y tipos coincidan con producción. Caché local en memoria y Celery en modo *eager* en tests.
+32. **`split_proportionally`** usa el método del mayor residuo: las partes siempre suman exactamente el total, sin centavos perdidos.

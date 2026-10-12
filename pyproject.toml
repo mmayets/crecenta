@@ -1,0 +1,78 @@
+[project]
+name = "crecenta"
+version = "0.1.0"
+description = "PWA de finanzas personales y para pequeños negocios"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "Django>=5.2,<5.3",
+    "psycopg[binary]>=3.2",
+    "django-environ>=0.11",
+    "django-allauth[socialaccount]>=65.0",
+    "django-storages>=1.14",
+    "celery[redis]>=5.4",
+    "redis>=5.0",
+    "pydantic>=2.8",
+    "whitenoise>=6.7",
+    "gunicorn>=23.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-django>=4.9",
+    "pytest-cov>=5.0",
+    "factory-boy>=3.3",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "django-stubs[compatible-mypy]>=5.0",
+]
+
+[tool.uv]
+package = false
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["**/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ", "SIM", "S"]
+ignore = ["S101"]  # assert en tests
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S105", "S106"]
+"config/settings/*" = ["F405", "F403", "S104", "S105"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+addopts = "-q --strict-markers --cov=apps --cov-report=term-missing:skip-covered"
+testpaths = ["apps", "tests"]
+filterwarnings = ["ignore:No directory at:UserWarning"]
+
+[tool.coverage.run]
+source = ["apps"]
+branch = true
+omit = ["**/migrations/*", "**/tests/*"]
+
+# ---------------------------------------------------------------- mypy
+# Se tipa estrictamente la capa de cálculo (services/ y utilidades de core).
+[tool.mypy]
+python_version = "3.12"
+plugins = ["mypy_django_plugin.main"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["apps.core.money", "apps.core.dates", "apps.core.periods", "apps.*.services.*"]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_return_any = true
+
+[tool.django-stubs]
+django_settings_module = "config.settings.test"
