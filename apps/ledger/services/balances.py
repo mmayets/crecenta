@@ -65,6 +65,16 @@ def total_balance(workspace: Workspace, as_of: date | None = None) -> Decimal:
     return sum(balances_by_account(workspace, as_of).values(), ZERO)
 
 
+def savings_accounts_balance(workspace: Workspace, as_of: date | None = None) -> Decimal:
+    """Saldo de las cuentas marcadas como de ahorro (no disponible para gastar)."""
+    ids = set(
+        Account.objects.for_workspace(workspace)
+        .filter(is_savings=True)
+        .values_list("id", flat=True)
+    )
+    return sum((v for k, v in balances_by_account(workspace, as_of).items() if k in ids), ZERO)
+
+
 def spent_by_category(workspace: Workspace, start: date, end: date) -> dict[UUID | None, Decimal]:
     """Gasto confirmado por categoría en [start, end]. Excluye transferencias y préstamos."""
     rows = (

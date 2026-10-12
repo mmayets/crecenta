@@ -26,6 +26,7 @@ DJANGO_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
+    "django.contrib.postgres",
 ]
 THIRD_PARTY_APPS = [
     "allauth",
@@ -38,6 +39,7 @@ LOCAL_APPS = [
     "apps.accounts",
     "apps.workspaces",
     "apps.ledger",
+    "apps.personal",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 

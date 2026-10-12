@@ -43,7 +43,11 @@ def ensure_system_categories(workspace: Workspace) -> int:
 
 
 def create_account(
-    workspace: Workspace, name: str, type: str, opening_balance: Decimal | str = "0"
+    workspace: Workspace,
+    name: str,
+    type: str,
+    opening_balance: Decimal | str = "0",
+    is_savings: bool = False,
 ) -> Account:
     account = Account(
         workspace=workspace,
@@ -51,6 +55,7 @@ def create_account(
         type=type,
         currency=workspace.currency,
         opening_balance=q(to_money(opening_balance)),
+        is_savings=is_savings,
     )
     account.full_clean()
     account.save()

@@ -120,6 +120,23 @@ def period_for(sources: list[IncomeInput], today: date) -> Period:
     return Period(start=start, end=end)
 
 
+def scheduled_dates(frequency: str, days: tuple[int, ...], period: Period) -> list[date]:
+    """Fechas en que ocurre algo periódico (cobro o vencimiento) dentro del período.
+
+    - semanal: `days[0]` es el día de la semana (0=lunes).
+    - mensual / quincenal / variable con días: cada día del mes indicado (ajustado a fin de mes).
+    - sin días: una sola vez, al inicio del período.
+    """
+    if frequency == Frequency.SEMANAL:
+        return weekly_dates(period.start, period.end, days[0])
+    if not days:
+        return [period.start]
+    result: list[date] = []
+    for day in days:
+        result.extend(monthly_dates(period.start, period.end, day))
+    return sorted(result)
+
+
 def pay_events(sources: list[IncomeInput], period: Period) -> list[PayEvent]:
     """Cobros que ocurren dentro del período, ordenados por fecha.
 
@@ -130,14 +147,7 @@ def pay_events(sources: list[IncomeInput], period: Period) -> list[PayEvent]:
     for source in sources:
         if source.net_amount == ZERO:
             continue
-        dates: list[date] = []
-        if source.frequency == Frequency.SEMANAL:
-            dates = weekly_dates(period.start, period.end, source.pay_days[0])
-        elif source.pay_days:
-            for day in source.pay_days:
-                dates.extend(monthly_dates(period.start, period.end, day))
-        else:
-            dates = [period.start]
+        dates = scheduled_dates(source.frequency, source.pay_days, period)
         events.extend(
             PayEvent(
                 date=d,

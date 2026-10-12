@@ -27,6 +27,8 @@ class Account(WorkspaceScopedModel):
     type = models.CharField("tipo", max_length=10, choices=AccountType.choices)
     currency = models.CharField("moneda", max_length=3, choices=CURRENCY_CHOICES)
     opening_balance = money_field("saldo inicial", default=0)
+    # El dinero de una cuenta de ahorro está en tus cuentas, pero no está disponible para gastar.
+    is_savings = models.BooleanField("es cuenta de ahorro", default=False)
     is_archived = models.BooleanField("archivada", default=False)
 
     class Meta:
