@@ -276,3 +276,11 @@ def test_compromisos_por_defecto():
     assert sum(c.amount for c in COMPROMISOS) == D("20000")
     assert OCTUBRE.days == 31
     assert Decimal("0") == 0
+
+
+def test_sin_ingresos_ni_gastos_no_es_viable():
+    from apps.personal.services.types import PersonalInputs
+
+    r = build_personal_plan(PersonalInputs(period=OCTUBRE, incomes=()))
+    assert r.status == PlanStatus.NO_VIABLE
+    assert r.deficit == 0 and r.alternatives == ()

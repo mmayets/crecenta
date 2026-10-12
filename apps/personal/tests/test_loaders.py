@@ -17,7 +17,6 @@ from apps.personal.models import (
     Debt,
     EssentialEstimate,
     IncomeSource,
-    PersonalProfile,
     Preference,
     SavingsGoal,
 )
@@ -29,6 +28,8 @@ from apps.personal.services.loaders import (
     workspace_availability,
 )
 from apps.personal.services.types import PlanStatus, Priority
+
+from .data import load_caso_50000
 
 pytestmark = pytest.mark.django_db
 D = Decimal
@@ -42,26 +43,7 @@ def cat(ws, name):
 @pytest.fixture
 def caso(personal_ws):
     """El caso RD$50,000 cargado en la base de datos."""
-    ws = personal_ws
-    IncomeSource.objects.create(workspace=ws, name="Salario", net_amount=D("50000"), pay_days=[1])
-    for name, amount, day, category in [
-        ("Alquiler", "15000", 5, "Alquiler o hipoteca"),
-        ("Electricidad", "2500", 15, "Electricidad"),
-        ("Internet", "2500", 20, "Internet y teléfono"),
-    ]:
-        Commitment.objects.create(
-            workspace=ws, name=name, amount=D(amount), due_day=day, category=cat(ws, category)
-        )
-    EssentialEstimate.objects.create(workspace=ws, category=cat(ws, "Alimentación"), amount=10000)
-    EssentialEstimate.objects.create(
-        workspace=ws, category=cat(ws, "Transporte y combustible"), amount=5000
-    )
-    SavingsGoal.objects.create(
-        workspace=ws, purpose="Fondo de emergencia", contribution_amount=D("7000")
-    )
-    PersonalProfile.objects.create(workspace=ws, discretionary_wish=D("5000"))
-    Preference.objects.create(workspace=ws, category=cat(ws, "Alimentación"), priority="reducible")
-    return ws
+    return load_caso_50000(personal_ws)
 
 
 def test_plan_desde_la_base_de_datos(caso):

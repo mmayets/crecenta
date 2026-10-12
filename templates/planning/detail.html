@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Plan · Crecenta{% endblock %}
+{% block content %}
+  <a class="underline" href="{% url 'planning:index' ws=workspace.pk %}">← Mi plan</a>
+  {% include "planning/_plan.html" %}
+{% endblock %}

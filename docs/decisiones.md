@@ -94,3 +94,13 @@ Decisiones tomadas donde el encargo no especifica. Formato: decisión · motivo.
 61. **Plantillas versionadas** `ai/prompts/<nombre>.<versión>.md` con secciones `## system` y `## user` y marcadores `{{ nombre }}`; la versión vigente se fija en `ai/services/prompts.py::VERSIONS` y se registra en cada `AIInteraction`.
 62. **El plan que recibe la IA no lleva identificadores internos** (`serialize_plan(..., include_refs=False)`); los montos van como texto con 2 decimales.
 63. **SDK oficiales** `google-genai` y `openai`, importados solo al usar ese proveedor. Modelos configurables por variables de entorno (`GEMINI_MODEL`, `OPENAI_MODEL`, `OPENAI_TRANSCRIBE_MODEL`).
+
+## Paso 6 — plan con IA y versiones
+
+64. **Cálculo síncrono, explicación asíncrona**: al pedir un plan, el motor calcula y guarda la versión al instante (estado `generando`, las cifras ya se ven); la narrativa corre en Celery (`planning.narrate_plan`) y deja la versión en `propuesta`. La tarea se encola al confirmar la transacción (`on_commit`) y nunca deja una versión en `generando`: ante cualquier falla usa la narrativa por reglas. Se agregó el estado `generando` a los del encargo.
+65. **`inputs_snapshot` reproduce el cálculo**: guarda las entradas del motor (sin cuentas, saldos por cuenta ni datos de la persona). Recalcular desde el snapshot da exactamente el mismo `computed` (hay test). La IA recibe el plan sin identificadores internos y las preferencias con el nombre de la categoría.
+66. **Editar = nueva versión**: la persona puede aplicar una alternativa del motor, cambiar ocio deseado, porcentaje de reserva (0–50 %), montos de esenciales y aportes de ahorro. Se crea una nueva propuesta recalculada por el motor (con `parent` y `edits`) y la anterior pasa a `reemplazado`. Cambios inválidos no tocan la propuesta.
+67. **Aceptar**: crea `BudgetPeriod` (con el reparto por cobro) y una `BudgetLine` por línea del plan; la versión aceptada anterior del mismo período y las demás propuestas abiertas pasan a `reemplazado`, y su presupuesto deja de estar vigente (una restricción única garantiza un solo presupuesto vigente por período).
+68. **Plan aceptado vigente**: `accepted_result()` recalcula el resultado desde el snapshot de la versión aceptada; lo usarán el inicio, las alertas y "Disponible para gastar" en lugar de los datos actuales cuando exista.
+69. **Sin cobros no hay plan viable**: si en el período no hay ningún cobro, el estado es `no_viable` aunque no haya gastos.
+70. **Datos faltantes** con prioridad (alta, media, baja), mensaje, impacto en el plan y pregunta sugerida; se muestran en el plan y se envían a la IA.

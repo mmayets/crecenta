@@ -25,3 +25,24 @@ def test_sin_referencias_para_la_ia():
     assert "ref" not in data["lineas"][0]
     assert "categoria_ref" not in data["lineas"][0]
     assert data["saldo_mas_bajo"] == {"fecha": "2026-10-31", "monto": "3000.00"}
+
+
+def test_ida_y_vuelta_de_las_entradas():
+    from apps.personal.services.serialize import inputs_from_dict, inputs_to_dict
+    from apps.personal.services.types import DebtInput
+
+    from .builders import D, ahorro
+
+    deuda = DebtInput("p", "Préstamo", D("4000"), D("9000"), 10, interest_rate=D("18.5"))
+    inputs = caso_50000(debts=(deuda,), savings=(ahorro(target_amount=D("90000")),))
+    again = inputs_from_dict(inputs_to_dict(inputs))
+    assert again == inputs
+    assert build_personal_plan(again).totals_by_kind == build_personal_plan(inputs).totals_by_kind
+
+
+def test_quitar_referencias():
+    from apps.personal.services.serialize import strip_refs
+
+    data = strip_refs(serialize_plan(build_personal_plan(caso_50000(incomes=(mensual("40000"),)))))
+    assert "ref" not in str(data.keys())
+    assert all("ref" not in c for a in data["alternativas"] for c in a["cambios"])

@@ -183,7 +183,7 @@ def compute_plan(inputs: PersonalInputs) -> BudgetResult:
 
     lowest = lowest_point(points)
     wish_unmet = inputs.discretionary_wish is not None and discretionary < inputs.discretionary_wish
-    if deficit > 0 or shortfalls:
+    if deficit > 0 or shortfalls or not events:
         status = PlanStatus.NO_VIABLE
     elif reserve < reserve_min or wish_unmet or (lowest and lowest.balance < reserve_min):
         status = PlanStatus.AJUSTADO

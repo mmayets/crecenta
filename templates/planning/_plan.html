@@ -1,0 +1,49 @@
+{% load money %}
+<div id="plan" {% if plan.status == "generando" %}hx-get="{% url 'planning:detail' ws=workspace.pk plan_id=plan.pk %}" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  <h1 class="mt-4 text-2xl font-semibold">Plan del {{ plan.period_start|date:"d/m/Y" }} al {{ plan.period_end|date:"d/m/Y" }}</h1>
+  <p class="mt-1">Estado de la versión: <strong>{{ plan.get_status_display }}</strong> · Resultado: <strong data-testid="estado-plan">{{ plan.plan_status }}</strong></p>
+
+  <table class="mt-4 w-full text-left">
+    <thead><tr><th>Concepto</th><th class="text-right">Monto</th></tr></thead>
+    <tbody>
+      <tr><td>Ingreso del período</td><td class="text-right">{{ plan.computed.ingreso_total|money:workspace.currency }}</td></tr>
+      {% for line in plan.computed.lineas %}
+        <tr><td>{{ line.nombre }}</td><td class="text-right">{{ line.monto|money:workspace.currency }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if plan.computed.faltantes_por_fecha %}
+    <h2 class="mt-4 font-semibold">Faltantes por fecha</h2>
+    <ul>{% for f in plan.computed.faltantes_por_fecha %}<li>{{ f.fecha }}: {{ f.monto|money:workspace.currency }} ({{ f.conceptos|join:", " }})</li>{% endfor %}</ul>
+  {% endif %}
+
+  {% if plan.status == "generando" %}
+    <p class="mt-4" role="status">Preparando la explicación de tu plan…</p>
+  {% elif plan.ai_narrative %}
+    <section class="mt-4 rounded-xl border bg-white p-4" aria-label="Explicación">
+      <p>{{ plan.ai_narrative.resumen }}</p>
+      {% for rec in plan.ai_narrative.recomendaciones %}
+        <article class="mt-3"><h3 class="font-semibold">{{ rec.titulo }}</h3><p>{{ rec.detalle }}</p>
+          {% if rec.es_proyeccion %}<p class="text-sm">Proyección</p>{% endif %}
+          {% if rec.datos_usados %}<p class="text-sm text-slate-500">Datos usados: {{ rec.datos_usados|join:", " }}</p>{% endif %}
+        </article>
+      {% endfor %}
+      {% for w in plan.ai_narrative.advertencias_datos_faltantes %}<p class="mt-2 text-sm">⚠ {{ w }}</p>{% endfor %}
+      <p class="mt-3 text-xs text-slate-500">{% if plan.narrative_source == "ia" %}Explicación generada con IA a partir de los cálculos del plan.{% else %}Explicación automática a partir de los cálculos del plan.{% endif %}</p>
+    </section>
+  {% endif %}
+
+  {% if plan.computed.alternativas %}
+    <h2 class="mt-4 font-semibold">Alternativas calculadas</h2>
+    <ul>{% for a in plan.computed.alternativas %}<li><strong>{{ a.nombre }}</strong>: libera {{ a.libera|money:workspace.currency }} → {{ a.estado_resultante }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  {% if plan.is_open %}
+    <div class="mt-6 flex gap-2">
+      <form method="post" action="{% url 'planning:accept' ws=workspace.pk plan_id=plan.pk %}">{% csrf_token %}<button class="rounded-xl bg-teal-700 px-4 py-2 font-semibold text-white">Aceptar</button></form>
+      <a class="rounded-xl border px-4 py-2" href="{% url 'planning:edit' ws=workspace.pk plan_id=plan.pk %}">Editar</a>
+      <form method="post" action="{% url 'planning:discard' ws=workspace.pk plan_id=plan.pk %}">{% csrf_token %}<button class="rounded-xl border px-4 py-2">Descartar</button></form>
+    </div>
+  {% endif %}
+</div>

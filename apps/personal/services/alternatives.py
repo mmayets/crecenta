@@ -113,13 +113,16 @@ def _freed(before: BudgetResult, after: BudgetResult, kinds: set[LineKind]) -> D
     return max(before.total(*kinds) - after.total(*kinds), ZERO)
 
 
-def generate_alternatives(
-    inputs: PersonalInputs, result: BudgetResult, compute: Compute
-) -> tuple[Alternative, ...]:
+_Candidate = tuple[str, str, str, PersonalInputs, set[LineKind], bool]
+
+
+def _candidates(inputs: PersonalInputs, result: BudgetResult) -> list[_Candidate]:
+    """Alternativas simples posibles (código, nombre, descripción, entradas nuevas, líneas que
+    libera, toca algo prioritario)."""
     gap = _gap(result)
     savings_total = _savings_total(inputs)
     savings_priority = _savings_is_priority(inputs)
-    candidates: list[tuple[str, str, str, PersonalInputs, set[LineKind], bool]] = []
+    candidates: list[_Candidate] = []
 
     if result.total(LineKind.DISCRECIONAL) > 0 or (
         inputs.discretionary_wish and result.status == PlanStatus.NO_VIABLE
@@ -202,9 +205,21 @@ def generate_alternatives(
                     savings_priority,
                 )
             )
+    return candidates
 
+
+def _combined_inputs(
+    inputs: PersonalInputs, result: BudgetResult, compute: Compute
+) -> PersonalInputs:
+    combined = _cut_reducible(replace(inputs, discretionary_wish=ZERO), _gap(result))
+    return _scale_savings(combined, _gap(compute(combined)))
+
+
+def generate_alternatives(
+    inputs: PersonalInputs, result: BudgetResult, compute: Compute
+) -> tuple[Alternative, ...]:
     alternatives: list[Alternative] = []
-    for code, name, description, new_inputs, kinds, touches_priority in candidates:
+    for code, name, description, new_inputs, kinds, touches_priority in _candidates(inputs, result):
         after = compute(new_inputs)
         if not _improves(result, after):
             continue
@@ -213,10 +228,7 @@ def generate_alternatives(
     if result.status == PlanStatus.NO_VIABLE and not any(
         a.status != PlanStatus.NO_VIABLE for a in alternatives
     ):
-        combined = _cut_reducible(replace(inputs, discretionary_wish=ZERO), gap)
-        partial = compute(combined)
-        combined = _scale_savings(combined, _gap(partial))
-        after = compute(combined)
+        after = compute(_combined_inputs(inputs, result, compute))
         if _improves(result, after):
             alternatives.append(
                 _make(
@@ -226,7 +238,7 @@ def generate_alternatives(
                     result,
                     after,
                     {LineKind.DISCRECIONAL, LineKind.ESENCIAL, LineKind.AHORRO},
-                    savings_priority,
+                    _savings_is_priority(inputs),
                 )
             )
 
@@ -237,6 +249,22 @@ def generate_alternatives(
             key=lambda a: (_STATUS_RANK[a.status], a.touches_priority, a.deficit, order[a.code]),
         )
     )
+
+
+def inputs_for_alternative(
+    inputs: PersonalInputs, code: str, compute: Compute
+) -> PersonalInputs | None:
+    """Entradas que resultan de aplicar la alternativa `code` (None si no aplica a este plan).
+
+    Permite que la persona acepte una alternativa: el motor recalcula el plan con estas entradas.
+    """
+    result = compute(inputs)
+    if code == "combinada":
+        return _combined_inputs(inputs, result, compute)
+    for candidate in _candidates(inputs, result):
+        if candidate[0] == code:
+            return candidate[3]
+    return None
 
 
 def _make(
