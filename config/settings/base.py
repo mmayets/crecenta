@@ -6,6 +6,7 @@ Los secretos y valores por entorno se leen solo de variables de entorno (ver `.e
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -42,6 +43,7 @@ LOCAL_APPS = [
     "apps.personal",
     "apps.ai",
     "apps.planning",
+    "apps.alerts",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -174,7 +176,12 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_ACKS_LATE = True
 CELERY_TASK_TIME_LIMIT = 120
-CELERY_BEAT_SCHEDULE: dict = {}
+CELERY_BEAT_SCHEDULE: dict = {
+    "alertas-diarias": {
+        "task": "alerts.evaluate_all",
+        "schedule": crontab(hour=7, minute=0),
+    },
+}
 
 # ------------------------------------------------------------------ IA
 AI_PROVIDER = env("AI_PROVIDER", default="fake")  # gemini | openai | fake

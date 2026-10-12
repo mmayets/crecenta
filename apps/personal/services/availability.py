@@ -36,6 +36,7 @@ class Availability:
     pending_savings: Decimal
     reserves: Decimal
     next_pay_date: date | None
+    savings_contributed: Decimal = ZERO
 
     @property
     def committed(self) -> Decimal:
@@ -65,6 +66,27 @@ def _unpaid(items: list[ScheduledItem], paid: Decimal) -> list[tuple[ScheduledIt
     return result
 
 
+def unpaid_fixed_items(
+    plan: BudgetResult, spent_by_category: dict[str, Decimal], today: date
+) -> list[tuple[ScheduledItem, Decimal]]:
+    """Cada vencimiento de compromisos y deudas con lo que queda por pagar.
+
+    Lo gastado en la categoría se aplica a sus vencimientos en orden de fecha. Sin categoría, un
+    vencimiento anterior a hoy se da por pagado.
+    """
+    by_category: dict[str | None, list[ScheduledItem]] = defaultdict(list)
+    for item in plan.scheduled:
+        if item.kind in _FIXED:
+            by_category[item.category_ref].append(item)
+    result: list[tuple[ScheduledItem, Decimal]] = []
+    for category_ref, items in by_category.items():
+        if category_ref is None:
+            result.extend((i, i.amount if i.date >= today else ZERO) for i in items)
+        else:
+            result.extend(_unpaid(items, spent_by_category.get(category_ref, ZERO)))
+    return sorted(result, key=lambda pair: (pair[0].date, pair[0].ref))
+
+
 def compute_availability(
     plan: BudgetResult,
     today: date,
@@ -79,21 +101,14 @@ def compute_availability(
     def covered_by_received(item: ScheduledItem) -> bool:
         return item.pay_event_date is None or item.pay_event_date in received
 
-    by_category: dict[str | None, list[ScheduledItem]] = defaultdict(list)
-    for item in plan.scheduled:
-        if item.kind in _FIXED:
-            by_category[item.category_ref].append(item)
-
-    pending_commitments = ZERO
-    for category_ref, items in by_category.items():
-        if category_ref is None:
-            pending_commitments += sum(
-                (i.amount for i in items if i.date >= today and covered_by_received(i)), ZERO
-            )
-            continue
-        for item, left in _unpaid(items, spent_by_category.get(category_ref, ZERO)):
-            if covered_by_received(item):
-                pending_commitments += left
+    pending_commitments = sum(
+        (
+            left
+            for item, left in unpaid_fixed_items(plan, spent_by_category, today)
+            if covered_by_received(item)
+        ),
+        ZERO,
+    )
 
     savings_due = sum(
         (i.amount for i in plan.scheduled if i.kind == LineKind.AHORRO and covered_by_received(i)),
@@ -110,4 +125,5 @@ def compute_availability(
         pending_savings=pending_savings,
         reserves=reserves,
         next_pay_date=min(upcoming) if upcoming else None,
+        savings_contributed=savings_contributed,
     )

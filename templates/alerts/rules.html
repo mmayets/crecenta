@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Configurar alertas · Crecenta{% endblock %}
+{% block content %}
+  <h1 class="text-2xl font-semibold">Configurar alertas</h1>
+  <form method="post" class="mt-4 space-y-3">
+    {% csrf_token %}
+    {% for field in form %}<p>{{ field.label_tag }} {{ field }} {{ field.errors }}</p>{% endfor %}
+    <button type="submit" class="w-full rounded-xl bg-teal-700 p-3 font-semibold text-white">Guardar</button>
+  </form>
+{% endblock %}

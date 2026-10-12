@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Alertas · Crecenta{% endblock %}
+{% block content %}
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-semibold">Alertas</h1>
+    <a class="underline" href="{% url 'alerts:rules' ws=workspace.pk %}">Configurar</a>
+  </div>
+  <ul class="mt-4 space-y-3">
+    {% for alert in open_alerts %}
+      <li class="rounded-xl border bg-white p-4" data-severity="{{ alert.severity }}">
+        <p class="text-sm">{{ alert.get_severity_display }}{% if alert.is_projection %} · Proyección{% endif %}{% if alert.status == "nueva" %} · Nueva{% endif %}</p>
+        <h2 class="font-semibold">{{ alert.title }}</h2>
+        <p>{{ alert.message }}</p>
+        <details class="mt-2 text-sm text-slate-600"><summary>Datos usados</summary>
+          <ul>{% for k, v in alert.data_used.items %}<li>{{ k }}: {{ v }}</li>{% endfor %}</ul>
+        </details>
+        <div class="mt-3 flex gap-2">
+          <form method="post" action="{% url 'alerts:resolve' ws=workspace.pk alert_id=alert.pk %}">{% csrf_token %}<button class="rounded-lg border px-3 py-1">Ya lo resolví</button></form>
+          <form method="post" action="{% url 'alerts:dismiss' ws=workspace.pk alert_id=alert.pk %}">{% csrf_token %}<button class="rounded-lg border px-3 py-1">Descartar</button></form>
+        </div>
+      </li>
+    {% empty %}
+      <li class="rounded-xl border bg-white p-4">No tienes alertas pendientes.</li>
+    {% endfor %}
+  </ul>
+  {% if closed %}
+    <h2 class="mt-8 font-semibold">Anteriores</h2>
+    <ul class="mt-2 space-y-1 text-slate-600">{% for alert in closed %}<li>{{ alert.title }} · {{ alert.get_status_display }}</li>{% endfor %}</ul>
+  {% endif %}
+{% endblock %}

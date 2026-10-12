@@ -10,4 +10,5 @@ urlpatterns = [
     path("", include("apps.workspaces.ws_urls")),
     path("", include("apps.ledger.ws_urls")),
     path("", include("apps.planning.ws_urls")),
+    path("", include("apps.alerts.ws_urls")),
 ]

@@ -104,3 +104,13 @@ Decisiones tomadas donde el encargo no especifica. Formato: decisión · motivo.
 68. **Plan aceptado vigente**: `accepted_result()` recalcula el resultado desde el snapshot de la versión aceptada; lo usarán el inicio, las alertas y "Disponible para gastar" en lugar de los datos actuales cuando exista.
 69. **Sin cobros no hay plan viable**: si en el período no hay ningún cobro, el estado es `no_viable` aunque no haya gastos.
 70. **Datos faltantes** con prioridad (alta, media, baja), mensaje, impacto en el plan y pregunta sugerida; se muestran en el plan y se envían a la IA.
+
+## Paso 7 — alertas
+
+71. **Las alertas se evalúan contra el plan aceptado vigente**; si no hay, contra el plan calculado con los datos actuales (se indica en "datos usados"). Sin ingresos no se evalúa.
+72. **Cuándo se evalúa**: cada día a las 7:00 (celery beat, `alerts.evaluate_all`) y tras cada movimiento confirmado (señal `post_save`, al confirmar la transacción). Las ráfagas de movimientos (sincronización offline) se agrupan en una sola evaluación con una espera de 5 segundos.
+73. **Sin duplicados**: cada situación tiene una clave (`dedupe_key`, incluye el período). Reevaluar actualiza la alerta abierta; una alerta descartada no vuelve en el período; una alerta abierta cuya condición desaparece pasa sola a `resuelta` (y se reabre si la situación vuelve). "Buen desempeño" no se resuelve sola.
+74. **Reglas** (umbral y días configurables por espacio, cada una se puede desactivar): consumo ≥ 80 % (≥ 100 % es urgente) por esencial y para el ocio en conjunto (los gastos sin categoría cuentan como ocio); riesgo de fin de período por proyección lineal **solo de gastos variables** desde el día 3, con el límite diario sugerido; pago en los próximos 3 días que el dinero de las cuentas de uso diario no cubre (si un cobro llega antes del vencimiento no se alerta); ahorro de cobros recibidos hace 3 días o más que no se apartó, con propuesta de reparto entre los próximos cobros; "Disponible para gastar" negativo; buen desempeño pasada la mitad del período con gasto variable ≤ 90 % de lo previsto a la fecha y ahorro al día.
+75. **Aviso previo al registrar un gasto** (`purchase_warnings`): si el gasto usa dinero comprometido o supera el presupuesto de su categoría. No se guarda como alerta: la persona decide si registra el gasto.
+76. **Acciones sugeridas** (`revisar_plan`, `limite_diario`, `mover_dinero`, `repartir_ahorro`) se guardan como datos; aplicarlas siempre requiere que la persona lo apruebe desde la interfaz.
+77. **Notificaciones**: en la Fase 1 las alertas se muestran dentro de la app (con contador de nuevas). Las notificaciones push se evaluarán junto con la PWA.
