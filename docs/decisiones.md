@@ -196,3 +196,18 @@ Reglas contables confirmadas en `docs/fase2.md` §1 y §7.
 129. **Los tipos vinculados no se registran por la vía genérica**: cobros, pagos a proveedor, aportes y retiros del propietario solo se crean desde su flujo (que actualiza la deuda o crea la pata espejo); la sincronización offline genérica los rechaza.
 130. **Clientes y proveedores por nombre**: se escriben al vender o registrar la deuda y se reutilizan sin distinguir mayúsculas ni espacios de más; no hace falta darlos de alta antes.
 131. **Anular**: una venta se puede anular mientras su CxC no tenga cobros (se borran líneas, movimiento y CxC). Un cobro o pago se deshace eliminándolo, y su monto vuelve al saldo de la deuda.
+
+## Paso B4 — indicadores, riesgo de caja y reserva operativa
+
+132. **Período del negocio = mes calendario** (`business/services/loaders.month_bounds`), como se confirmó en `docs/fase2.md`.
+133. **Qué entra en cada número** (`business/services/indicators.py`):
+    - *Ventas* = importes sin ITBIS de las líneas de venta del mes + movimientos `venta` registrados sin detalle (cuentan como venta sin costo y se avisa).
+    - *Costo de lo vendido* = cantidad × costo guardado al vender. Productos sin costo se avisan (la ganancia queda sobrestimada).
+    - *Gastos operativos* = gastos del grupo "gasto operativo" o **sin categoría** (se avisa), más los pagos a proveedor cuya CxP tiene categoría operativa (p. ej. un alquiler que se dejó a deber cuenta cuando se paga).
+    - *Costos variables pagados* (comisiones, entregas, compras de materiales, también pagadas a crédito) **no** restan del resultado: ya están en el costo unitario. Se informan aparte y los usa la alerta de costos (B7).
+    - *Flujo de efectivo* = todas las entradas y salidas confirmadas de las cuentas del negocio salvo las transferencias entre sus propias cuentas.
+    - Movimientos pendientes de revisión no cuentan en nada.
+134. **Equilibrio del mes en ventas** (no en unidades, porque se venden varios productos): gastos fijos previstos ÷ margen bruto real del mes. Los gastos previstos se pasan a monto mensual (quincenal × 2, semanal × 52/12). Sin gastos previstos o sin ganancia bruta, no se calcula y se dice por qué.
+135. **Proyección de caja a 30 días, conservadora**: las salidas cuentan siempre (CxP en su vencimiento; vencidas o sin fecha, hoy; gastos operativos en sus fechas); las entradas solo cuentan para CxC con fecha futura dentro del horizonte (las vencidas o sin fecha no, porque no se sabe cuándo llegarán). En un mismo día entran primero los cobros. Un día es "en riesgo" si el saldo queda bajo la reserva fijada (o bajo cero).
+136. **Fechas de gastos previstos**: mensual en su día (ajustado a fin de mes); quincenal en su día y 15 días después o antes; semanal con el día de la semana (1 = lunes … 7 = domingo); sin día, se asume que vence hoy y luego cada mes o semana. Un gasto mensual con categoría cuyo monto del mes ya se registró no se vuelve a contar este mes.
+137. **Retiro seguro del propietario** = efectivo operativo − todas las salidas de los próximos 30 días − reserva fijada, nunca negativo, **sin contar cobros futuros**. Es más estricto que la proyección a propósito: un retiro no debe depender de que un cliente pague a tiempo. El efectivo operativo excluye las cuentas marcadas como de ahorro.
