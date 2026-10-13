@@ -125,7 +125,7 @@ def test_movimiento_confirmado_dispara_la_evaluacion(
 
 
 def test_evaluacion_diaria(caso, business_ws, other_ws):
-    assert evaluate_all_task() == 2  # solo espacios personales
+    assert evaluate_all_task() == 3  # personales y de negocio
     from apps.alerts.tasks import evaluate_workspace_task
 
     evaluate_workspace_task("00000000-0000-0000-0000-000000000000")  # inexistente: no falla

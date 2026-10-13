@@ -230,3 +230,13 @@ Reglas contables confirmadas en `docs/fase2.md` §1 y §7.
 148. **Misma tubería de IA que el plan personal**: plantilla `plan_negocio.v1.md`, mismo esquema de narrativa, mismo verificador de cifras (los márgenes se guardan como "30.00 %" para que el verificador reconozca los porcentajes calculados) y narrativa por reglas como respaldo, que separa ventas, ganancia y caja.
 149. **Aceptar un plan de negocio** lo deja como la meta del mes (reemplaza a otras versiones del mismo mes) y **no** cambia precios, objetivos ni registra nada. Editar crea una nueva versión recalculada (unidades, precios, gastos, retiro o una alternativa).
 150. **Retiro mensual deseado** (`BusinessGoal.planned_owner_draw`): lo que la persona quiere sacar del negocio cada mes para vivir; el plan lo contrasta con lo que el negocio puede soltar.
+
+## Paso B7 — alertas de negocio
+
+151. **Cuatro reglas de negocio** (`alerts/services/rules_business.py`), puras y con la misma tubería que las personales (sin duplicar, se resuelven solas cuando la condición desaparece, una alerta descartada no vuelve en el mes, configurables en "Preferencias de alertas" del espacio):
+    - *margen_bajo_objetivo*: margen bruto del mes, o de un producto que se vende, bajo el objetivo (con 1 punto de tolerancia configurable). Urgente si se vende a pérdida.
+    - *costos_variables_crecen*: lo pagado en materiales, comisiones y entregas creció al menos 10 puntos más que las ventas, comparando **los mismos días** del mes anterior (comparar un mes a medias con uno completo daría falsas alarmas). Sin datos del mes anterior no se evalúa.
+    - *riesgo_caja_fechas* (proyección): primera fecha de los próximos 30 días con efectivo negativo (urgente) o bajo la reserva (atención), con los pagos que la causan. La clave incluye la fecha: si el riesgo se mueve a otro día, la alerta anterior se resuelve y aparece la nueva.
+    - *retiro_sin_cobertura*: hubo retiros del propietario en el mes y hoy el efectivo no cubre los compromisos registrados (más la reserva).
+152. **El período de las alertas de negocio es el mes calendario**, igual que sus indicadores.
+153. **La evaluación diaria incluye los espacios de negocio**; también se reevalúan tras cada movimiento confirmado (como en la persona). Los avisos previos al registrar un gasto siguen siendo solo personales.

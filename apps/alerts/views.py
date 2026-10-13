@@ -10,7 +10,7 @@ from apps.workspaces.mixins import workspace_required
 from apps.workspaces.models import Workspace
 
 from .models import Alert, AlertRule
-from .services.rules_personal import DEFAULT_PARAMS, RULE_LABELS
+from .services.evaluate import catalog
 
 
 def _get_alert(workspace: Workspace, alert_id) -> Alert:
@@ -20,7 +20,7 @@ def _get_alert(workspace: Workspace, alert_id) -> Alert:
         raise Http404("Alerta no encontrada") from exc
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_http_methods(["GET"])
 def index(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     alerts = Alert.objects.for_workspace(workspace)
@@ -36,7 +36,7 @@ def index(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     return response
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_POST
 def dismiss(request: HttpRequest, workspace: Workspace, alert_id) -> HttpResponse:
     alert = _get_alert(workspace, alert_id)
@@ -46,7 +46,7 @@ def dismiss(request: HttpRequest, workspace: Workspace, alert_id) -> HttpRespons
     return redirect("alerts:index", ws=workspace.pk)
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_POST
 def resolve(request: HttpRequest, workspace: Workspace, alert_id) -> HttpResponse:
     alert = _get_alert(workspace, alert_id)
@@ -57,12 +57,13 @@ def resolve(request: HttpRequest, workspace: Workspace, alert_id) -> HttpRespons
 
 
 class RulesForm(forms.Form):
-    def __init__(self, rules: dict[str, AlertRule], *args, **kwargs) -> None:
+    def __init__(self, workspace: Workspace, rules: dict[str, AlertRule], *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        for code, defaults in DEFAULT_PARAMS.items():
+        defaults_by_code, labels = catalog(workspace)
+        for code, defaults in defaults_by_code.items():
             rule = rules.get(code)
             self.fields[f"{code}__enabled"] = forms.BooleanField(
-                label=RULE_LABELS[code], required=False, initial=rule.enabled if rule else True
+                label=labels[code], required=False, initial=rule.enabled if rule else True
             )
             for name, default in defaults.items():
                 value = (rule.params.get(name) if rule else None) or default
@@ -74,13 +75,13 @@ class RulesForm(forms.Form):
                 )
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_http_methods(["GET", "POST"])
 def rules(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     existing = {r.code: r for r in AlertRule.objects.for_workspace(workspace)}
-    form = RulesForm(existing, request.POST or None)
+    form = RulesForm(workspace, existing, request.POST or None)
     if request.method == "POST" and form.is_valid():
-        for code, defaults in DEFAULT_PARAMS.items():
+        for code, defaults in catalog(workspace)[0].items():
             AlertRule.objects.update_or_create(
                 workspace=workspace,
                 code=code,

@@ -13,8 +13,8 @@ def evaluate_workspace_task(workspace_id: str) -> None:
 
 @shared_task(name="alerts.evaluate_all", ignore_result=True)
 def evaluate_all_task() -> int:
-    """Evaluación diaria (celery beat) de todos los espacios personales."""
-    ids = list(Workspace.objects.filter(kind=Workspace.Kind.PERSONAL).values_list("id", flat=True))
+    """Evaluación diaria (celery beat) de todos los espacios, personales y de negocio."""
+    ids = list(Workspace.objects.values_list("id", flat=True))
     for workspace_id in ids:
         evaluate_workspace_task.delay(str(workspace_id))
     return len(ids)

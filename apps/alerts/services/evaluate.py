@@ -16,17 +16,34 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.alerts.models import Alert, AlertRule
+from apps.alerts.services.rules_business import (
+    BUSINESS_AUTO_RESOLVE,
+    BUSINESS_DEFAULT_PARAMS,
+    BUSINESS_RULE_LABELS,
+    BusinessAlertContext,
+    Withdrawal,
+    evaluate_business,
+)
 from apps.alerts.services.rules_personal import (
     AUTO_RESOLVE,
     DEFAULT_PARAMS,
+    RULE_LABELS,
     AlertDraft,
     PersonalAlertContext,
     check_purchase_impact,
     evaluate_personal,
 )
-from apps.ledger.choices import CategoryGroup
+from apps.business.models import BusinessGoal
+from apps.business.services.indicators import compute_indicators
+from apps.business.services.loaders import (
+    load_business_inputs,
+    load_cash_outlook,
+    month_bounds,
+)
+from apps.core.dates import add_months, clamp_day
+from apps.ledger.choices import CategoryGroup, Direction, TxKind
 from apps.ledger.models import Category
-from apps.ledger.services.balances import spent_by_category
+from apps.ledger.services.balances import confirmed, spent_by_category
 from apps.personal.services.budget_engine import build_personal_plan
 from apps.personal.services.loaders import load_personal_inputs, workspace_availability
 from apps.planning.services.lifecycle import accepted_result
@@ -35,9 +52,17 @@ from apps.workspaces.models import Workspace
 DEBOUNCE_SECONDS = 5
 
 
+def catalog(workspace: Workspace) -> tuple[dict[str, dict], dict[str, str]]:
+    """Reglas disponibles en el espacio (parámetros por defecto y nombres)."""
+    if workspace.is_business:
+        return BUSINESS_DEFAULT_PARAMS, BUSINESS_RULE_LABELS
+    return DEFAULT_PARAMS, RULE_LABELS
+
+
 def rule_settings(workspace: Workspace) -> tuple[frozenset[str], dict[str, dict]]:
     rules = {r.code: r for r in AlertRule.objects.for_workspace(workspace)}
-    enabled = frozenset(code for code in DEFAULT_PARAMS if code not in rules or rules[code].enabled)
+    defaults, _ = catalog(workspace)
+    enabled = frozenset(code for code in defaults if code not in rules or rules[code].enabled)
     params = {code: rule.params for code, rule in rules.items()}
     return enabled, params
 
@@ -70,6 +95,40 @@ def build_context(workspace: Workspace, today: date) -> PersonalAlertContext | N
         discretionary_refs=discretionary,
         availability=workspace_availability(workspace, today, plan),
         currency=workspace.currency,
+        params=params,
+        enabled=enabled,
+    )
+
+
+def build_business_context(workspace: Workspace, today: date) -> BusinessAlertContext:
+    start, _ = month_bounds(today)
+    year, month = add_months(today.year, today.month, -1)
+    prev_start = date(year, month, 1)
+    prev_end = clamp_day(year, month, today.day)
+    outlook = load_cash_outlook(workspace, today)
+    withdrawals = [
+        Withdrawal(d, amount)
+        for d, amount in confirmed(workspace)
+        .filter(
+            kind=TxKind.RETIRO_PROPIETARIO,
+            direction=Direction.OUT,
+            date__range=(start, today),
+        )
+        .values_list("date", "amount")
+    ]
+    goal = BusinessGoal.objects.filter(workspace=workspace).first()
+    enabled, params = rule_settings(workspace)
+    return BusinessAlertContext(
+        today=today,
+        currency=workspace.currency,
+        month=compute_indicators(load_business_inputs(workspace, start, today, today)),
+        previous_same_days=compute_indicators(
+            load_business_inputs(workspace, prev_start, prev_end, today)
+        ),
+        projection=outlook.projection,
+        reserve=outlook.reserve,
+        withdrawals=withdrawals,
+        target_margin=goal.target_margin_pct if goal else None,
         params=params,
         enabled=enabled,
     )
@@ -109,8 +168,9 @@ def persist_alerts(
         saved.append(alert)
 
     current = {d.dedupe_key for d in drafts}
+    auto = BUSINESS_AUTO_RESOLVE if workspace.is_business else AUTO_RESOLVE
     for key, alert in existing.items():
-        if key not in current and alert.is_open and alert.code in AUTO_RESOLVE:
+        if key not in current and alert.is_open and alert.code in auto:
             alert.status = Alert.Status.RESUELTA
             alert.resolved_at = now
             alert.save(update_fields=["status", "resolved_at", "updated_at"])
@@ -118,9 +178,10 @@ def persist_alerts(
 
 
 def evaluate_workspace(workspace: Workspace, today: date | None = None) -> list[Alert]:
-    if not workspace.is_personal:
-        return []  # las alertas de negocio llegan en la Fase 2
     today = today or timezone.localdate()
+    if workspace.is_business:
+        business = build_business_context(workspace, today)
+        return persist_alerts(workspace, evaluate_business(business), month_bounds(today)[0])
     ctx = build_context(workspace, today)
     if ctx is None:
         return []
