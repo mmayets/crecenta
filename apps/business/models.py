@@ -83,6 +83,14 @@ class Product(WorkspaceScopedModel):
         validators=_NON_NEGATIVE,
     )
     is_active = models.BooleanField("activo", default=True)
+    # Inventario (Fase 3): solo para mercancía que se compra y se revende.
+    tracks_inventory = models.BooleanField("controlo su inventario", default=False)
+    stock_minimum = models.DecimalField(
+        "existencia mínima", max_digits=12, decimal_places=3, default=0, validators=_NON_NEGATIVE
+    )
+    # Derivados del historial de movimientos (services.inventory.refresh_stock); no se editan.
+    stock = models.DecimalField("existencia", max_digits=12, decimal_places=3, default=0)
+    average_cost = models.DecimalField("costo promedio", max_digits=14, decimal_places=4, default=0)
 
     class Meta:
         verbose_name = "producto o servicio"
@@ -450,6 +458,14 @@ class Receivable(_Debt):
 
 
 class Payable(_Debt):
+    purchase = models.OneToOneField(
+        "Purchase",
+        verbose_name="compra",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="payable",
+    )
     supplier = models.ForeignKey(
         Supplier,
         verbose_name="proveedor",
@@ -486,3 +502,128 @@ class Payable(_Debt):
 
     def __str__(self) -> str:
         return f"Por pagar · {self.concept}"
+
+
+class Purchase(WorkspaceScopedModel):
+    """Compra de mercancía para el inventario (de contado o a crédito)."""
+
+    class Payment(models.TextChoices):
+        CONTADO = "contado", "Contado"
+        CREDITO = "credito", "Crédito"
+
+    date = models.DateField("fecha")
+    supplier = models.ForeignKey(
+        Supplier,
+        verbose_name="proveedor",
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        related_name="purchases",
+    )
+    payment = models.CharField(
+        "forma de pago", max_length=8, choices=Payment.choices, default=Payment.CONTADO
+    )
+    account = models.ForeignKey(
+        "ledger.Account",
+        verbose_name="cuenta",
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    client_uuid = models.UUIDField("id del dispositivo", null=True, blank=True, editable=False)
+    subtotal = money_field("subtotal sin ITBIS", default=0)
+    tax = money_field("ITBIS pagado", default=0, validators=_NON_NEGATIVE)
+    total = money_field("total", default=0)
+    note = models.CharField("nota", max_length=140, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+
+    class Meta:
+        verbose_name = "compra de mercancía"
+        verbose_name_plural = "compras de mercancía"
+        ordering = ["-date", "-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["workspace", "client_uuid"],
+                condition=Q(client_uuid__isnull=False),
+                name="compra_client_uuid_unico",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"Compra {self.date} {self.total}"
+
+
+class PurchaseLine(TimeStampedModel):
+    purchase = models.ForeignKey(
+        Purchase, verbose_name="compra", on_delete=models.CASCADE, related_name="lines"
+    )
+    product = models.ForeignKey(
+        Product, verbose_name="producto", on_delete=models.RESTRICT, related_name="purchase_lines"
+    )
+    qty = models.DecimalField("cantidad", max_digits=12, decimal_places=3)
+    unit_cost = models.DecimalField(
+        "costo unitario sin ITBIS", max_digits=14, decimal_places=4, validators=_NON_NEGATIVE
+    )
+
+    class Meta:
+        verbose_name = "línea de compra"
+        verbose_name_plural = "líneas de compra"
+        ordering = ["created_at"]
+        constraints = [
+            models.CheckConstraint(condition=Q(qty__gt=0), name="compra_cantidad_positiva"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.qty} × {self.product}"
+
+
+class InventoryMovement(WorkspaceScopedModel):
+    """Entrada o salida de unidades. `qty` lleva signo (+ entra, − sale); `unit_cost` es el costo
+    con que se registró (compra: el de la compra; salidas: el promedio del momento)."""
+
+    class Kind(models.TextChoices):
+        INICIAL = "inicial", "Inventario inicial"
+        COMPRA = "compra", "Compra"
+        VENTA = "venta", "Venta"
+        MERMA = "merma", "Merma"
+        AJUSTE = "ajuste", "Ajuste por conteo"
+
+    product = models.ForeignKey(
+        Product, verbose_name="producto", on_delete=models.RESTRICT, related_name="movements"
+    )
+    kind = models.CharField("tipo", max_length=8, choices=Kind.choices)
+    date = models.DateField("fecha")
+    qty = models.DecimalField("cantidad", max_digits=12, decimal_places=3)
+    unit_cost = models.DecimalField("costo unitario", max_digits=14, decimal_places=4, default=0)
+    value = money_field("valor", default=0)
+    purchase_line = models.OneToOneField(
+        PurchaseLine, null=True, blank=True, on_delete=models.CASCADE, related_name="movement"
+    )
+    sale_line = models.OneToOneField(
+        SaleLine, null=True, blank=True, on_delete=models.CASCADE, related_name="movement"
+    )
+    note = models.CharField("nota", max_length=140, blank=True)
+    client_uuid = models.UUIDField("id del dispositivo", null=True, blank=True, editable=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+
+    class Meta:
+        verbose_name = "movimiento de inventario"
+        verbose_name_plural = "movimientos de inventario"
+        ordering = ["date", "created_at"]
+        constraints = [
+            models.CheckConstraint(condition=~Q(qty=0), name="inventario_cantidad_no_cero"),
+            models.UniqueConstraint(
+                fields=["workspace", "client_uuid"],
+                condition=Q(client_uuid__isnull=False),
+                name="inventario_client_uuid_unico",
+            ),
+        ]
+        indexes = [models.Index(fields=["product", "date"], name="inv_producto_fecha")]
+
+    def __str__(self) -> str:
+        return f"{self.get_kind_display()} {self.qty} {self.product}"

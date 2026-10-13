@@ -265,3 +265,18 @@ Reglas contables confirmadas en `docs/fase2.md` §1 y §7.
 167. **Alternativas del plan de negocio, afinadas con la demo**: si a la caja no le falta nada, no se proponen alternativas que solo mejoran la caja (p. ej. posponer el retiro cuando el problema es la ganancia), y se ordenan primero las que dejan el plan en mejor estado y luego por cuánto mejoran.
 168. **Exportación y borrado incluyen el negocio**; probado con la demo completa (las protecciones `RESTRICT` entre productos, clientes y ventas no impiden borrar la cuenta porque todo se borra en la misma cascada).
 169. **Montos de parámetros libres** (`core.money.amount_or_zero`) para las vistas de avisos htmx: lo inválido, infinito, negativo o mayor que un campo de 14 dígitos cuenta como 0. Corrige un error 500 de la Fase 1 en el aviso de gasto.
+
+# Fase 3 — Inventario, reportes y pendientes
+
+Decisiones confirmadas en `docs/fase3.md` §8 (la persona pidió hacer la fase completa con la propuesta).
+
+## Pasos C1–C4 — inventario, compras, ventas con inventario e indicadores
+
+170. **Solo productos con "controlo su inventario"** (`Product.tracks_inventory`) tienen existencias. Existencia y costo promedio se guardan en el producto como caché y siempre se recalculan desde el historial (`refresh_stock`), así anular una compra o una venta deja todo cuadrado.
+171. **Costo promedio ponderado con 4 decimales** (`business/services/inventory.py`): las entradas con costo propio (inventario inicial y compras) lo recalculan; ventas, mermas y ajustes salen al promedio del momento. Si la existencia era cero o negativa, el promedio pasa a ser el costo de la nueva entrada (promediar con una existencia negativa no tiene sentido).
+172. **Cada movimiento guarda el costo con que se registró**; un movimiento con fecha anterior cambia la existencia y el promedio actuales, pero no reescribe el costo de ventas ya hechas (igual que la regla de la Fase 2: las ventas pasadas no cambian).
+173. **Venta de un producto con inventario**: el costo guardado en la línea es el promedio del momento y se crea la salida. Vender sin existencias se permite y se avisa ("Vendiste más … de lo que tenías registrado").
+174. **Compras de mercancía** (`purchases.py`): solo de productos con inventario; de contado crean un movimiento `compra_inventario` (categoría nueva "Compras de mercancía", con su ITBIS en `tax_amount`), a crédito una CxP. No son costo variable: se vuelven costo al vender. Se anulan mientras no tengan pagos.
+175. **Mermas y ajustes** no mueven efectivo y son gasto del mes al costo promedio (`shrinkage` en los indicadores, restado del resultado); un ajuste positivo lo reduce. El conteo físico registra un ajuste por la diferencia. Compras y ventas no se borran desde el inventario: se anulan desde su pantalla.
+176. **Editar una venta** (`edit_sale`) conserva su id y su `client_uuid`: revierte líneas, salidas, movimiento de contado o CxC y las vuelve a registrar; no se permite si ya tiene cobros.
+177. **Indicadores**: valor del inventario (existencias positivas × promedio, al día de hoy) y días de inventario (valor ÷ costo de lo vendido por día del período).

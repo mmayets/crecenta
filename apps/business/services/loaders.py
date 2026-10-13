@@ -12,6 +12,7 @@ from apps.business.models import (
     BusinessGoal,
     BusinessProfile,
     DebtStatus,
+    InventoryMovement,
     OperatingExpense,
     Payable,
     Product,
@@ -20,7 +21,7 @@ from apps.business.models import (
     SaleLine,
 )
 from apps.core.dates import add_months, clamp_day
-from apps.core.money import ZERO
+from apps.core.money import ZERO, q
 from apps.ledger.choices import CategoryGroup, Direction, TxKind
 from apps.ledger.models import Transaction
 from apps.ledger.services.balances import confirmed, savings_accounts_balance, total_balance
@@ -126,10 +127,15 @@ def load_business_inputs(
     operating = _sum(expenses.filter(operating_group), kind=TxKind.GASTO) + _sum(
         expenses.filter(category__group=CategoryGroup.GASTO_OPERATIVO), kind=TxKind.PAGO_CXP
     )
-    variable_paid = _sum(expenses, kind=TxKind.COMPRA_INVENTARIO) + _sum(
-        expenses.filter(variable_group).exclude(kind=TxKind.COMPRA_INVENTARIO),
+    # Las compras de mercancía para el inventario no son costo variable: se vuelven costo al vender.
+    supplies = expenses.filter(purchase__isnull=True).exclude(payable__purchase__isnull=False)
+    variable_paid = _sum(supplies, kind=TxKind.COMPRA_INVENTARIO) + _sum(
+        supplies.filter(variable_group).exclude(kind=TxKind.COMPRA_INVENTARIO),
         kind__in=[TxKind.GASTO, TxKind.PAGO_CXP],
     )
+    shrinkage: Decimal = -InventoryMovement.objects.filter(
+        workspace=workspace, date__range=(start, end), kind__in=["merma", "ajuste"]
+    ).aggregate(t=Sum("value", default=ZERO))["t"]
     cash = period.exclude(kind__in=TRANSFER_KINDS)
     receivables, receivables_overdue = _open_total(_open(Receivable, workspace), today)
     payables, payables_overdue = _open_total(_open(Payable, workspace), today)
@@ -152,7 +158,21 @@ def load_business_inputs(
         payables_overdue=payables_overdue,
         expense_plan=_expense_plan(workspace),
         goal=_goal(workspace),
+        shrinkage=shrinkage,
+        inventory_value=inventory_value(workspace),
     )
+
+
+def inventory_value(workspace: Workspace) -> Decimal:
+    """Valor actual del inventario: existencias positivas × costo promedio."""
+    total = ZERO
+    for stock, average in (
+        Product.objects.for_workspace(workspace)
+        .filter(tracks_inventory=True, stock__gt=0)
+        .values_list("stock", "average_cost")
+    ):
+        total += stock * average
+    return q(total)
 
 
 def _debts(qs: QuerySet) -> list[OpenDebt]:  # type: ignore[type-arg]

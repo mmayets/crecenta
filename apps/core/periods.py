@@ -24,6 +24,7 @@ class Frequency(StrEnum):
     QUINCENAL = "quincenal"
     SEMANAL = "semanal"
     VARIABLE = "variable"
+    ANUAL = "anual"  # solo compromisos (marbete, seguro, inscripción); nunca ingresos
 
 
 # Cobros esperados por frecuencia (número de días de cobro requeridos).

@@ -75,6 +75,8 @@ class BusinessPeriodInputs:
     payables_overdue: Decimal = ZERO
     expense_plan: list[ExpensePlan] = field(default_factory=list)
     goal: GoalInputs = field(default_factory=GoalInputs)
+    shrinkage: Decimal = ZERO  # mermas y ajustes del período al costo (positivo = pérdida)
+    inventory_value: Decimal = ZERO  # valor actual del inventario al costo promedio
 
 
 @dataclass(frozen=True)
@@ -129,6 +131,9 @@ class PeriodIndicators:
     by_product: list[ProductMargin]
     goal: GoalProgress
     notes: list[str]  # datos faltantes o estimados
+    shrinkage: Decimal = ZERO
+    inventory_value: Decimal = ZERO
+    inventory_days: Decimal | None = None  # días de venta que cubre el inventario actual
 
 
 def product_margins(lines: list[SoldLine]) -> list[ProductMargin]:
@@ -166,7 +171,13 @@ def compute_indicators(inputs: BusinessPeriodInputs) -> PeriodIndicators:
     cogs = sum((m.cogs for m in by_product), ZERO)
     gross = sales - cogs
     gross_margin = pct(gross, sales)
-    result = gross - inputs.operating_expenses
+    result = gross - inputs.operating_expenses - inputs.shrinkage
+    days = Decimal((inputs.end - inputs.start).days + 1)
+    inventory_days = (
+        q(inputs.inventory_value / (cogs / days))
+        if cogs > 0 and inputs.inventory_value > 0
+        else None
+    )
     fixed_month = q(sum((e.monthly_amount for e in inputs.expense_plan), ZERO))
 
     break_even: Decimal | None = None
@@ -227,4 +238,7 @@ def compute_indicators(inputs: BusinessPeriodInputs) -> PeriodIndicators:
         by_product=by_product,
         goal=progress,
         notes=notes,
+        shrinkage=inputs.shrinkage,
+        inventory_value=inputs.inventory_value,
+        inventory_days=inventory_days,
     )

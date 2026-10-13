@@ -11,7 +11,7 @@ from __future__ import annotations
 import datetime
 import uuid
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -33,6 +33,7 @@ from apps.ledger.choices import CategoryGroup, Direction, TxKind, TxSource
 from apps.ledger.models import Account, Category, Transaction
 from apps.workspaces.models import Workspace
 
+from .inventory import record_sale_outflow, refresh_stock
 from .sale_math import LineInput, sale_totals
 
 SALES_CATEGORY = "Ventas"
@@ -147,7 +148,11 @@ def register_sale(workspace: Workspace, user: User | None, data: SaleData) -> tu
     )
 
 
-def _create_sale(workspace: Workspace, user: User | None, data: SaleData) -> Sale:
+def _create_sale(
+    workspace: Workspace, user: User | None, data: SaleData, existing: Sale | None = None
+) -> Sale:
+    """Valida y escribe la venta con sus líneas, salidas de inventario y su movimiento o CxC.
+    Con `existing` reescribe una venta ya guardada (edición) conservando su id."""
     errors: dict[str, str] = {}
     if not data.lines:
         errors["lines"] = "Agrega al menos un producto."
@@ -185,36 +190,37 @@ def _create_sale(workspace: Workspace, user: User | None, data: SaleData) -> Sal
         raise ValidationError({"lines": "La venta debe tener un total mayor que cero."})
 
     customer = data.customer or get_or_create_named(Customer, workspace, data.customer_name)
-    sale = Sale(
-        workspace=workspace,
-        date=data.date,
-        customer=customer,
-        payment=data.payment,
-        account=data.account if data.payment == Sale.Payment.CONTADO else None,
-        client_uuid=data.client_uuid,
-        subtotal=totals.subtotal,
-        tax=totals.tax,
-        total=totals.total,
-        note=data.note.strip()[:140],
-        created_by=user,
-    )
+    sale = existing or Sale(workspace=workspace, client_uuid=data.client_uuid, created_by=user)
+    sale.date = data.date
+    sale.customer = customer
+    sale.payment = data.payment
+    sale.account = data.account if data.payment == Sale.Payment.CONTADO else None
+    sale.subtotal = totals.subtotal
+    sale.tax = totals.tax
+    sale.total = totals.total
+    sale.note = data.note.strip()[:140]
     if data.payment == Sale.Payment.CREDITO and data.account is not None:
         raise ValidationError({"account": "Una venta a crédito no mueve dinero hasta cobrarse."})
     sale.full_clean(validate_constraints=False)
     sale.save()
-    SaleLine.objects.bulk_create(
-        SaleLine(
+    for line, price, net in zip(data.lines, prices, totals.line_nets, strict=True):
+        product = line.product
+        tracked = product is not None and product.tracks_inventory
+        sale_line = SaleLine.objects.create(
             sale=sale,
-            product=line.product,
-            description=(line.description or (line.product.name if line.product else ""))[:120],
+            product=product,
+            description=(line.description or (product.name if product else ""))[:120],
             qty=to_money(line.qty),
             unit_price=price,
             discount_pct=line.discount_pct,
             net_amount=net,
-            unit_cost_snapshot=line.product.unit_cost if line.product else ZERO,
+            # Con inventario, el costo es el promedio del momento; si no, el costo del producto.
+            unit_cost_snapshot=(
+                q(product.average_cost) if tracked else (product.unit_cost if product else ZERO)  # type: ignore[union-attr]
+            ),
         )
-        for line, price, net in zip(data.lines, prices, totals.line_nets, strict=True)
-    )
+        if tracked:
+            record_sale_outflow(workspace, sale_line, data.date)
     concept = _sale_concept(sale)
     if data.payment == Sale.Payment.CONTADO:
         assert data.account is not None
@@ -256,15 +262,68 @@ def _sale_concept(sale: Sale) -> str:
     return f"Venta{who}: {text}"[:140]
 
 
-def delete_sale(workspace: Workspace, sale: Sale) -> None:
-    """Anula una venta: borra sus líneas, su movimiento de contado y su CxC sin cobros."""
-    _check_owned(workspace, sale, "sale")
+def _tracked_products(sale: Sale) -> list[Product]:
+    return [
+        line.product
+        for line in sale.lines.select_related("product")
+        if line.product is not None and line.product.tracks_inventory
+    ]
+
+
+def _check_no_collections(sale: Sale, action: str) -> None:
     receivable = Receivable.objects.filter(sale=sale).first()
     if receivable is not None and receivable.paid > 0:
         raise ValidationError(
-            "Esta venta ya tiene cobros registrados. Elimina primero los cobros para anularla."
+            f"Esta venta ya tiene cobros registrados. Elimina primero los cobros para {action}."
         )
-    sale.delete()
+
+
+def delete_sale(workspace: Workspace, sale: Sale) -> None:
+    """Anula una venta: borra sus líneas, sus salidas de inventario, su movimiento de contado y su
+    CxC sin cobros, y recalcula las existencias."""
+    _check_owned(workspace, sale, "sale")
+    _check_no_collections(sale, "anularla")
+    products = _tracked_products(sale)
+    with transaction.atomic():
+        sale.delete()
+        for product in set(products):
+            refresh_stock(product)
+
+
+def edit_sale(workspace: Workspace, user: User | None, sale: Sale, data: SaleData) -> Sale:
+    """Reescribe una venta sin cobros con los datos nuevos (mismo id). Revierte y vuelve a
+    registrar sus salidas de inventario, su movimiento de contado o su CxC."""
+    _require_business(workspace)
+    _check_owned(workspace, sale, "sale")
+    with transaction.atomic():
+        locked = Sale.objects.select_for_update().get(pk=sale.pk)
+        _check_no_collections(locked, "editarla")
+        products = _tracked_products(locked)
+        locked.lines.all().delete()
+        Transaction.objects.filter(sale=locked).delete()
+        Receivable.objects.filter(sale=locked).delete()
+        for product in set(products):
+            refresh_stock(product)
+            product.refresh_from_db()
+        lines = [
+            replace(line, product=Product.objects.get(pk=line.product.pk))
+            if line.product is not None
+            else line
+            for line in data.lines
+        ]
+        return _create_sale(
+            workspace, user, replace(data, lines=lines, client_uuid=locked.client_uuid), locked
+        )
+
+
+def stock_warnings(sale: Sale) -> list[str]:
+    """Avisos tras vender: productos con inventario que quedaron sin existencias registradas."""
+    return [
+        f"Vendiste más {product.name} de lo que tenías registrado (existencia "
+        f"{product.stock.normalize():f}). Registra la compra o haz un conteo."
+        for product in {p.pk: p for p in _tracked_products(sale)}.values()
+        if Product.objects.get(pk=product.pk).stock < 0
+    ]
 
 
 # ---------------------------------------------------------------------------- CxC y CxP

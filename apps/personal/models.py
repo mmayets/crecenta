@@ -49,7 +49,10 @@ class IncomeSource(WorkspaceScopedModel):
     name = models.CharField("nombre", max_length=60)
     net_amount = money_field("monto neto de cada cobro", validators=_POSITIVE)
     frequency = models.CharField(
-        "frecuencia", max_length=10, choices=_choices(Frequency), default=Frequency.MENSUAL
+        "frecuencia",
+        max_length=10,
+        choices=_choices([f for f in Frequency if f != Frequency.ANUAL]),
+        default=Frequency.MENSUAL,
     )
     pay_days = ArrayField(
         models.PositiveSmallIntegerField(),
@@ -90,6 +93,7 @@ class Commitment(WorkspaceScopedModel):
         (Frequency.MENSUAL.value, "Mensual"),
         (Frequency.QUINCENAL.value, "Quincenal"),
         (Frequency.SEMANAL.value, "Semanal"),
+        (Frequency.ANUAL.value, "Anual"),
     ]
 
     name = models.CharField("nombre", max_length=60)
@@ -102,6 +106,13 @@ class Commitment(WorkspaceScopedModel):
     )
     due_day = models.PositiveSmallIntegerField(
         "día de vencimiento", help_text="Día del mes (1–31); para semanal, día de la semana (0–6)."
+    )
+    # Solo para compromisos anuales: mes en que vence (1–12).
+    due_month = models.PositiveSmallIntegerField(
+        "mes de vencimiento",
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(12)],
     )
     is_fixed = models.BooleanField("monto fijo", default=True)
     is_active = models.BooleanField("activo", default=True)
@@ -123,6 +134,8 @@ class Commitment(WorkspaceScopedModel):
                 errors["due_day"] = "Para pagos semanales use 0 (lunes) a 6 (domingo)."
         elif not 1 <= self.due_day <= 31:
             errors["due_day"] = "El día debe estar entre 1 y 31."
+        if self.frequency == Frequency.ANUAL and not self.due_month:
+            errors["due_month"] = "Indica en qué mes vence este pago anual."
         if self.category_id and self.category.workspace_id != self.workspace_id:
             errors["category"] = "La categoría no pertenece a este espacio."
         if errors:

@@ -31,6 +31,7 @@ BUSINESS = [
     ("Ventas", G.INGRESO),
     ("Otros ingresos del negocio", G.INGRESO),
     ("Materia prima", G.COSTO_VARIABLE),
+    ("Compras de mercancía", G.COSTO_VARIABLE),
     ("Empaque", G.COSTO_VARIABLE),
     ("Comisiones", G.COSTO_VARIABLE),
     ("Entrega", G.COSTO_VARIABLE),

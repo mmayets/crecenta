@@ -128,6 +128,16 @@ class Transaction(WorkspaceScopedModel):
         on_delete=models.SET_NULL,
         related_name="transactions",
     )
+    purchase = models.ForeignKey(
+        "business.Purchase",
+        verbose_name="compra de mercancía",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="transactions",
+    )
+    # ITBIS incluido en un gasto o compra con comprobante (para el resumen de ITBIS).
+    tax_amount = money_field("ITBIS incluido", default=0)
     payable = models.ForeignKey(
         "business.Payable",
         verbose_name="cuenta por pagar",
