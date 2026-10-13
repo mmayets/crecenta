@@ -69,6 +69,14 @@ class QuickEntryForm(_WorkspaceForm):
         widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
     )
     description = forms.CharField(label="Nota (opcional)", max_length=140, required=False)
+    tax_amount = forms.DecimalField(
+        label="ITBIS incluido en la factura (opcional)",
+        min_value=0,
+        max_digits=14,
+        decimal_places=2,
+        required=False,
+        help_text="Para el resumen de ITBIS del mes.",
+    )
     client_uuid = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
     source = forms.ChoiceField(
         choices=[("manual", "manual"), ("texto", "texto"), ("voz", "voz")],
@@ -80,6 +88,8 @@ class QuickEntryForm(_WorkspaceForm):
         super().__init__(*args, **kwargs)
         if self.workspace.is_business:
             self.fields["kind"].choices = BUSINESS_QUICK_KINDS
+        else:
+            del self.fields["tax_amount"]
         self.fields["category"].queryset = (
             Category.objects.for_workspace(self.workspace)
             .filter(is_archived=False)
@@ -101,6 +111,7 @@ class QuickEntryForm(_WorkspaceForm):
             "category_id": str(data["category"].pk) if data["category"] else "",
             "description": data["description"],
             "source": data["source"],
+            "tax_amount": str(data.get("tax_amount") or ""),
         }
 
 

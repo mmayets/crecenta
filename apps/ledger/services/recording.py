@@ -76,6 +76,7 @@ class TxData:
     status: str = TxStatus.CONFIRMADO
     client_uuid: uuid.UUID | None = None
     receipt: Any = None  # receipts.Receipt (comprobante que respalda el movimiento)
+    tax_amount: Decimal = Decimal("0")  # ITBIS incluido (gastos del negocio con comprobante)
 
 
 def record_transaction(workspace: Workspace, user: User | None, data: TxData) -> Transaction:
@@ -95,6 +96,7 @@ def record_transaction(workspace: Workspace, user: User | None, data: TxData) ->
         status=data.status,
         client_uuid=data.client_uuid,
         receipt=data.receipt,
+        tax_amount=q(to_money(data.tax_amount)),
         created_by=user,
     )
     tx.full_clean(validate_constraints=False)

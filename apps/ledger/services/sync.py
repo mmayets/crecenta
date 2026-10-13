@@ -44,6 +44,7 @@ class SyncItem:
     to_account: Account | None = None
     description: str = ""
     source: str = TxSource.OFFLINE
+    tax_amount: Decimal = Decimal("0")
 
 
 @dataclass(frozen=True)
@@ -112,6 +113,16 @@ def parse_item(workspace: Workspace, raw: dict[str, Any]) -> SyncItem:
         if to_account is None:
             errors["to_account_id"] = "Cuenta de destino no encontrada."
 
+    tax_amount = Decimal("0")
+    if raw.get("tax_amount"):
+        try:
+            tax_amount = q(to_money(str(raw["tax_amount"])))
+        except MoneyError:
+            errors["tax_amount"] = "ITBIS inválido."
+        else:
+            if tax_amount < 0 or ("amount" not in errors and tax_amount > amount):
+                errors["tax_amount"] = "El ITBIS no puede ser negativo ni mayor que el monto."
+
     source = str(raw.get("source") or TxSource.OFFLINE)
     if source not in ALLOWED_SOURCES:
         errors["source"] = "Origen inválido."
@@ -129,6 +140,7 @@ def parse_item(workspace: Workspace, raw: dict[str, Any]) -> SyncItem:
         to_account=to_account,
         description=str(raw.get("description", ""))[:140],
         source=source,
+        tax_amount=tax_amount,
     )
 
 
@@ -172,6 +184,7 @@ def upsert_from_client(workspace: Workspace, user: User | None, item: SyncItem) 
                         description=item.description,
                         source=item.source,
                         client_uuid=item.client_uuid,
+                        tax_amount=item.tax_amount,
                     ),
                 )
     except IntegrityError:

@@ -287,3 +287,8 @@ Decisiones confirmadas en `docs/fase3.md` §8 (la persona pidió hacer la fase c
 179. **Pago anual cercano** (persona): avisa 30 días antes (configurable) con el monto y la provisión mensual; urgente a 7 días o menos. La fecha es la del año en curso o la del siguiente si ya pasó (día ajustado a fin de mes).
 180. **Compromisos anuales en el plan**: cada período aparta 1/12 del pago (línea "Apartar para …", fechada en el primer cobro); el pago completo sale de lo apartado y no se vuelve a descontar en su mes. Los ingresos no pueden ser anuales. Los planes guardados antes de la Fase 3 siguen leyéndose (sin mes).
 181. **Preferencias de alertas**: los parámetros vacíos toman su valor por defecto y los que no son porcentajes aceptan valores grandes (p. ej. el valor mínimo del inventario quieto).
+
+## Paso C7 — reportes mensuales y resumen de ITBIS
+
+182. **Reportes por mes** (`reports/services/business_reports.py`): los últimos 6 meses calendario (el actual hasta hoy), calculados con los mismos indicadores del inicio, así las cifras siempre coinciden. Exportación CSV con punto decimal y sin separador de miles.
+183. **Resumen de ITBIS informativo**: cobrado en ventas − pagado en compras de mercancía (por fecha de la factura, también a crédito) − ITBIS de gastos con comprobante (campo opcional "ITBIS incluido" en el registro rápido del negocio, validado: no negativo ni mayor que el monto). Negativo = estimado a favor. Se aclara que no reemplaza la declaración ante la DGII.
