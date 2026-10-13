@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Confirma los datos de tu negocio · Crecenta{% endblock %}
+{% block content %}
+  <h1>¿Entendimos bien?</h1>
+  <p class="mt-1 text-slate-600">Revisa y corrige antes de guardar. {% if has_doubts %}Los campos marcados no los pudimos entender con seguridad.{% endif %}</p>
+  <form method="post" class="mt-4 space-y-6">
+    {% csrf_token %}
+    <section class="card"><h2 class="font-semibold">Tu negocio</h2>
+      {{ profile.non_field_errors }}
+      {% for field in profile %}<p>{{ field.label_tag }} {{ field }} {{ field.errors }}</p>{% endfor %}
+    </section>
+    {% for section, formset in formsets.items %}
+      {% if formset.forms %}
+        <section><h2 class="font-semibold">{% if section == "productos" %}Productos y costos{% else %}Gastos fijos{% endif %}</h2>{% include "onboarding/_formset.html" %}</section>
+      {% else %}{{ formset.management_form }}{% endif %}
+    {% endfor %}
+    <section class="card"><h2 class="font-semibold">Dinero del negocio</h2>
+      {% for field in cash %}<p>{{ field.label_tag }} {{ field }} {{ field.errors }}</p>{% endfor %}
+    </section>
+    <section class="card"><h2 class="font-semibold">Tus metas</h2>
+      {% for field in goals %}<p>{{ field.label_tag }} {{ field }} {{ field.errors }}</p>{% endfor %}
+    </section>
+    <button type="submit" class="btn-primary w-full">Confirmar y guardar</button>
+  </form>
+  <a class="mt-4 inline-block underline" href="{% url 'onboarding:conversation' ws=workspace.pk %}">Volver a escribir</a>
+{% endblock %}

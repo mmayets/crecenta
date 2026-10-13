@@ -1,4 +1,4 @@
-"""Pasos del onboarding personal y completitud del perfil.
+"""Pasos del onboarding (personal y de negocio) y completitud del perfil.
 
 Los pasos mínimos (ingresos, compromisos, esenciales) bastan para un primer plan; el resto se puede
 omitir y completar después. La completitud indica qué falta y cómo afecta la calidad del plan.
@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from apps.business.models import BusinessGoal, BusinessProfile, OperatingExpense, Product
 from apps.ledger.models import Account, Transaction
 from apps.onboarding.models import OnboardingState
 from apps.personal.models import (
@@ -51,6 +52,25 @@ STEPS: tuple[Step, ...] = (
 STEP_KEYS = tuple(s.key for s in STEPS)
 STEPS_BY_KEY = {s.key: s for s in STEPS}
 
+BUSINESS_STEPS: tuple[Step, ...] = (
+    Step("perfil", "Tu negocio", "¿A qué se dedica tu negocio?", 15, True,
+         "No sabremos si cobras ITBIS ni cuántas horas puedes trabajar."),
+    Step("productos", "Productos y costos", "¿Qué vendes, a qué precio y cuánto te cuesta?", 35,
+         True, "Sin productos no podemos estimar ventas ni ganancia."),
+    Step("gastos", "Gastos fijos", "¿Qué gastos fijos tiene el negocio?", 20, False,
+         "El resultado y el punto de equilibrio quedarán inflados."),
+    Step("efectivo", "Dinero del negocio", "¿Cuánto dinero tiene hoy el negocio?", 10, False,
+         "No podremos avisarte de fechas con riesgo de caja."),
+    Step("objetivos", "Tus metas", "¿Qué margen y ganancia quieres, y cuánto retirar?", 20, False,
+         "No podremos sugerir precios ni decirte cuánto puedes retirar."),
+)  # fmt: skip
+BUSINESS_STEP_KEYS = tuple(s.key for s in BUSINESS_STEPS)
+BUSINESS_STEPS_BY_KEY = {s.key: s for s in BUSINESS_STEPS}
+
+
+def steps_for(workspace: Workspace) -> tuple[Step, ...]:
+    return BUSINESS_STEPS if workspace.is_business else STEPS
+
 
 def get_state(workspace: Workspace) -> OnboardingState:
     state, _ = OnboardingState.objects.get_or_create(workspace=workspace)
@@ -69,6 +89,15 @@ def _has_data(workspace: Workspace, key: str) -> bool:
             or Transaction.objects.for_workspace(ws).exists()
         ),
         "deudas": lambda: Debt.objects.for_workspace(ws).exists(),
+        # Negocio
+        "perfil": lambda: BusinessProfile.objects.filter(workspace=ws).exists(),
+        "productos": lambda: Product.objects.for_workspace(ws).exists(),
+        "gastos": lambda: OperatingExpense.objects.for_workspace(ws).exists(),
+        "efectivo": lambda: (
+            Account.objects.for_workspace(ws).exclude(opening_balance=0).exists()
+            or Transaction.objects.for_workspace(ws).exists()
+        ),
+        "objetivos": lambda: BusinessGoal.objects.filter(workspace=ws).exists(),
         "preferencias": lambda: (
             Preference.objects.for_workspace(ws).exists()
             or PersonalProfile.objects.filter(workspace=ws).exists()
@@ -102,24 +131,25 @@ def completeness(workspace: Workspace) -> Completeness:
     """Un paso cuenta como hecho si tiene datos o si la persona lo respondió (aunque sea con
     "no tengo"). Omitirlo no lo completa."""
     state = get_state(workspace)
+    steps = steps_for(workspace)
     progress = tuple(
         StepProgress(
             step=s,
             done=s.key in state.answered_steps or _has_data(workspace, s.key),
             skipped=s.key in state.skipped_steps,
         )
-        for s in STEPS
+        for s in steps
     )
-    total = sum(s.weight for s in STEPS)
+    total = sum(s.weight for s in steps)
     done = sum(p.step.weight for p in progress if p.done)
     return Completeness(percent=round(done * 100 / total), steps=progress)
 
 
-def next_step(current: str) -> str | None:
-    index = STEP_KEYS.index(current)
-    return STEP_KEYS[index + 1] if index + 1 < len(STEP_KEYS) else None
+def next_step(current: str, keys: tuple[str, ...] = STEP_KEYS) -> str | None:
+    index = keys.index(current)
+    return keys[index + 1] if index + 1 < len(keys) else None
 
 
-def previous_step(current: str) -> str | None:
-    index = STEP_KEYS.index(current)
-    return STEP_KEYS[index - 1] if index > 0 else None
+def previous_step(current: str, keys: tuple[str, ...] = STEP_KEYS) -> str | None:
+    index = keys.index(current)
+    return keys[index - 1] if index > 0 else None

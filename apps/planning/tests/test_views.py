@@ -130,8 +130,9 @@ def test_plan_de_otro_espacio_da_404(
     assert logged.post(url("accept", personal_ws, plan_id=ajeno.pk)).status_code == 404
 
 
-def test_espacio_de_negocio_no_tiene_plan_personal(logged, business_ws):
-    assert logged.get(url("index", business_ws)).status_code == 404
+def test_espacio_de_negocio_tiene_su_propio_plan(logged, business_ws):
+    # Desde el paso B8 el negocio usa las mismas pantallas con su plan de negocio.
+    assert logged.get(url("index", business_ws)).status_code == 200
 
 
 def test_aplicar_alternativa(client, user, personal_ws, django_capture_on_commit_callbacks):

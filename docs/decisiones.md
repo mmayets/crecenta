@@ -240,3 +240,11 @@ Reglas contables confirmadas en `docs/fase2.md` §1 y §7.
     - *retiro_sin_cobertura*: hubo retiros del propietario en el mes y hoy el efectivo no cubre los compromisos registrados (más la reserva).
 152. **El período de las alertas de negocio es el mes calendario**, igual que sus indicadores.
 153. **La evaluación diaria incluye los espacios de negocio**; también se reevalúan tras cada movimiento confirmado (como en la persona). Los avisos previos al registrar un gasto siguen siendo solo personales.
+
+## Paso B8 — inicio guiado del negocio
+
+154. **Mismas URL y pantallas que la bienvenida personal**: las vistas de `onboarding` delegan en `business_views.py` cuando el espacio es de negocio, así los enlaces "Completar mi perfil" funcionan igual en ambos espacios.
+155. **Cinco pasos, dos obligatorios**: *Tu negocio* (actividad, si cobra ITBIS y su tasa, si los precios lo incluyen, horas disponibles) y *Productos y costos* (precio sin ITBIS, costo por unidad, unidades esperadas al mes, si es servicio y sus minutos) bastan para el primer plan. *Gastos fijos*, *Dinero del negocio* y *Tus metas* (margen, ganancia, reserva de caja, retiro mensual) se pueden omitir; la completitud dice cómo afecta omitirlos.
+156. **El costo se pide como un solo número por unidad** en la bienvenida ("materiales, empaque, entrega y comisiones"); el detalle por componentes queda para la pantalla de productos (paso B9). Por defecto la tasa es 18 % (ITBIS); en Ecuador la persona la cambia (IVA).
+157. **Modo conversacional del negocio**: plantilla `onboarding_negocio.v1.md` y esquema `BusinessOnboardingExtraction`. Lo extraído se muestra prellenado y nada se guarda hasta confirmar; se resaltan los datos dudosos y los que faltan (costo o unidades). Las compras de materiales no se piden como gasto fijo (ya están en el costo). El efectivo declarado actualiza la cuenta "Efectivo" del negocio.
+158. **Las pantallas del plan sirven para ambos espacios**: el detalle muestra las cuatro preguntas (¿cuánto vendería, cuánto me cuesta, cuánto ganaría, cuánto podría retirar?), los motivos, el detalle por producto, la caja del mes y las alternativas; la edición permite cambiar unidades, precios, gastos y retiro.

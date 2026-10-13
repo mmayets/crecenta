@@ -19,6 +19,7 @@ CONTEXTS = {
         "datos_faltantes": [],
     },
     "onboarding_extraccion": {"hoy": "2026-10-12", "texto": "cobro 50 mil"},
+    "onboarding_negocio": {"hoy": "2026-10-12", "texto": "vendo bizcochos"},
     "comprobante_ocr": {"hoy": "2026-10-12", "categorias": ["Alimentación"]},
     "registro_rapido": {"hoy": "2026-10-12", "texto": "x", "categorias": [], "cuentas": []},
 }

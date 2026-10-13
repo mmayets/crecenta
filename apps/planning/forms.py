@@ -62,3 +62,48 @@ class EditPlanForm(forms.Form):
         if data.get("alternativa"):
             edits["alternativa"] = data["alternativa"]
         return edits
+
+
+class EditBusinessPlanForm(forms.Form):
+    """Edición de una propuesta de negocio: unidades y precios por producto, gastos y retiro."""
+
+    alternativa = forms.ChoiceField(label="Aplicar una alternativa", required=False)
+    retiro = forms.DecimalField(
+        label="Retiro del propietario este mes", min_value=0, max_digits=14, decimal_places=2
+    )
+
+    def __init__(self, plan: PlanVersion, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        snapshot = plan.inputs_snapshot
+        self.fields["alternativa"].choices = [("", "Ninguna")] + [
+            (a["codigo"], a["nombre"]) for a in plan.computed.get("alternativas", [])
+        ]
+        self.fields["retiro"].initial = snapshot["retiro"]
+        self.product_refs: list[str] = []
+        self.expense_refs: list[str] = []
+        money = {"min_value": 0, "max_digits": 14, "decimal_places": 2}
+        for p in snapshot["productos"]:
+            self.product_refs.append(p["ref"])
+            self.fields[f"unidades_{p['ref']}"] = forms.DecimalField(
+                label=f"Unidades de {p['nombre']} al mes", initial=p["unidades"], **money
+            )
+            self.fields[f"precio_{p['ref']}"] = forms.DecimalField(
+                label=f"Precio de {p['nombre']}", initial=p["precio"], **money
+            )
+        for e in snapshot["gastos"]:
+            self.expense_refs.append(e["ref"])
+            self.fields[f"gasto_{e['ref']}"] = forms.DecimalField(
+                label=e["nombre"], initial=e["monto"], **money
+            )
+
+    def to_edits(self) -> dict:
+        data = self.cleaned_data
+        edits: dict = {
+            "unidades": {r: str(data[f"unidades_{r}"]) for r in self.product_refs},
+            "precios": {r: str(data[f"precio_{r}"]) for r in self.product_refs},
+            "gastos": {r: str(data[f"gasto_{r}"]) for r in self.expense_refs},
+            "retiro": str(data["retiro"]),
+        }
+        if data.get("alternativa"):
+            edits["alternativa"] = data["alternativa"]
+        return edits

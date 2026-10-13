@@ -116,6 +116,39 @@ class OnboardingExtraction(_Base):
     campos_dudosos: list[str] = Field(default_factory=list, max_length=40)
 
 
+# ---------------------------------------------------------------- onboarding de negocio
+
+
+class ProductoExtraido(_Base):
+    nombre: str = Field(max_length=120)
+    precio: Decimal = Field(ge=0)
+    costo: Decimal | None = Field(default=None, ge=0)
+    unidades_mes: Decimal | None = Field(default=None, ge=0)
+    es_servicio: bool = False
+    minutos: int | None = Field(default=None, gt=0, le=1440)
+
+
+class GastoNegocioExtraido(_Base):
+    nombre: str = Field(max_length=80)
+    monto: Decimal = Field(gt=0)
+    frecuencia: Literal["mensual", "quincenal", "semanal"] = "mensual"
+    dia: int | None = Field(default=None, ge=1, le=31)
+
+
+class BusinessOnboardingExtraction(_Base):
+    actividad: str | None = Field(default=None, max_length=120)
+    modelo: Literal["productos", "servicios", "mixto"] | None = None
+    cobra_itbis: bool | None = None
+    productos: list[ProductoExtraido] = Field(default_factory=list, max_length=20)
+    gastos: list[GastoNegocioExtraido] = Field(default_factory=list, max_length=20)
+    efectivo: Decimal | None = Field(default=None, ge=0)
+    margen_objetivo_pct: Decimal | None = Field(default=None, ge=0, le=95)
+    ganancia_objetivo: Decimal | None = Field(default=None, ge=0)
+    retiro_mensual: Decimal | None = Field(default=None, ge=0)
+    # Rutas de los campos dudosos, p. ej. "productos.0.costo".
+    campos_dudosos: list[str] = Field(default_factory=list, max_length=40)
+
+
 # ---------------------------------------------------------------- comprobantes (OCR)
 
 

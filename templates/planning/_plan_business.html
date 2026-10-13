@@ -1,0 +1,92 @@
+{% load money icons %}
+{% with cur=workspace.currency c=plan.computed %}
+<div id="plan" {% if plan.status == "generando" %}hx-get="{% url 'planning:detail' ws=workspace.pk plan_id=plan.pk %}" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  <div class="mt-4 flex items-start justify-between gap-3">
+    <div>
+      <h1>Plan del negocio · {{ plan.period_start|date:"F Y" }}</h1>
+      <p class="muted">Versión {{ plan.get_status_display|lower }} · creada el {{ plan.created_at|date:"d/m/Y H:i" }}</p>
+    </div>
+    <span class="badge-{{ plan.plan_status }}" data-testid="estado-plan">{% if plan.plan_status == "viable" %}Viable{% elif plan.plan_status == "ajustado" %}Ajustado{% else %}No viable{% endif %}</span>
+  </div>
+
+  <section class="mt-4 grid grid-cols-2 gap-3" aria-label="Resumen del mes">
+    <div class="card"><p class="muted">¿Cuánto vendería?</p><p class="amount text-lg font-semibold">{{ c.ventas|money:cur }}</p></div>
+    <div class="card"><p class="muted">¿Cuánto me cuesta vender?</p><p class="amount text-lg font-semibold">{{ c.costo_de_lo_vendido|money:cur }}</p></div>
+    <div class="card"><p class="muted">¿Cuánto ganaría?</p><p class="amount text-lg font-semibold">{{ c.resultado|money:cur }}</p><p class="muted">Ganancia bruta {{ c.ganancia_bruta|money:cur }} ({{ c.margen_bruto }}) − gastos fijos {{ c.gastos_operativos|money:cur }}</p></div>
+    <div class="card"><p class="muted">¿Cuánto podría retirar?</p><p class="amount text-lg font-semibold">{{ c.retiro_maximo|money:cur }}</p>{% if c.retiro_planeado != "0.00" %}<p class="muted">Quieres retirar {{ c.retiro_planeado|money:cur }}</p>{% endif %}</div>
+  </section>
+
+  {% if c.motivos %}
+    <ul class="mt-3 space-y-1">{% for m in c.motivos %}<li class="flex gap-2 text-sm text-amber-800">{% icon "triangle-alert" "h-4 w-4 shrink-0" %}{{ m }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  {% if plan.status == "generando" %}
+    <p class="card mt-4 flex items-center gap-2" role="status">{% icon "refresh-cw" "h-5 w-5 animate-spin text-marca-700" %}Preparando la explicación de tu plan…</p>
+  {% elif plan.ai_narrative %}
+    <section class="card mt-4 space-y-3" aria-label="Explicación">
+      <p class="flex gap-2">{% icon "sparkles" "h-5 w-5 shrink-0 text-marca-700" %}<span>{{ plan.ai_narrative.resumen }}</span></p>
+      {% for rec in plan.ai_narrative.recomendaciones %}
+        <article class="rounded-xl bg-slate-50 p-3">
+          <h3 class="font-semibold">{{ rec.titulo }}{% if rec.es_proyeccion %} <span class="badge-info">Proyección</span>{% endif %}</h3>
+          <p class="text-sm">{{ rec.detalle }}</p>
+          {% if rec.datos_usados %}<p class="muted mt-1">Datos usados: {{ rec.datos_usados|join:", " }}</p>{% endif %}
+        </article>
+      {% endfor %}
+      {% for w in plan.ai_narrative.advertencias_datos_faltantes %}<p class="flex gap-2 text-sm text-amber-800">{% icon "triangle-alert" "h-4 w-4 shrink-0" %}{{ w }}</p>{% endfor %}
+      {% for q in plan.ai_narrative.preguntas_para_mejorar_el_plan %}<p class="flex gap-2 text-sm">{% icon "circle-help" "h-4 w-4 shrink-0" %}{{ q }}</p>{% endfor %}
+      <p class="muted">{% if plan.narrative_source == "ia" %}Explicación generada con IA a partir de los cálculos del plan.{% else %}Explicación automática a partir de los cálculos del plan.{% endif %} Las cifras siempre las calcula el sistema.</p>
+    </section>
+  {% endif %}
+
+  <section class="mt-5">
+    <h2>Por producto</h2>
+    <ul class="card mt-2 divide-y p-0">
+      {% for p in c.productos %}
+        <li class="px-4 py-3">
+          <div class="flex justify-between gap-3"><span class="font-medium">{{ p.nombre }}</span><span class="amount">{{ p.ganancia_bruta|money:cur }}</span></div>
+          <p class="muted">{{ p.unidades }} × {{ p.precio|money:cur }}{% if p.unidades_estimadas %} (estimado){% endif %} · costo {{ p.costo_unitario|money:cur }} c/u · margen {{ p.margen }}</p>
+        </li>
+      {% empty %}<li class="px-4 py-3 muted">Sin productos registrados.</li>{% endfor %}
+    </ul>
+    <p class="muted mt-2">{% if c.ventas_equilibrio %}Ventas para cubrir los gastos fijos: {{ c.ventas_equilibrio|money:cur }}.{% endif %} {% if c.ventas_para_meta %}Ventas para llegar a tu meta de ganancia: {{ c.ventas_para_meta|money:cur }}.{% endif %}</p>
+  </section>
+
+  <section class="mt-5">
+    <h2>Caja del mes</h2>
+    <div class="card mt-2 text-sm">
+      <p>Efectivo hoy: <span class="amount">{{ c.caja.efectivo_inicial|money:cur }}</span> · saldo más bajo: <span class="amount">{{ c.caja.saldo_mas_bajo.monto|money:cur }}</span> el {{ c.caja.saldo_mas_bajo.fecha|slice:"8:" }}/{{ c.caja.saldo_mas_bajo.fecha|slice:"5:7" }}</p>
+      {% for f in c.caja.faltantes_por_fecha %}<p class="mt-1 flex gap-2 text-red-700">{% icon "triangle-alert" "h-4 w-4 shrink-0" %}El {{ f.fecha|slice:"8:" }}/{{ f.fecha|slice:"5:7" }} faltarían <strong>{{ f.monto|money:cur }}</strong> ({{ f.conceptos|join:", " }}).</p>{% endfor %}
+    </div>
+  </section>
+
+  {% if c.alternativas %}
+    <section class="mt-5">
+      <h2>Alternativas calculadas</h2>
+      <ul class="mt-2 space-y-3">
+        {% for a in c.alternativas %}
+          <li class="card">
+            <div class="flex items-start justify-between gap-2"><p class="font-semibold">{{ a.nombre }}</p><span class="badge-{{ a.estado }}">{% if a.estado == "viable" %}Queda viable{% elif a.estado == "ajustado" %}Queda ajustado{% else %}Aún no alcanza{% endif %}</span></div>
+            <p class="text-sm text-slate-600">{{ a.descripcion }}</p>
+            <ul class="mt-2 text-sm">{% for ch in a.cambios %}<li>{{ ch.concepto }}: {{ ch.de|money:cur }} → <strong>{{ ch.a|money:cur }}</strong></li>{% endfor %}</ul>
+            <p class="muted mt-1">Resultado del mes: {{ a.resultado|money:cur }} · mejora {{ a.libera|money:cur }}</p>
+            {% if plan.is_open %}<form method="post" action="{% url 'planning:apply' ws=workspace.pk plan_id=plan.pk %}" class="mt-3">{% csrf_token %}<input type="hidden" name="alternativa" value="{{ a.codigo }}"><button class="btn-secondary btn-sm">Aplicar esta alternativa</button></form>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {% if plan.assumptions %}
+    <details class="card mt-5 text-sm"><summary class="cursor-pointer font-medium">Supuestos del cálculo</summary><ul class="mt-2 list-disc pl-5">{% for s in plan.assumptions %}<li>{{ s }}</li>{% endfor %}</ul></details>
+  {% endif %}
+
+  {% if plan.is_open %}
+    <div class="sticky bottom-24 mt-6 grid grid-cols-3 gap-2 rounded-2xl bg-white/90 p-2 shadow-lg backdrop-blur">
+      <form method="post" action="{% url 'planning:accept' ws=workspace.pk plan_id=plan.pk %}">{% csrf_token %}<button class="btn-primary w-full">{% icon "circle-check" "h-5 w-5" %}Aceptar</button></form>
+      <a class="btn-secondary" href="{% url 'planning:edit' ws=workspace.pk plan_id=plan.pk %}">{% icon "pencil" "h-5 w-5" %}Editar</a>
+      <form method="post" action="{% url 'planning:discard' ws=workspace.pk plan_id=plan.pk %}">{% csrf_token %}<button class="btn-secondary w-full">{% icon "x" "h-5 w-5" %}Descartar</button></form>
+    </div>
+    <p class="muted mt-2 text-center">Nada cambia hasta que aceptes el plan: no se modifican precios ni se registra nada.</p>
+  {% endif %}
+</div>
+{% endwith %}

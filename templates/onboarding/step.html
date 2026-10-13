@@ -5,7 +5,7 @@
     {% include "onboarding/_progress.html" %}
     <h1>{{ info.question }}</h1>
     {% if not info.required %}<p class="text-sm text-slate-500">Opcional. Si lo omites: {{ info.impact|lower }}</p>{% endif %}
-    {% if info.key == "ingresos" %}<p class="mt-2"><a class="underline" href="{% url 'onboarding:conversation' ws=workspace.pk %}">Prefiero contarlo con mis palabras</a></p>{% endif %}
+    {% if info.key == first_step %}<p class="mt-2"><a class="underline" href="{% url 'onboarding:conversation' ws=workspace.pk %}">Prefiero contarlo con mis palabras</a></p>{% endif %}
     <form method="post" class="mt-4 space-y-4">
       {% csrf_token %}
       {% if is_formset %}

@@ -8,9 +8,9 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from apps.workspaces.mixins import workspace_required
 from apps.workspaces.models import Workspace
 
-from .forms import EditPlanForm
+from .forms import EditBusinessPlanForm, EditPlanForm
 from .models import PlanVersion
-from .services.generate import request_personal_plan
+from .services.generate import request_business_plan, request_personal_plan
 from .services.lifecycle import (
     PlanError,
     accept_plan,
@@ -32,7 +32,7 @@ def _today():
     return timezone.localdate()
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_GET
 def index(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     plans = PlanVersion.objects.for_workspace(workspace)
@@ -44,20 +44,22 @@ def index(request: HttpRequest, workspace: Workspace) -> HttpResponse:
         {
             "workspace": workspace,
             "budget": budget,
+            "accepted": plans.filter(status=PlanVersion.Status.ACEPTADO).first(),
             "proposal": proposal,
             "history": plans[:20],
         },
     )
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_POST
 def generate(request: HttpRequest, workspace: Workspace) -> HttpResponse:
-    plan = request_personal_plan(workspace, request.user, _today())
+    generate_plan = request_business_plan if workspace.is_business else request_personal_plan
+    plan = generate_plan(workspace, request.user, _today())
     return redirect("planning:detail", ws=workspace.pk, plan_id=plan.pk)
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_GET
 def detail(request: HttpRequest, workspace: Workspace, plan_id) -> HttpResponse:
     plan = _get_plan(workspace, plan_id)
@@ -67,19 +69,24 @@ def detail(request: HttpRequest, workspace: Workspace, plan_id) -> HttpResponse:
     return render(request, template, {"workspace": workspace, "plan": plan})
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_POST
 def accept(request: HttpRequest, workspace: Workspace, plan_id) -> HttpResponse:
     plan = _get_plan(workspace, plan_id)
     try:
         accept_plan(plan, request.user)
-        messages.success(request, "Plan aceptado. Tu presupuesto del período quedó listo.")
+        messages.success(
+            request,
+            "Plan aceptado. Quedó como la meta del mes."
+            if plan.kind == PlanVersion.Kind.BUSINESS
+            else "Plan aceptado. Tu presupuesto del período quedó listo.",
+        )
     except PlanError as exc:
         messages.error(request, str(exc))
     return redirect("planning:detail", ws=workspace.pk, plan_id=plan.pk)
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_POST
 def discard(request: HttpRequest, workspace: Workspace, plan_id) -> HttpResponse:
     plan = _get_plan(workspace, plan_id)
@@ -91,14 +98,15 @@ def discard(request: HttpRequest, workspace: Workspace, plan_id) -> HttpResponse
     return redirect("planning:index", ws=workspace.pk)
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_http_methods(["GET", "POST"])
 def edit(request: HttpRequest, workspace: Workspace, plan_id) -> HttpResponse:
     plan = _get_plan(workspace, plan_id)
     if not plan.is_open:
         messages.error(request, "Solo se puede editar una propuesta.")
         return redirect("planning:detail", ws=workspace.pk, plan_id=plan.pk)
-    form = EditPlanForm(plan, request.POST or None)
+    form_class = EditBusinessPlanForm if plan.kind == PlanVersion.Kind.BUSINESS else EditPlanForm
+    form = form_class(plan, request.POST or None)
     if request.method == "POST" and form.is_valid():
         try:
             new_plan = edit_plan(plan, request.user, form.to_edits(), _today())
@@ -111,7 +119,7 @@ def edit(request: HttpRequest, workspace: Workspace, plan_id) -> HttpResponse:
     )
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_GET
 def compare(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     a = _get_plan(workspace, request.GET.get("a"))
@@ -123,7 +131,7 @@ def compare(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     )
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_POST
 def apply_alternative(request: HttpRequest, workspace: Workspace, plan_id) -> HttpResponse:
     """Crea una nueva propuesta aplicando una alternativa calculada por el motor."""

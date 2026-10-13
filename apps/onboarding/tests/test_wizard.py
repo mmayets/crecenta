@@ -261,4 +261,6 @@ def test_resumen_y_requisitos(logged, personal_ws):
 
 def test_paso_inexistente_y_negocio(logged, personal_ws, business_ws):
     assert logged.get(url(personal_ws, "inventado")).status_code == 404
-    assert logged.get(url(business_ws, name="index")).status_code == 404
+    # El negocio tiene su propia bienvenida (paso B8).
+    assert logged.get(url(business_ws, name="index"))["Location"] == url(business_ws, "perfil")
+    assert logged.get(url(business_ws, "ingresos")).status_code == 404

@@ -2,13 +2,18 @@
 {% block title %}Cuéntanos · Bienvenida · Crecenta{% endblock %}
 {% block content %}
   {% include "onboarding/_progress.html" %}
-  <h1>Cuéntanos tu situación</h1>
-  <p class="mt-1 text-slate-600">Escribe o dicta cuánto cobras, qué pagas y cuánto gastas. Te mostraremos lo que entendimos para que lo confirmes antes de guardar.</p>
+  {% if is_business %}
+    <h1>Cuéntanos de tu negocio</h1>
+    <p class="mt-1 text-slate-600">Escribe o dicta qué vendes, a qué precio, cuánto te cuesta, cuántos vendes al mes y tus gastos fijos. Te mostraremos lo que entendimos para que lo confirmes antes de guardar.</p>
+  {% else %}
+    <h1>Cuéntanos tu situación</h1>
+    <p class="mt-1 text-slate-600">Escribe o dicta cuánto cobras, qué pagas y cuánto gastas. Te mostraremos lo que entendimos para que lo confirmes antes de guardar.</p>
+  {% endif %}
   <form method="post" class="mt-4 space-y-3">
     {% csrf_token %}
     {{ form.non_field_errors }}
     {{ form.texto }} {{ form.texto.errors }}
     <button type="submit" class="btn-primary w-full">Analizar</button>
   </form>
-  <a class="mt-4 inline-block underline" href="{% url 'onboarding:step' ws=workspace.pk step='ingresos' %}">Prefiero el formulario paso a paso</a>
+  <a class="mt-4 inline-block underline" href="{% url 'onboarding:step' ws=workspace.pk step=first_step %}">Prefiero el formulario paso a paso</a>
 {% endblock %}

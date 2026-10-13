@@ -31,6 +31,7 @@ VERSIONS = {
     "plan_personal": "v1",
     "plan_negocio": "v1",
     "onboarding_extraccion": "v1",
+    "onboarding_negocio": "v1",
     "comprobante_ocr": "v1",
     "registro_rapido": "v1",
 }

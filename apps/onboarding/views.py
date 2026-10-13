@@ -16,6 +16,7 @@ from apps.planning.services.generate import request_personal_plan
 from apps.workspaces.mixins import workspace_required
 from apps.workspaces.models import Workspace
 
+from . import business_views
 from .forms import (
     SECTION_FORMS,
     ConversationForm,
@@ -58,18 +59,21 @@ def _first_pending(workspace: Workspace) -> str:
     return "listo"
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_GET
 def index(request: HttpRequest, workspace: Workspace) -> HttpResponse:
-    target = _first_pending(workspace)
+    first = business_views.first_pending if workspace.is_business else _first_pending
+    target = first(workspace)
     if target == "listo":
         return redirect("onboarding:done", ws=workspace.pk)
     return redirect("onboarding:step", ws=workspace.pk, step=target)
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_http_methods(["GET", "POST"])
 def step(request: HttpRequest, workspace: Workspace, step: str) -> HttpResponse:
+    if workspace.is_business:
+        return business_views.step(request, workspace, step)
     if step not in STEP_KEYS:
         raise Http404("Paso inexistente")
     info = STEPS_BY_KEY[step]
@@ -102,6 +106,7 @@ def step(request: HttpRequest, workspace: Workspace, step: str) -> HttpResponse:
             "is_formset": step in SECTION_FORMS,
             "progress": completeness(workspace),
             "previous": previous_step(step),
+            "first_step": STEP_KEYS[0],
         },
         status=400 if request.method == "POST" else 200,
     )
@@ -114,9 +119,11 @@ def _go_next(workspace: Workspace, current: str) -> HttpResponse:
     return redirect("onboarding:step", ws=workspace.pk, step=following)
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_http_methods(["GET", "POST"])
 def done(request: HttpRequest, workspace: Workspace) -> HttpResponse:
+    if workspace.is_business:
+        return business_views.done(request, workspace)
     progress = completeness(workspace)
     if request.method == "POST":
         if not progress.minimum_ready:
@@ -133,9 +140,11 @@ def done(request: HttpRequest, workspace: Workspace) -> HttpResponse:
 # ---------------------------------------------------------------- modo conversacional
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_http_methods(["GET", "POST"])
 def conversation(request: HttpRequest, workspace: Workspace) -> HttpResponse:
+    if workspace.is_business:
+        return business_views.conversation(request, workspace)
     form = ConversationForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         try:
@@ -152,7 +161,12 @@ def conversation(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     return render(
         request,
         "onboarding/conversation.html",
-        {"workspace": workspace, "form": form, "progress": completeness(workspace)},
+        {
+            "workspace": workspace,
+            "form": form,
+            "progress": completeness(workspace),
+            "first_step": STEP_KEYS[0],
+        },
     )
 
 
@@ -188,9 +202,11 @@ def _confirmation_forms(workspace: Workspace, initial: dict[str, Any], data=None
     return formsets, essentials
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_http_methods(["GET", "POST"])
 def confirm(request: HttpRequest, workspace: Workspace) -> HttpResponse:
+    if workspace.is_business:
+        return business_views.confirm(request, workspace)
     state = get_state(workspace)
     if not state.pending_extraction:
         return redirect("onboarding:conversation", ws=workspace.pk)
@@ -234,7 +250,7 @@ def confirm(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     )
 
 
-@workspace_required(kind="personal")
+@workspace_required
 @require_POST
 def voice(request: HttpRequest, workspace: Workspace) -> JsonResponse:
     """Nota de voz → texto (para dictar en el modo conversacional o en el registro rápido)."""

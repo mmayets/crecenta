@@ -8,6 +8,11 @@
       <h2 class="font-semibold">Plan vigente: {{ budget }}</h2>
       <a class="underline" href="{% url 'planning:detail' ws=workspace.pk plan_id=budget.plan.pk %}">Ver plan aceptado</a>
     </section>
+  {% elif accepted and workspace.is_business %}
+    <section class="mt-4 card">
+      <h2 class="font-semibold">Meta del mes: plan de {{ accepted.period_start|date:"F Y" }}</h2>
+      <a class="underline" href="{% url 'planning:detail' ws=workspace.pk plan_id=accepted.pk %}">Ver plan aceptado</a>
+    </section>
   {% endif %}
   {% if proposal %}
     <section class="mt-4 card">

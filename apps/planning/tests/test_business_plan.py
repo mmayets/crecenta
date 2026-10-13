@@ -117,3 +117,46 @@ def test_aceptar_editar_y_comparar(negocio, user, django_capture_on_commit_callb
     accepted = accept_plan(nuevo, user)
     assert accepted.status == PlanVersion.Status.ACEPTADO
     assert not BudgetPeriod.objects.exists()  # el plan de negocio no crea presupuesto personal
+
+
+def test_vistas_del_plan_de_negocio(client, negocio, user, django_capture_on_commit_callbacks):
+    from django.urls import reverse
+
+    client.force_login(user)
+    ws = negocio
+    with django_capture_on_commit_callbacks(execute=True):
+        response = client.post(reverse("planning:generate", kwargs={"ws": ws.pk}))
+    plan = PlanVersion.objects.get(workspace=ws)
+    assert plan.kind == PlanVersion.Kind.BUSINESS
+    detail = reverse("planning:detail", kwargs={"ws": ws.pk, "plan_id": plan.pk})
+    assert response["Location"] == detail
+    html = client.get(detail).content.decode()
+    assert "Plan del negocio" in html and "¿Cuánto podría retirar?" in html
+    assert "RD$49,285.60" in html and "Subir precios al margen objetivo" in html
+
+    edit_url = reverse("planning:edit", kwargs={"ws": ws.pk, "plan_id": plan.pk})
+    form_html = client.get(edit_url).content.decode()
+    assert "Unidades de Bizcocho al mes" in form_html
+    refs = {p["nombre"]: p["ref"] for p in plan.inputs_snapshot["productos"]}
+    gastos = {g["nombre"]: g["ref"] for g in plan.inputs_snapshot["gastos"]}
+    data = {
+        "retiro": "0",
+        f"unidades_{refs['Bizcocho']}": "60",
+        f"precio_{refs['Bizcocho']}": "857.14",
+        f"unidades_{refs['Cupcake']}": "150",
+        f"precio_{refs['Cupcake']}": "107.14",
+        f"gasto_{gastos['Alquiler']}": "8000",
+        f"gasto_{gastos['Publicidad']}": "2500",
+        "alternativa": "",
+    }
+    with django_capture_on_commit_callbacks(execute=True):
+        response = client.post(edit_url, data)
+    nuevo = PlanVersion.objects.exclude(pk=plan.pk).get()
+    assert nuevo.plan_status == "viable" and nuevo.inputs_snapshot["retiro"] == "0.00"
+
+    accept_url = reverse("planning:accept", kwargs={"ws": ws.pk, "plan_id": nuevo.pk})
+    client.post(accept_url)
+    nuevo.refresh_from_db()
+    assert nuevo.status == PlanVersion.Status.ACEPTADO
+    index = client.get(reverse("planning:index", kwargs={"ws": ws.pk})).content.decode()
+    assert "Meta del mes" in index

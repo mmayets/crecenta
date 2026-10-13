@@ -2,12 +2,12 @@
 {% block title %}Tu perfil · Crecenta{% endblock %}
 {% block content %}
   {% include "onboarding/_progress.html" %}
-  <h1>{% if progress.minimum_ready %}¡Listo para tu primer plan!{% else %}Faltan datos para tu plan{% endif %}</h1>
+  <h1>{% if progress.minimum_ready %}¡Listo para tu primer plan{% if is_business %} de negocio{% endif %}!{% else %}Faltan datos para tu plan{% endif %}</h1>
   {% if progress.missing %}
     <h2 class="mt-4 font-semibold">Lo que falta y cómo afecta tu plan</h2>
     <ul class="mt-2 space-y-2">{% for item in progress.missing %}<li><a class="underline" href="{% url 'onboarding:step' ws=workspace.pk step=item.step.key %}">{{ item.step.title }}</a>: {{ item.step.impact }}</li>{% endfor %}</ul>
   {% endif %}
   {% if progress.minimum_ready %}
-    <form method="post" class="mt-6">{% csrf_token %}<button class="btn-primary w-full">Generar mi plan</button></form>
+    <form method="post" class="mt-6">{% csrf_token %}<button class="btn-primary w-full">{% if is_business %}Generar el plan de mi negocio{% else %}Generar mi plan{% endif %}</button></form>
   {% endif %}
 {% endblock %}
