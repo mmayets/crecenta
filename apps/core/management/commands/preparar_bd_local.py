@@ -1,14 +1,14 @@
 """Crea en el PostgreSQL local el usuario y la base de datos de la app, aplica las migraciones y
-(opcionalmente) carga la demo. Pensado para el primer arranque en PyCharm o sin Docker.
+(opcionalmente) carga la demo. Pensado para el primer arranque en PyCharm o desde la terminal.
 
 Uso:
     python manage.py preparar_bd_local                 # crea, migra y carga la demo
     python manage.py preparar_bd_local --sin-demo
     python manage.py preparar_bd_local --admin-url postgres://postgres:CLAVE@localhost:5432/postgres
 
-Lee la base de destino de DATABASE_URL (.env) y la cuenta administradora de POSTGRES_ADMIN_URL
-(por defecto postgres://postgres:postgres@localhost:5432/postgres). Es idempotente: si el usuario o
-la base ya existen, no los toca.
+Lee la base de destino y la cuenta administradora (POSTGRES_ADMIN_URL) de config/db.py o, si
+existen, de las variables de entorno (por defecto la cuenta postgres:postgres en localhost).
+Es idempotente: si el usuario o la base ya existen, no los toca.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ DEFAULT_ADMIN_URL = "postgres://postgres:postgres@localhost:5432/postgres"
 def _target() -> dict[str, Any]:
     db = settings.DATABASES["default"]
     if "postgresql" not in db["ENGINE"]:
-        raise CommandError("DATABASE_URL debe apuntar a PostgreSQL.")
+        raise CommandError("La base de datos configurada debe ser PostgreSQL.")
     return {
         "name": db["NAME"],
         "user": db["USER"],
@@ -80,9 +80,7 @@ class Command(BaseCommand):
         parser.add_argument("--solo-crear", action="store_true", help="No migrar ni cargar demo")
 
     def handle(self, *args, admin_url: str | None, sin_demo: bool, solo_crear: bool, **options):
-        import environ
-
-        admin_url = admin_url or environ.Env()("POSTGRES_ADMIN_URL", default=DEFAULT_ADMIN_URL)
+        admin_url = admin_url or settings.POSTGRES_ADMIN_URL or DEFAULT_ADMIN_URL
         target = _target()
         admin = urlsplit(admin_url)  # se muestra sin la clave
         self.stdout.write(

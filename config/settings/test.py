@@ -1,17 +1,21 @@
 from .base import *  # noqa: F403
-from .base import BASE_DIR, env
+from .base import BASE_DIR, env, local_db
 
 SECRET_KEY = "test-secret-key-solo-para-pruebas"
 DEBUG = False
 ALLOWED_HOSTS = ["testserver", "localhost"]
 
-DATABASES = {
-    "default": env.db(
-        "TEST_DATABASE_URL",
-        default=env("DATABASE_URL", default="postgres://postgres:postgres@localhost:5432/crecenta"),
-    )
-}
-DATABASES["default"]["ATOMIC_REQUESTS"] = True
+# Sin TEST_DATABASE_URL ni DATABASE_URL se usa la conexión de config/db.py (la de base.py).
+if env("TEST_DATABASE_URL", default="") or env("DATABASE_URL", default="") or local_db is None:
+    DATABASES = {
+        "default": env.db(
+            "TEST_DATABASE_URL",
+            default=env(
+                "DATABASE_URL", default="postgres://postgres:postgres@localhost:5432/crecenta"
+            ),
+        )
+    }
+    DATABASES["default"]["ATOMIC_REQUESTS"] = True
 
 CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]

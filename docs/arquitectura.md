@@ -11,9 +11,7 @@
 ```
 crecenta/
 ├── scripts/build_icons.py         # genera el sprite SVG de íconos
-├── docker-compose.yml              # web, db (postgres:16), redis, worker, beat
-├── Dockerfile                      # python:3.12-slim + Tailwind CLI standalone (stage de build)
-├── .env.example
+├── .env.example                    # referencia de los parámetros (tabla `parameters`)
 ├── pyproject.toml                  # dependencias, ruff, mypy, pytest, coverage
 ├── manage.py
 ├── tailwind.config.js
@@ -475,7 +473,7 @@ Al cierre de cada paso: `ruff check .`, `ruff format --check .`, `pytest`, y
 
 | # | Paso | Entregable | Verificación |
 |---|------|-----------|--------------|
-| 1 | **Esqueleto** | `pyproject`, settings base/dev/prod/test, Docker + compose, Celery, `core` (money, dates, periods), `accounts.User` por email, allauth | `check`, `check --deploy`, tests de `core` (redondeo, días del mes, eventos de cobro quincenal 15/30 en febrero) |
+| 1 | **Esqueleto** | `pyproject`, settings base/dev/prod/test, Celery, `core` (money, dates, periods), `accounts.User` por email, allauth | `check`, `check --deploy`, tests de `core` (redondeo, días del mes, eventos de cobro quincenal 15/30 en febrero) |
 | 2 | **Espacios y aislamiento** | `Workspace`, `Membership`, `WorkspaceScopedQuerySet`, `WorkspaceRequiredMixin`, rutas `/e/<uuid>/…` | Tests: usuario B recibe 404 en vistas/endpoints del espacio de A |
 | 3 | **Ledger** | `Account`, `Category` (+ categorías del sistema), `Transaction`, saldos, clasificación, sync idempotente | Transferencia/retiro/préstamo no cuentan como gasto/ingreso; mismo `client_uuid` dos veces → 1 movimiento |
 | 4 | **Motor personal** | `budget_engine`, `cash_timeline`, `alternatives`, `savings`, `availability` + modelos `personal` | Caso RD$50,000 exacto; variante quincenal (ahorro 3,500 × 2); caso no viable con faltante, fecha y ≥ 2 alternativas recalculadas; meta diaria con días reales y días seleccionados; disponible para gastar excluye comprometido. Cobertura ≥ 90 % |

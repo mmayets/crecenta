@@ -21,37 +21,30 @@ JSON validado y nunca aplica nada sin que la persona lo acepte.
 - [Seguridad y privacidad](docs/seguridad.md)
 - [Abrir en PyCharm con PostgreSQL local](docs/pycharm.md)
 
-## Arranque rápido con Docker
-
-```bash
-cp .env.example .env
-docker compose up --build            # web, db, redis, worker, beat
-docker compose exec web python manage.py seed_demo
-# http://localhost:8000  ·  demo@crecenta.app / Demo-Crecenta-2026
-# vendedora de Dulces Ana: vendedor@crecenta.app (misma contraseña)
-```
-
 ## PyCharm / desarrollo local con PostgreSQL instalado
 
 Guía paso a paso: [docs/pycharm.md](docs/pycharm.md). En resumen:
 
 ```bash
 uv sync
-cp .env.local.example .env          # ajuste la clave de su usuario postgres
+cp config/db.example.py config/db.py        # conexión; ajuste la clave de su usuario postgres
 uv run python manage.py preparar_bd_local   # crea usuario y base, migra y carga la demo
+uv run python manage.py importar_parametros .env.local.example   # resto → tabla parameters
 uv run python manage.py runserver
+# http://localhost:8000  ·  demo@crecenta.app / Demo-Crecenta-2026
+# vendedora de Dulces Ana: vendedor@crecenta.app (misma contraseña)
 ```
 
 En PyCharm las configuraciones de ejecución ya vienen en `.run/` ("1 · Preparar base de datos
 local" y "2 · Servidor Django"). Redis es opcional en local.
 
-## Desarrollo local (sin Docker, manual)
+## Desarrollo local (manual)
 
 Requiere Python 3.12, PostgreSQL 16, Redis y [uv](https://docs.astral.sh/uv/).
 
 ```bash
 uv sync
-export DATABASE_URL=postgres://usuario:clave@localhost:5432/crecenta
+cp config/db.example.py config/db.py   # ponga su usuario, clave y base
 uv run python manage.py migrate
 uv run python manage.py seed_demo      # persona RD$50,000 + negocio Dulces Ana con ventas
 uv run python manage.py runserver

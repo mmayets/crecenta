@@ -15,3 +15,6 @@ bin/tailwindcss
 
 # PyCharm: la carpeta .idea es personal; las configuraciones compartidas están en .run/
 .idea/
+
+# Conexión local a la base de datos (plantilla: config/db.example.py)
+config/db.py

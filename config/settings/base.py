@@ -1,6 +1,8 @@
 """Configuración común a todos los entornos.
 
-Los secretos y valores por entorno se leen solo de variables de entorno (ver `.env.example`).
+La conexión a la base de datos sale de `config/db.py` y el resto de los valores por entorno de la
+tabla `parameters` (ver `config/parameters.py`). Una variable de entorno, si existe, gana sobre
+ambos (útil en CI; ver `.env.example`).
 """
 
 from pathlib import Path
@@ -8,10 +10,36 @@ from pathlib import Path
 import environ
 from celery.schedules import crontab
 
+from config.parameters import load_parameters
+
+try:
+    from config import db as local_db
+except ImportError:  # sin config/db.py (p. ej. en CI) la conexión llega por DATABASE_URL
+    local_db = None
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 env = environ.Env()
 environ.Env.read_env(BASE_DIR / ".env", overwrite=False)
+
+# ------------------------------------------------------------------ base de datos
+if env("DATABASE_URL", default="") or local_db is None:
+    DATABASES = {
+        "default": env.db(
+            "DATABASE_URL", default="postgres://crecenta:crecenta@localhost:5432/crecenta"
+        ),
+    }
+else:
+    DATABASES = {"default": dict(local_db.DATABASE)}
+POSTGRES_ADMIN_URL = env("POSTGRES_ADMIN_URL", default=getattr(local_db, "POSTGRES_ADMIN_URL", ""))
+
+# Los tests no dependen de los parámetros de la base de desarrollo.
+if not env("DJANGO_SETTINGS_MODULE", default="").endswith(".test"):
+    load_parameters(DATABASES["default"])
+
+DATABASES["default"]["ATOMIC_REQUESTS"] = True
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("DB_CONN_MAX_AGE", default=60)
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="")
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
@@ -86,16 +114,6 @@ TEMPLATES = [
         },
     },
 ]
-
-# ------------------------------------------------------------------ base de datos
-DATABASES = {
-    "default": env.db(
-        "DATABASE_URL", default="postgres://crecenta:crecenta@localhost:5432/crecenta"
-    ),
-}
-DATABASES["default"]["ATOMIC_REQUESTS"] = True
-DATABASES["default"]["CONN_MAX_AGE"] = env.int("DB_CONN_MAX_AGE", default=60)
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ------------------------------------------------------------------ caché (rate limiting, sesiones)
 REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")

@@ -4,7 +4,7 @@ Decisiones tomadas donde el encargo no especifica. Formato: decisión · motivo.
 
 ## Generales
 
-1. **Python 3.12 en Docker**; el código también corre en 3.13 (el entorno de desarrollo actual). · El encargo fija 3.12.
+1. **Python 3.12**; el código también corre en 3.13 (el entorno de desarrollo actual). · El encargo fija 3.12.
 2. **Usuario personalizado con email como identificador** (`accounts.User`, sin `username`), creado desde la primera migración. · Cambiar el modelo de usuario después es costoso.
 3. **Rutas con el espacio en la URL** (`/e/<workspace_uuid>/…`) y el último espacio usado en la sesión. · Hace explícito el aislamiento y permite abrir dos espacios en pestañas distintas.
 4. **Aislamiento**: `WorkspaceScopedQuerySet.for_workspace(ws)` + `WorkspaceRequiredMixin`; un espacio ajeno responde **404** (no 403) para no revelar su existencia.
@@ -32,7 +32,7 @@ Decisiones tomadas donde el encargo no especifica. Formato: decisión · motivo.
 ## Frontend / PWA
 
 19. **Íconos**: sprite SVG inline con un subconjunto de Lucide (licencia ISC) y la etiqueta `{% icon %}`.
-20. **htmx, Alpine.js y ApexCharts** se guardan en `static/vendor/` con versión fijada. Tailwind se compila con el CLI standalone en el build de Docker; el CSS compilado también se versiona para que el proyecto funcione sin el CLI en desarrollo.
+20. **htmx, Alpine.js y ApexCharts** se guardan en `static/vendor/` con versión fijada. Tailwind se compila con el CLI standalone (`make css`); el CSS compilado también se versiona para que el proyecto funcione sin el CLI en desarrollo.
 21. **Service worker servido desde `/sw.js`** por una vista de Django (scope raíz).
 22. **Background Sync** cuando el navegador lo soporta (Chromium/Android); en iOS se sincroniza en `online`/al abrir la app. El endpoint es idempotente por `client_uuid`.
 23. **Comprobantes**: máximo 10 MB, tipos `image/jpeg|png|webp|heic` y `application/pdf`; servidos solo por vista autenticada con `Content-Disposition`.
@@ -43,7 +43,7 @@ Decisiones tomadas donde el encargo no especifica. Formato: decisión · motivo.
 
 ## Paso 1 — esqueleto
 
-25. **Django 5.2 (LTS)** y `uv` para dependencias (`pyproject.toml` + `uv.lock`). · Versión con soporte extendido; `uv` hace instalaciones reproducibles y rápidas en Docker.
+25. **Django 5.2 (LTS)** y `uv` para dependencias (`pyproject.toml` + `uv.lock`). · Versión con soporte extendido; `uv` hace instalaciones reproducibles y rápidas.
 26. **`IncomeSource.net_amount` es el monto de cada cobro**, no el mensual (quincenal de RD$25,000 → RD$50,000 al mes). · La línea de tiempo de caja necesita el monto real de cada fecha. La interfaz ofrece escribir el total mensual y lo divide.
 27. **Ingreso variable sin fecha** se considera recibido al inicio del período y se marca como estimado; con fechas, se usa cada fecha. Para elegir el ingreso principal (día ancla) se ignoran los ingresos semanales; si solo hay semanales, el período es el mes calendario.
 28. **`LANGUAGE_CODE = "es"`** (Django no trae traducción `es-DO`); el formato de montos (`RD$50,000.00`) lo da `core.money.fmt`, no la localización de Django, para que sea idéntico en todo el sistema. El HTML declara `lang="es-DO"`.
@@ -135,7 +135,7 @@ Decisiones tomadas donde el encargo no especifica. Formato: decisión · motivo.
 
 ## Paso 10 — interfaz
 
-90. **Front sin CDN**: htmx 2.0.4, Alpine.js 3.14.8 (build CSP, sin `eval`) y ApexCharts 3.54.1 en `static/vendor/` con versión en el nombre del archivo; licencias en `static/vendor/LICENSES.md`. Tailwind 3.4.17 con el CLI standalone (`make css`; en Docker se compila en una etapa propia). El CSS compilado se versiona para que el proyecto funcione sin el CLI.
+90. **Front sin CDN**: htmx 2.0.4, Alpine.js 3.14.8 (build CSP, sin `eval`) y ApexCharts 3.54.1 en `static/vendor/` con versión en el nombre del archivo; licencias en `static/vendor/LICENSES.md`. Tailwind 3.4.17 con el CLI standalone (`make css`). El CSS compilado se versiona para que el proyecto funcione sin el CLI.
 91. **Íconos SVG**: 41 íconos de Lucide 0.460 (ISC) en un sprite inline (`templates/icons/sprite.svg`, generado por `scripts/build_icons.py`) y la etiqueta `{% icon "nombre" "clases" "etiqueta" %}`: decorativos con `aria-hidden`, o con `role="img"` y `aria-label` cuando el ícono es el único texto.
 92. **CSP estricta respetada**: ningún `<script>` ni manejador `on…` en línea. Los gráficos leen sus datos de `json_script`; las confirmaciones usan `hx-confirm`; el token CSRF se envía a htmx desde una etiqueta `<meta>`. Verificado en Chromium: sin errores ni violaciones de CSP en consola.
 93. **Navegación mobile-first**: barra inferior (Inicio, Movimientos, botón flotante "+ Registrar", Plan, Alertas con contador de nuevas) y encabezado con el espacio activo (toque para cambiar) y Ajustes. El menú "+" ofrece Gasto, Ingreso, Escribir o dictar, Foto de comprobante y Transferencia.

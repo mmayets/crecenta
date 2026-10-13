@@ -1,4 +1,4 @@
-# Abrir Crecenta en PyCharm (con PostgreSQL local, sin Docker)
+# Abrir Crecenta en PyCharm (con PostgreSQL local)
 
 Funciona en Windows, macOS y Linux, con PyCharm Community o Professional (2024.3 o superior).
 
@@ -24,28 +24,34 @@ Funciona en Windows, macOS y Linux, con PyCharm Community o Professional (2024.3
    Add Interpreter → Add Local Interpreter → Existing** (o **uv**) y elija
    `.venv/Scripts/python.exe` (Windows) o `.venv/bin/python` (macOS/Linux).
 
-## 3. Configurar `.env`
+## 3. Configurar la conexión (`config/db.py`)
 
-Copie el archivo de ejemplo para entorno local:
+Copie el archivo de ejemplo:
 
 ```bash
 # Windows (PowerShell)
-Copy-Item .env.local.example .env
+Copy-Item config/db.example.py config/db.py
 # macOS / Linux
-cp .env.local.example .env
+cp config/db.example.py config/db.py
 ```
 
-Abra `.env` y revise dos líneas:
+Abra `config/db.py` (no se sube al repositorio) y revise dos cosas:
 
-```ini
-# La base de la app (el comando del paso 4 la crea con este usuario y clave):
-DATABASE_URL=postgres://crecenta:crecenta@localhost:5432/crecenta
-# La cuenta administradora de su PostgreSQL: cambie "postgres" (la segunda) por SU clave.
-POSTGRES_ADMIN_URL=postgres://postgres:postgres@localhost:5432/postgres
+- `DATABASE`: la base de la app (el comando del paso 4 la crea con este usuario y clave).
+- `POSTGRES_ADMIN_URL`: la cuenta administradora de su PostgreSQL; cambie "postgres" (la
+  segunda) por SU clave. Si la clave tiene símbolos como `@`, `:` o `/`, escríbalos codificados
+  (`@` → `%40`, `:` → `%3A`, `/` → `%2F`).
+
+El resto de la configuración (clave secreta, modo depuración, Redis, IA, correo…) vive en la
+tabla `parameters` de la base de datos. Después del paso 4, cárguela con los valores de ejemplo:
+
+```bash
+uv run python manage.py importar_parametros .env.local.example
 ```
 
-Si la clave tiene símbolos como `@`, `:` o `/`, escríbalos codificados (`@` → `%40`, `:` → `%3A`,
-`/` → `%2F`).
+Se editan desde el panel de administración (**Parámetros**) o con SQL; se leen al arrancar, así
+que un cambio requiere reiniciar el servidor. Una variable de entorno con el mismo nombre gana
+sobre la tabla.
 
 ## 4. Crear la base de datos
 
@@ -80,7 +86,7 @@ Elija **2 · Servidor Django** → ▶ y abra http://127.0.0.1:8000
 | Demo · recrear datos | `manage.py seed_demo --reset` (borra solo la cuenta de demostración) |
 | Migraciones · aplicar | `manage.py migrate` |
 | Tests (pytest) | toda la suite (crea y borra su propia base `test_crecenta`) |
-| Celery worker (opcional, con Redis) | solo si puso `REDIS_URL` en `.env`; usa `--pool=solo` para Windows |
+| Celery worker (opcional, con Redis) | solo si puso `REDIS_URL` en la tabla `parameters`; usa `--pool=solo` para Windows |
 
 ## PyCharm Professional: soporte de Django (opcional)
 
@@ -96,10 +102,10 @@ puerto `5432`, usuario `crecenta`, clave `crecenta`, base `crecenta`.
 | Mensaje | Qué hacer |
 |---|---|
 | `No pude conectarme con la cuenta administradora` | PostgreSQL apagado (Windows: *Servicios* → `postgresql-x64-16` → Iniciar) o clave equivocada en `POSTGRES_ADMIN_URL`. |
-| `password authentication failed for user "crecenta"` | El usuario ya existía con otra clave: cámbiela en pgAdmin o ponga esa clave en `DATABASE_URL`. |
-| `could not connect to server … port 5432` | PostgreSQL usa otro puerto (p. ej. 5433): cámbielo en las dos URL. |
+| `password authentication failed for user "crecenta"` | El usuario ya existía con otra clave: cámbiela en pgAdmin o ponga esa clave en `config/db.py`. |
+| `could not connect to server … port 5432` | PostgreSQL usa otro puerto (p. ej. 5433): cámbielo en `config/db.py` (en `DATABASE` y en la URL). |
 | `ModuleNotFoundError: django` | PyCharm no está usando `.venv`: revise el intérprete (paso 2). |
-| Los tests fallan con `permission denied to create database` | El usuario de `DATABASE_URL` no tiene `CREATEDB`: `ALTER ROLE crecenta CREATEDB;` |
+| Los tests fallan con `permission denied to create database` | El usuario de `config/db.py` no tiene `CREATEDB`: `ALTER ROLE crecenta CREATEDB;` |
 | Quiero crear la base a mano (pgAdmin / psql) | `CREATE ROLE crecenta LOGIN CREATEDB PASSWORD 'crecenta';` y `CREATE DATABASE crecenta OWNER crecenta ENCODING 'UTF8' TEMPLATE template0;`, luego **Migraciones · aplicar**. |
 
 En Windows no hay `make`: los comandos de calidad equivalentes son
