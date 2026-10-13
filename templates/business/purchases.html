@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load icons money %}
+{% block title %}Compras · Crecenta{% endblock %}
+{% block content %}
+{% with cur=workspace.currency %}
+  <div class="flex items-end justify-between gap-3"><h1>Compras de mercancía</h1><a class="btn-primary" href="{% url 'business:purchase_new' ws=workspace.pk %}">{% icon "plus" "h-5 w-5" %}Comprar</a></div>
+  <ul class="card mt-4 divide-y p-0">
+    {% for p in purchases %}
+      <li><a class="flex items-center gap-3 px-4 py-3 text-slate-800 no-underline" href="{% url 'business:purchase_detail' ws=workspace.pk purchase_id=p.pk %}">
+        {% icon "package" "h-5 w-5 text-marca-700" %}
+        <span class="min-w-0 flex-1"><span class="block truncate">{% for l in p.lines.all %}{{ l.qty|floatformat:"-3u" }} {{ l.product.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span><span class="muted block">{{ p.date|date:"j/n" }}{% if p.supplier %} · {{ p.supplier }}{% endif %} · {{ p.get_payment_display }}</span></span>
+        <span class="amount">{{ p.total|money:cur }}</span></a></li>
+    {% empty %}<li class="px-4 py-6 text-center text-slate-600">Aún no hay compras.</li>{% endfor %}
+  </ul>
+{% endwith %}
+{% endblock %}

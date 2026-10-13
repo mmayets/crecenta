@@ -50,6 +50,8 @@
       <div class="flex justify-between"><dt>− Pagos de los próximos 30 días</dt><dd class="amount">{{ cash.reserve.committed|money:cur }}</dd></div>
       {% if cash.reserve.reserve %}<div class="flex justify-between"><dt>− Reserva que fijaste</dt><dd class="amount">{{ cash.reserve.reserve|money:cur }}</dd></div>{% endif %}
       <div class="flex justify-between border-t pt-1 font-semibold"><dt>Puedes utilizar</dt><dd class="amount">{{ d.usable|money:cur }}</dd></div>
+      {% if ind.inventory_value %}<div class="flex justify-between pt-2"><dt>Mercancía en inventario (al costo)</dt><dd class="amount">{{ ind.inventory_value|money:cur }}</dd></div>{% endif %}
+      {% if ind.shrinkage %}<div class="flex justify-between"><dt>Mermas y ajustes del mes</dt><dd class="amount">{{ ind.shrinkage|money:cur }}</dd></div>{% endif %}
     </dl>
     <p class="muted mt-2">Las ventas a crédito cuentan como venta el día que se hacen, pero el dinero entra cuando cobras.</p>
     {% for n in ind.notes %}<p class="mt-1 flex gap-2 text-amber-800">{% icon "triangle-alert" "h-4 w-4 shrink-0" %}{{ n }}</p>{% endfor %}
@@ -105,6 +107,8 @@
   {% endif %}
 
   <nav class="mt-6 grid grid-cols-2 gap-2 text-sm" aria-label="Más">
+    <a class="btn-secondary" href="{% url 'business:reports' ws=workspace.pk %}">{% icon "trending-up" "h-5 w-5" %}Reportes</a>
+    <a class="btn-secondary" href="{% url 'business:inventory' ws=workspace.pk %}">{% icon "package" "h-5 w-5" %}Inventario</a>
     <a class="btn-secondary" href="{% url 'ledger:movements' ws=workspace.pk %}">{% icon "list" "h-5 w-5" %}Movimientos</a>
     <a class="btn-secondary" href="{% url 'business:owner' ws=workspace.pk %}">{% icon "arrow-left-right" "h-5 w-5" %}Retiros y aportes</a>
   </nav>

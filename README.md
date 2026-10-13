@@ -16,6 +16,7 @@ JSON validado y nunca aplica nada sin que la persona lo acepte.
 - [Decisiones tomadas](docs/decisiones.md)
 - [Fase 1: criterios de aceptación y evidencia](docs/fase1.md)
 - [Fase 2: pequeños negocios (diseño, reglas contables y evidencia)](docs/fase2.md)
+- [Fase 3: inventario, compras, reportes e ITBIS (diseño y evidencia)](docs/fase3.md)
 - [Seguridad y privacidad](docs/seguridad.md)
 - [Abrir en PyCharm con PostgreSQL local](docs/pycharm.md)
 

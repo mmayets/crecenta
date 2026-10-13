@@ -146,6 +146,8 @@ def test_exportar_y_eliminar_con_datos_de_negocio(client):
     assert negocio["ventas"] and negocio["lineas_de_venta"] and negocio["productos"]
     assert negocio["componentes_de_costo"] and negocio["por_cobrar"] and negocio["por_pagar"]
     assert negocio["perfil_negocio"] and negocio["objetivos"]
+    assert negocio["compras"] and negocio["lineas_de_compra"]
+    assert negocio["movimientos_de_inventario"]
     assert data["transferencias_entre_espacios"]
 
     response = client.post(

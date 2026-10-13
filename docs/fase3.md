@@ -172,3 +172,26 @@ export_csv(ws, start, end) -> bytes
 6. **ITBIS**: resumen informativo (cobrado en ventas − pagado en compras y gastos con comprobante);
    no prepara declaraciones ante la DGII.
 7. **Fuera de esta fase**: varias personas por negocio, varias monedas y recetas con insumos.
+
+---
+
+## 9. Cierre de la Fase 3: criterios y evidencia
+
+| Criterio | Cómo se verifica |
+|---|---|
+| Costo promedio ponderado exacto; replay del historial = estado guardado | `apps/business/tests/test_inventory.py::test_promedio_ponderado`, `test_replay_del_historial`, `test_anular_compra_revierte_existencias` |
+| Compra a crédito no mueve efectivo; compra no es gasto; idempotencia | `test_compra_a_credito_no_mueve_efectivo`, `test_inventario_inicial_compra_y_venta` (costo variable 0) |
+| Merma es gasto del mes y no mueve efectivo; conteo físico | `test_mermas_ajustes_y_conteo` |
+| Costo de lo vendido = promedio; anular/editar revierte; vender sin existencias avisa | `test_inventario_inicial_compra_y_venta`, `test_editar_venta`, `test_vender_sin_existencias_avisa_y_anular_revierte` |
+| Valor y días de inventario; resultado y flujo separados | `test_inventario_inicial_compra_y_venta` (900 de valor, 39 días) y la demo (`test_seed_demo.py`) |
+| Un test por regla de alerta nueva | `apps/alerts/tests/test_rules_business.py::test_alertas_de_inventario` (3 reglas), `test_rules.py::test_pago_anual_cercano`, `test_evaluate_business.py::test_alertas_de_inventario_desde_la_base` |
+| Compromisos anuales: provisión mensual y el caso RD$50,000 no cambia | `apps/personal/tests/test_annual.py` y `TestCaso50000` intacto |
+| Reportes = suma de los indicadores de cada mes; ITBIS; CSV | `apps/reports/tests/test_business_reports.py` |
+| Interfaz sin errores de CSP | `apps/business/tests/test_views_fase3.py` y revisión en Chromium (390 × 844) de 12 pantallas nuevas o cambiadas: sin errores de consola ni de CSP; el gráfico dibuja sus barras |
+| Demo con inventario real | `apps/core/tests/test_seed_demo.py` (40 unidades a RD$74.3692, merma RD$148.74, valor RD$2,974.77) y `test_seed_dates.py` |
+| Aislamiento de las rutas nuevas | `tests/test_aislamiento.py` y `tests/test_aislamiento_negocio.py` |
+
+Comandos: `make check` y `make e2e`.
+
+**Queda para una Fase 4**: varias personas por negocio (roles), varias monedas, recetas con
+insumos para productos elaborados y declaraciones fiscales.

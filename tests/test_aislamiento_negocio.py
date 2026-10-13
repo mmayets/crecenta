@@ -79,6 +79,33 @@ def test_objetos_ajenos_en_mi_negocio_responden_404(logged, business_ws, ajeno):
         url = reverse(f"business:{name}", kwargs={**mine, **kwargs})
         codes = {logged.get(url).status_code, logged.post(url).status_code}
         assert codes <= {404, 405} and 404 in codes  # 405: método no permitido, sin tocar datos
+    # Fase 3: compras, inventario y edición de ventas.
+    from apps.business.models import InventoryMovement
+    from apps.business.services.inventory import register_adjustment
+    from apps.business.services.purchases import (
+        PurchaseData,
+        PurchaseLineData,
+        register_purchase,
+    )
+
+    product.tracks_inventory = True
+    product.save()
+    compra_ajena = PurchaseData(
+        date="2026-10-10", lines=[PurchaseLineData(product, D("2"), D("5"))], payment="credito"
+    )
+    purchase, _ = register_purchase(ajeno, None, compra_ajena)
+    movement = register_adjustment(ajeno, None, product, "merma", D("1"), "2026-10-10")
+    for name, kwargs in (
+        ("sale_edit", {"sale_id": sale.pk}),
+        ("stock_product", {"product_id": product.pk}),
+        ("purchase_detail", {"purchase_id": purchase.pk}),
+        ("purchase_delete", {"purchase_id": purchase.pk}),
+        ("movement_delete", {"movement_id": movement.pk}),
+    ):
+        url = reverse(f"business:{name}", kwargs={**mine, **kwargs})
+        codes = {logged.get(url).status_code, logged.post(url).status_code}
+        assert codes <= {404, 405} and 404 in codes
+    assert InventoryMovement.objects.filter(pk=movement.pk).exists()
     pricing = reverse("business:pricing", kwargs=mine) + f"?producto={product.pk}"
     assert logged.get(pricing).status_code == 404
     assert Sale.objects.filter(pk=sale.pk).exists()
@@ -122,3 +149,13 @@ def test_ids_ajenos_en_formularios_se_rechazan(logged, user, business_ws, person
     }  # fmt: skip
     assert logged.post(reverse("business:owner", kwargs=mine), retiro).status_code == 400
     assert not WorkspaceTransfer.objects.exists()
+
+    # Compra con producto ajeno.
+    mine_tracked = Product.objects.create(workspace=business_ws, name="Refresco", price=D("1"),
+                                          unit_cost=D("0"), tracks_inventory=True)  # fmt: skip
+    assert mine_tracked.pk
+    foreign_product.tracks_inventory = True
+    foreign_product.save()
+    compra = {"client_uuid": str(uuid.uuid4()), "date": "2026-10-13", "payment": "credito",
+              "producto_1": str(foreign_product.pk), "cantidad_1": "1", "costo_1": "1"}  # fmt: skip
+    assert logged.post(reverse("business:purchase_new", kwargs=mine), compra).status_code == 400

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static icons money %}
+{% block title %}Reportes · Crecenta{% endblock %}
+{% block content %}
+{% with cur=workspace.currency %}
+  <div class="flex items-end justify-between gap-3"><h1>Reportes</h1><a class="btn-secondary" href="{% url 'business:reports_csv' ws=workspace.pk %}">{% icon "download" "h-5 w-5" %}CSV</a></div>
+  <section class="card mt-4"><div data-chart="datos-reporte" data-type="bar" data-currency="{{ cur }}"></div>{{ chart|json_script:"datos-reporte" }}</section>
+  <section class="mt-5">
+    <h2>Mes a mes</h2>
+    <div class="card mt-2 overflow-x-auto p-0">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-left"><tr><th class="px-3 py-2">Mes</th><th class="px-3 py-2 text-right">Ventas</th><th class="px-3 py-2 text-right">Costo</th><th class="px-3 py-2 text-right">Gastos</th><th class="px-3 py-2 text-right">Resultado</th><th class="px-3 py-2 text-right">Flujo</th></tr></thead>
+        <tbody class="divide-y">
+          {% for m in months reversed %}
+            <tr><td class="px-3 py-2 whitespace-nowrap">{{ m.start|date:"M Y" }}</td><td class="amount px-3 py-2 text-right">{{ m.sales|money:cur }}</td><td class="amount px-3 py-2 text-right">{{ m.cogs|money:cur }}</td><td class="amount px-3 py-2 text-right">{{ m.operating_expenses|money:cur }}</td><td class="amount px-3 py-2 text-right {% if m.operating_result < 0 %}text-red-700{% endif %}">{{ m.operating_result|money:cur }}</td><td class="amount px-3 py-2 text-right">{{ m.net_cash_flow|money:cur }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="muted mt-2">Gastos incluye mermas y ajustes del inventario. El mes actual llega hasta hoy.</p>
+  </section>
+  <section class="mt-5">
+    <div class="flex items-center justify-between gap-2"><h2>ITBIS de {{ tax_month }}</h2>
+      <form method="get" class="flex items-center gap-2"><label for="mes" class="sr-only">Mes</label><select id="mes" name="mes" class="py-1 text-sm">{% for value, label in month_options %}<option value="{{ value }}" {% if value == selected %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button class="btn-secondary btn-sm">Ver</button></form>
+    </div>
+    <dl class="card mt-2 space-y-1 text-sm">
+      <div class="flex justify-between"><dt>Cobrado en ventas</dt><dd class="amount">{{ tax.collected|money:cur }}</dd></div>
+      <div class="flex justify-between"><dt>− Pagado en compras de mercancía</dt><dd class="amount">{{ tax.paid_purchases|money:cur }}</dd></div>
+      <div class="flex justify-between"><dt>− Pagado en gastos con comprobante</dt><dd class="amount">{{ tax.paid_expenses|money:cur }}</dd></div>
+      <div class="flex justify-between border-t pt-1 font-semibold"><dt>{% if tax.balance < 0 %}Estimado a favor{% else %}Estimado por pagar{% endif %}</dt><dd class="amount" data-testid="itbis-saldo">{{ tax.balance|money:cur }}</dd></div>
+    </dl>
+    <p class="muted mt-2">{{ tax.note }}</p>
+  </section>
+{% endwith %}
+{% endblock %}
+{% block scripts %}
+  <script src="{% static 'vendor/apexcharts-3.54.1.min.js' %}" defer></script>
+  <script src="{% static 'js/charts.js' %}" defer></script>
+{% endblock %}

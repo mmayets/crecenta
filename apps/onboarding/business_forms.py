@@ -78,6 +78,7 @@ class ProductForm(WorkspaceModelForm):
         model = Product
         fields = [
             "name", "price", "unit_cost", "expected_monthly_units", "is_service", "labor_minutes",
+            "tracks_inventory", "stock_minimum",
         ]  # fmt: skip
         labels = {
             "name": "Producto o servicio",
@@ -86,10 +87,25 @@ class ProductForm(WorkspaceModelForm):
             "expected_monthly_units": "¿Cuántos esperas vender al mes?",
             "is_service": "Es un servicio",
             "labor_minutes": "Minutos que te toma (servicios)",
+            "tracks_inventory": "Lo compro hecho y quiero controlar su inventario",
+            "stock_minimum": "Avísame cuando queden (unidades)",
         }
         help_texts = {
             "unit_cost": "Materiales, empaque, entrega y comisiones de una unidad.",
+            "tracks_inventory": "Para mercancía que compras y revendes: el costo de lo vendido "
+            "será el costo promedio de tus compras.",
         }
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields["stock_minimum"].required = False
+        if self.instance._state.adding:  # el id (UUID) existe aunque no esté guardado
+            # Sin valor inicial: una fila vacía del formset no cuenta como "cambiada".
+            self.fields["stock_minimum"].initial = None
+            self.initial.pop("stock_minimum", None)
+
+    def clean_stock_minimum(self) -> Decimal:
+        return self.cleaned_data.get("stock_minimum") or Decimal("0")
 
     def clean_name(self) -> str:
         name = " ".join(self.cleaned_data["name"].split())

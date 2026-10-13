@@ -10,7 +10,8 @@ from django import forms
 from django.forms import inlineformset_factory
 from django.utils import timezone
 
-from apps.business.models import BusinessProfile, CostComponent, Product, Sale
+from apps.business.models import BusinessProfile, CostComponent, Product, Purchase, Sale
+from apps.business.services.purchases import PurchaseData, PurchaseLineData
 from apps.business.services.sales import DebtData, SaleData, SaleLineData
 from apps.ledger.choices import CategoryGroup
 from apps.ledger.models import Account, Category
@@ -230,3 +231,105 @@ ComponentFormSet = inlineformset_factory(
     extra=2,
     can_delete=True,
 )
+
+
+# ---------------------------------------------------------------------------- Fase 3
+
+PURCHASE_ROWS = 3
+
+
+class PurchaseForm(_Base):
+    date = _date_field("Fecha de la factura", initial=timezone.localdate)
+    supplier_name = forms.CharField(label="Proveedor (opcional)", max_length=120, required=False)
+    payment = forms.ChoiceField(
+        label="Forma de pago",
+        choices=Purchase.Payment.choices,
+        initial=Purchase.Payment.CONTADO,
+        widget=forms.RadioSelect,
+    )
+    account = forms.ModelChoiceField(
+        label="¿De dónde salió el dinero?", queryset=Account.objects.none(), required=False
+    )
+    due_date = _date_field("¿Cuándo le pagas? (crédito)", required=False)
+    tax = forms.DecimalField(
+        label="ITBIS de la factura (opcional)", min_value=0, required=False, **MONEY
+    )
+    note = forms.CharField(label="Nota (opcional)", max_length=140, required=False)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        products = Product.objects.for_workspace(self.workspace).filter(
+            tracks_inventory=True, is_active=True
+        )
+        self.rows = []
+        for i in range(1, PURCHASE_ROWS + 1):
+            self.fields[f"producto_{i}"] = forms.ModelChoiceField(
+                label="Producto", queryset=products, required=i == 1, empty_label="—"
+            )
+            self.fields[f"cantidad_{i}"] = forms.DecimalField(
+                label="Cantidad", min_value=Decimal("0.001"), max_digits=12, decimal_places=3,
+                required=False,
+            )  # fmt: skip
+            self.fields[f"costo_{i}"] = forms.DecimalField(
+                label="Costo por unidad (sin ITBIS)", min_value=0, max_digits=14,
+                decimal_places=4, required=False,
+            )  # fmt: skip
+            self.rows.append([self[f"{n}_{i}"] for n in ("producto", "cantidad", "costo")])
+
+    def clean(self) -> dict[str, Any]:
+        data = super().clean()
+        if data.get("payment") == Purchase.Payment.CONTADO and not data.get("account"):
+            self.add_error("account", "Indica de qué cuenta salió el dinero.")
+        for i in range(1, PURCHASE_ROWS + 1):
+            if data.get(f"producto_{i}"):
+                if not data.get(f"cantidad_{i}"):
+                    self.add_error(f"cantidad_{i}", "Indica la cantidad.")
+                if data.get(f"costo_{i}") is None:
+                    self.add_error(f"costo_{i}", "Indica el costo por unidad.")
+        return data
+
+    def to_purchase_data(self) -> PurchaseData:
+        d = self.cleaned_data
+        credit = d["payment"] == Purchase.Payment.CREDITO
+        return PurchaseData(
+            date=d["date"],
+            lines=[
+                PurchaseLineData(d[f"producto_{i}"], d[f"cantidad_{i}"], d[f"costo_{i}"])
+                for i in range(1, PURCHASE_ROWS + 1)
+                if d.get(f"producto_{i}")
+            ],
+            payment=d["payment"],
+            account=None if credit else d["account"],
+            supplier_name=d["supplier_name"],
+            tax=d.get("tax") or Decimal("0"),
+            due_date=d.get("due_date") if credit else None,
+            note=d["note"],
+            client_uuid=d["client_uuid"],
+        )
+
+
+class StockActionForm(forms.Form):
+    ACTIONS = [
+        ("contar", "Conté las unidades que tengo"),
+        ("merma", "Se perdieron o dañaron unidades"),
+        ("inicial", "Registrar lo que ya tenía (inventario inicial)"),
+    ]
+    client_uuid = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
+    action = forms.ChoiceField(label="¿Qué pasó?", choices=ACTIONS, widget=forms.RadioSelect,
+                               initial="contar")  # fmt: skip
+    qty = forms.DecimalField(
+        label="Unidades", min_value=0, max_digits=12, decimal_places=3,
+        help_text="Contar: cuántas tienes ahora. Merma: cuántas se perdieron.",
+    )  # fmt: skip
+    unit_cost = forms.DecimalField(
+        label="Costo por unidad (solo inventario inicial)", min_value=0, max_digits=14,
+        decimal_places=4, required=False,
+    )  # fmt: skip
+    date = _date_field("Fecha", initial=timezone.localdate)
+    note = forms.CharField(label="Nota (opcional)", max_length=140, required=False)
+
+    def clean(self) -> dict[str, Any]:
+        data = super().clean()
+        if data.get("action") == "inicial" and data.get("unit_cost") is None:
+            self.add_error("unit_cost", "Indica cuánto te costó cada unidad.")
+        return data

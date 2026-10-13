@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load icons money %}
+{% block title %}Compra · Crecenta{% endblock %}
+{% block content %}
+{% with cur=workspace.currency %}
+  <a class="underline" href="{% url 'business:purchases' ws=workspace.pk %}">← Compras</a>
+  <h1 class="mt-2">Compra del {{ purchase.date|date:"j \d\e F" }}</h1>
+  <p class="muted">{{ purchase.get_payment_display }}{% if purchase.supplier %} · {{ purchase.supplier }}{% endif %}{% if purchase.account %} · {{ purchase.account }}{% endif %}</p>
+  <ul class="card mt-4 divide-y p-0">{% for l in lines %}<li class="flex justify-between px-4 py-3"><span>{{ l.qty|floatformat:"-3u" }} × {{ l.product.name }}</span><span class="amount">{{ l.unit_cost|money:cur }} c/u</span></li>{% endfor %}</ul>
+  <dl class="card mt-3 space-y-1 text-sm">
+    <div class="flex justify-between"><dt>Subtotal</dt><dd class="amount">{{ purchase.subtotal|money:cur }}</dd></div>
+    {% if purchase.tax %}<div class="flex justify-between"><dt>ITBIS</dt><dd class="amount">{{ purchase.tax|money:cur }}</dd></div>{% endif %}
+    <div class="flex justify-between font-semibold"><dt>Total</dt><dd class="amount">{{ purchase.total|money:cur }}</dd></div>
+  </dl>
+  {% if payable %}<p class="card mt-3 text-sm">Por pagar: <span class="amount">{{ payable.balance|money:cur }}</span> ({{ payable.get_status_display|lower }}). {% if payable.balance %}<a href="{% url 'business:pay' ws=workspace.pk debt_id=payable.pk %}">Registrar pago</a>{% endif %}</p>{% endif %}
+  <form method="post" action="{% url 'business:purchase_delete' ws=workspace.pk purchase_id=purchase.pk %}" class="mt-6" hx-confirm="¿Anular esta compra? Se descuenta del inventario.">{% csrf_token %}<button class="btn-secondary w-full">{% icon "trash-2" "h-5 w-5" %}Anular compra</button></form>
+{% endwith %}
+{% endblock %}

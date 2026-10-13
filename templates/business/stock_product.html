@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load icons money %}
+{% block title %}{{ product.name }} · Inventario · Crecenta{% endblock %}
+{% block content %}
+{% with cur=workspace.currency %}
+  <a class="underline" href="{% url 'business:inventory' ws=workspace.pk %}">← Inventario</a>
+  <h1 class="mt-2">{{ product.name }}</h1>
+  <p class="muted">Existencia {{ product.stock|floatformat:"-3u" }} · costo promedio {{ product.average_cost|money:cur }}</p>
+  <form method="post" class="card mt-4 space-y-4">{% csrf_token %}{% include "partials/form.html" %}<button class="btn-primary w-full">Guardar</button></form>
+  <h2 class="mt-6">Historial</h2>
+  <ul class="card mt-2 divide-y p-0 text-sm">
+    {% for m in movements %}
+      <li class="flex items-center gap-3 px-4 py-2">
+        <span class="flex-1">{{ m.get_kind_display }} · {{ m.date|date:"j/n/Y" }}{% if m.note %} · {{ m.note }}{% endif %}
+          {% if m.sale_line %}<a class="block" href="{% url 'business:sale_detail' ws=workspace.pk sale_id=m.sale_line.sale_id %}">Ver venta</a>{% elif m.purchase_line %}<a class="block" href="{% url 'business:purchase_detail' ws=workspace.pk purchase_id=m.purchase_line.purchase_id %}">Ver compra</a>{% endif %}</span>
+        <span class="text-right"><span class="amount block {% if m.qty < 0 %}text-red-700{% else %}text-emerald-700{% endif %}">{% if m.qty > 0 %}+{% endif %}{{ m.qty|floatformat:"-3u" }}</span><span class="muted">{{ m.unit_cost|money:cur }} c/u</span></span>
+        {% if not m.sale_line_id and not m.purchase_line_id %}<form method="post" action="{% url 'business:movement_delete' ws=workspace.pk movement_id=m.pk %}" hx-confirm="¿Eliminar este movimiento?">{% csrf_token %}<button class="rounded-full p-1 text-slate-500 hover:bg-slate-100">{% icon "trash-2" "h-4 w-4" "Eliminar" %}</button></form>{% endif %}
+      </li>
+    {% empty %}<li class="px-4 py-3 muted">Sin movimientos. Registra el inventario inicial o una compra.</li>{% endfor %}
+  </ul>
+{% endwith %}
+{% endblock %}

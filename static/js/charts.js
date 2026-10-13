@@ -9,17 +9,30 @@
       const data = JSON.parse(source.textContent);
       if (!data.series || !data.series.length) return;
       const currency = el.dataset.currency === "USD" ? "US$" : "RD$";
-      const chart = new ApexCharts(el, {
-        chart: { type: "donut", height: 220, fontFamily: "inherit" },
-        series: data.series,
-        labels: data.labels,
-        colors: ["#0f766e", "#f59e0b", "#6366f1", "#ef4444"],
-        legend: { position: "bottom" },
-        dataLabels: { enabled: false },
-        tooltip: {
-          y: { formatter: (v) => currency + v.toLocaleString("es-DO", { minimumFractionDigits: 2 }) },
-        },
-      });
+      const money = (v) => currency + v.toLocaleString("es-DO", { minimumFractionDigits: 2 });
+      // data-type="bar": series = [{name, data: [...]}, ...] por mes (reportes del negocio).
+      const options = el.dataset.type === "bar"
+        ? {
+            chart: { type: "bar", height: 260, fontFamily: "inherit", toolbar: { show: false }, animations: { enabled: false } },
+            series: data.series,
+            xaxis: { categories: data.labels },
+            colors: ["#0f766e", "#f59e0b", "#6366f1"],
+            plotOptions: { bar: { columnWidth: "60%" } },
+            yaxis: { labels: { formatter: (v) => currency + Math.round(v).toLocaleString("es-DO") } },
+            legend: { position: "bottom" },
+            dataLabels: { enabled: false },
+            tooltip: { y: { formatter: money } },
+          }
+        : {
+            chart: { type: "donut", height: 220, fontFamily: "inherit" },
+            series: data.series,
+            labels: data.labels,
+            colors: ["#0f766e", "#f59e0b", "#6366f1", "#ef4444"],
+            legend: { position: "bottom" },
+            dataLabels: { enabled: false },
+            tooltip: { y: { formatter: money } },
+          };
+      const chart = new ApexCharts(el, options);
       chart.render();
       el.dataset.rendered = "1";
     });

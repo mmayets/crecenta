@@ -6,6 +6,8 @@
   y torta de boda (margen alto, se vende poco).
 - Gastos fijos, ventas del mes anterior y del mes en curso (contado y crédito), un cobro parcial,
   una compra a crédito y un retiro del propietario hacia la persona.
+- Fase 3: refrescos de reventa con inventario (inventario inicial, compras de contado con ITBIS y
+  a crédito, ventas al costo promedio y una merma) y un gasto con ITBIS.
 """
 
 from __future__ import annotations
@@ -23,6 +25,8 @@ from apps.business.models import (
     Sale,
 )
 from apps.business.services.costs import refresh_unit_cost
+from apps.business.services.inventory import register_adjustment
+from apps.business.services.purchases import PurchaseData, PurchaseLineData, register_purchase
 from apps.business.services.sales import (
     DebtData,
     SaleData,
@@ -82,6 +86,11 @@ def load_business_case(
         [("Ingredientes y decoración", "materia", "2600"), ("Base y caja", "empaque", "400")],
     )  # fmt: skip
 
+    refresco = Product.objects.create(
+        workspace=ws, name="Refresco de 2 litros", price=D("120"), unit_cost=D("0"),
+        expected_monthly_units=D("80"), tracks_inventory=True, stock_minimum=D("12"),
+    )  # fmt: skip
+
     cats = {c.name: c for c in Category.objects.for_workspace(ws)}
     for name, amount, freq, day, cat, reducible in (
         ("Alquiler del local", "8000", "mensual", 5, "Alquiler del local", False),
@@ -118,6 +127,17 @@ def load_business_case(
         )
         return register_sale(ws, user, data)[0]
 
+    def buy(
+        when: datetime.date, product: Product, qty: str, cost: str, account: Account | None = None,
+        tax: str = "0", supplier: str = "", due: datetime.date | None = None,
+    ) -> None:  # fmt: skip
+        data = PurchaseData(
+            date=when, lines=[PurchaseLineData(product, D(qty), D(cost))],
+            payment="contado" if account else "credito", account=account,
+            supplier_name=supplier, tax=D(tax), due_date=due,
+        )  # fmt: skip
+        register_purchase(ws, user, data)
+
     def spend(when: datetime.date, amount: str, category: str, kind: str = TxKind.GASTO) -> None:
         Transaction.objects.create(
             workspace=ws, account=banco, date=when, amount=D(amount), direction=Direction.OUT,
@@ -125,11 +145,13 @@ def load_business_case(
         )  # fmt: skip
 
     # Mes anterior: base para comparar costos y estimar unidades.
+    register_adjustment(ws, user, refresco, "inicial", D("24"), prev_start, unit_cost=D("70"))
+    buy(on(prev_start, 10), refresco, "48", "72", account=banco, tax="622.08")
     for day, lines in (
-        (3, [(biz, "8"), (cup, "30")]),
-        (12, [(biz, "10"), (cup, "40")]),
+        (3, [(biz, "8"), (cup, "30"), (refresco, "20")]),
+        (12, [(biz, "10"), (cup, "40"), (refresco, "25")]),
         (20, [(biz, "12"), (boda, "1")]),
-        (27, [(biz, "6"), (cup, "35")]),
+        (27, [(biz, "6"), (cup, "35"), (refresco, "15")]),
     ):
         sell(on(prev_start, day), lines, account=banco)  # fmt: skip
     spend(on(prev_start, 2), "9000", "Materia prima", TxKind.COMPRA_INVENTARIO)
@@ -137,7 +159,15 @@ def load_business_case(
     spend(on(prev_start, 15), "6000", "Nómina")
 
     # Mes en curso (hasta hoy).
-    sell(on(start, 2), [(biz, "6"), (cup, "25")])
+    buy(on(start, 1), refresco, "48", "75", supplier="Distribuidora del Este",
+        due=today + datetime.timedelta(days=10))  # fmt: skip
+    sell(on(start, 2), [(biz, "6"), (cup, "25"), (refresco, "18")])
+    register_adjustment(ws, user, refresco, "merma", D("2"), on(start, 5), note="Botellas rotas")
+    Transaction.objects.create(
+        workspace=ws, account=banco, date=on(start, 4), amount=D("2950"), direction=Direction.OUT,
+        kind=TxKind.GASTO, category=cats["Servicios (luz, agua, internet)"],
+        description="Luz e internet (con comprobante)", tax_amount=D("450"), created_by=user,
+    )  # fmt: skip
     sell(on(start, 4), [(biz, "4")], credit="Luisa Pérez")
     pedido = sell(on(start, 6), [(boda, "1")], credit="Hotel Bella Vista")
     sell(on(start, 8), [(cup, "40")], account=banco)

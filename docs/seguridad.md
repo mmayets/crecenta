@@ -54,6 +54,13 @@ Revisión hecha al cierre de la Fase 1 (paso 12). Cada punto indica cómo se cum
 - **Privacidad**: la exportación incluye los datos de negocio (productos y componentes, gastos, clientes, proveedores, ventas y líneas, por cobrar y por pagar, perfil, metas y transferencias entre espacios) y eliminar la cuenta borra todo, incluido un negocio con ventas y deudas (probado con la demo completa).
 - **Dependencias**: `pip-audit` sin vulnerabilidades conocidas al cierre de la fase.
 
+## Fase 3 (inventario, compras y reportes)
+
+- Las rutas nuevas (inventario, compras, edición de ventas, reportes) están cubiertas por el recorrido general y por `tests/test_aislamiento_negocio.py` (objetos de otro negocio en la URL → 404; productos ajenos en una compra → rechazados).
+- Compras, ajustes y mermas son idempotentes (`client_uuid` único por espacio); anular una compra con pagos o editar una venta con cobros se rechaza.
+- Los movimientos de compras y ventas no se borran desde el inventario (solo anulando su documento), para que efectivo, deudas y existencias no se descuadren.
+- La exportación de datos incluye compras, líneas de compra y movimientos de inventario; el CSV de reportes se sirve solo al propietario del espacio.
+
 ## Pendiente para fases siguientes
 
 - Verificación del correo es `optional` en desarrollo y `mandatory` en producción; evaluar 2FA (allauth MFA) cuando haya negocios con varias personas.

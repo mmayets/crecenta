@@ -33,8 +33,8 @@ QTY_PLACES = Decimal("0.001")
 WITH_OWN_COST = frozenset({"inicial", "compra"})
 
 
-def q4(value: Decimal) -> Decimal:
-    return value.quantize(COST_PLACES, rounding=ROUND_HALF_UP)
+def q4(value: Decimal | int) -> Decimal:
+    return Decimal(value).quantize(COST_PLACES, rounding=ROUND_HALF_UP)
 
 
 @dataclass(frozen=True)
@@ -143,7 +143,7 @@ def record_sale_outflow(workspace: Workspace, line: SaleLine, on: datetime.date)
     """Salida por una línea de venta al costo promedio del momento; devuelve ese costo."""
     product = line.product
     assert product is not None and product.tracks_inventory
-    cost = product.average_cost
+    cost = q4(product.average_cost)  # puede venir como 0 entero si el producto es nuevo
     _create(workspace, None, product, "venta", -line.qty, on, cost, sale_line=line)
     refresh_stock(product)
     return cost

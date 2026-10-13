@@ -21,9 +21,12 @@ from apps.business.models import (
     BusinessProfile,
     CostComponent,
     Customer,
+    InventoryMovement,
     OperatingExpense,
     Payable,
     Product,
+    Purchase,
+    PurchaseLine,
     Receivable,
     Sale,
     SaleLine,
@@ -65,6 +68,9 @@ SECTIONS: dict[str, Any] = {
     "ventas": Sale,
     "por_cobrar": Receivable,
     "por_pagar": Payable,
+    # Fase 3
+    "compras": Purchase,
+    "movimientos_de_inventario": InventoryMovement,
 }
 CSV_COLUMNS = [
     "date",
@@ -121,6 +127,9 @@ def build_export(user: User) -> IO[bytes]:
                     CostComponent.objects.filter(product__workspace=workspace)
                 )
                 entry["lineas_de_venta"] = _rows(SaleLine.objects.filter(sale__workspace=workspace))
+                entry["lineas_de_compra"] = _rows(
+                    PurchaseLine.objects.filter(purchase__workspace=workspace)
+                )
             data["espacios"].append(entry)
 
             text = io.StringIO()

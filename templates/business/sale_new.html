@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% load icons %}
-{% block title %}Nueva venta · Crecenta{% endblock %}
+{% block title %}{% if editing %}Editar venta{% else %}Nueva venta{% endif %} · Crecenta{% endblock %}
 {% block content %}
-  <h1>Registrar venta</h1>
+  <h1>{% if editing %}Editar venta{% else %}Registrar venta{% endif %}</h1>
+  {% if editing %}<p class="muted">Se reemplazan los productos, el cobro o la cuenta por cobrar y el inventario de esta venta.</p>{% endif %}
   <form method="post" class="card mt-4 space-y-4">
     {% csrf_token %}
     {% if form.non_field_errors %}<div class="rounded-xl bg-red-50 p-3 text-sm text-red-800" role="alert">{{ form.non_field_errors }}</div>{% endif %}
@@ -23,6 +24,6 @@
     {% include "partials/field.html" with field=form.date %}
     {% include "partials/field.html" with field=form.note %}
     <p class="muted">A crédito: cuenta como venta hoy y queda por cobrar; el dinero entra cuando registres el cobro.</p>
-    <button type="submit" class="btn-primary w-full">{% icon "circle-check" "h-5 w-5" %}Guardar venta</button>
+    <button type="submit" class="btn-primary w-full">{% icon "circle-check" "h-5 w-5" %}{% if editing %}Guardar cambios{% else %}Guardar venta{% endif %}</button>
   </form>
 {% endblock %}

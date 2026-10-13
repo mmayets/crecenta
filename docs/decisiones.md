@@ -292,3 +292,12 @@ Decisiones confirmadas en `docs/fase3.md` §8 (la persona pidió hacer la fase c
 
 182. **Reportes por mes** (`reports/services/business_reports.py`): los últimos 6 meses calendario (el actual hasta hoy), calculados con los mismos indicadores del inicio, así las cifras siempre coinciden. Exportación CSV con punto decimal y sin separador de miles.
 183. **Resumen de ITBIS informativo**: cobrado en ventas − pagado en compras de mercancía (por fecha de la factura, también a crédito) − ITBIS de gastos con comprobante (campo opcional "ITBIS incluido" en el registro rápido del negocio, validado: no negativo ni mayor que el monto). Negativo = estimado a favor. Se aclara que no reemplaza la declaración ante la DGII.
+
+## Pasos C8–C9 — interfaz y cierre de la Fase 3
+
+184. **Pantallas nuevas del negocio**: Inventario (existencias, valor, por agotarse), detalle por producto (contar, merma, inventario inicial e historial; solo se borran movimientos manuales), Compras (lista, nueva, detalle, anular), Editar venta y Reportes (gráfico de barras mes a mes, tabla, ITBIS del mes elegible, CSV de 12 meses). El menú "+" separa "Compra de mercancía" (inventario) de "Compra de materiales" (gasto de insumos).
+185. **Producto**: casilla "Lo compro hecho y quiero controlar su inventario" y existencia mínima; en una fila nueva del formulario la existencia mínima no tiene valor inicial, para que una fila vacía no cuente como modificada (el id UUID existe antes de guardar, por eso se usa `_state.adding`).
+186. **Edición de ventas desde la pantalla**: solo ventas sin cobros, con productos y de hasta 3 líneas (lo que cabe en el formulario); las demás se anulan y se registran de nuevo.
+187. **Gráfico de barras sin animación** (se veía vacío hasta terminar la animación).
+188. **Demo**: "Refresco de 2 litros" con inventario inicial, una compra de contado con ITBIS el mes anterior, una compra a crédito este mes, ventas en ambos meses, una merma y un gasto con ITBIS. El caso personal RD$50,000 no se toca (sigue cuadrando exacto).
+189. **Seguridad**: el aislamiento del negocio cubre las rutas nuevas (objetos ajenos en la URL y productos ajenos en compras); la exportación incluye compras, líneas de compra y movimientos de inventario; borrar la cuenta con la demo completa funciona.

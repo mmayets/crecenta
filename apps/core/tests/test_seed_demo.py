@@ -54,11 +54,16 @@ def test_demo_completa():
     assert snapshot.indicators.sales > 0 and snapshot.indicators.cogs > 0
     assert Sale.objects.for_workspace(business).filter(payment="credito").exists()
     assert Receivable.objects.for_workspace(business).filter(status="parcial").exists()
-    assert Payable.objects.for_workspace(business).count() == 1
+    assert Payable.objects.for_workspace(business).count() == 2  # harina y refrescos a crédito
     assert WorkspaceTransfer.objects.get().to_workspace == personal
     business_plan = PlanVersion.objects.for_workspace(business).get()
     assert business_plan.status == "propuesta" and business_plan.plan_status == "ajustado"
-    assert business_plan.computed["resultado"] == "2928.40"
+    assert business_plan.computed["resultado"] == "12528.40"
+    # Fase 3: inventario real del refresco (inicial + compras − ventas − merma).
+    refresco = Product.objects.get(workspace=business, name="Refresco de 2 litros")
+    assert refresco.stock == 40 and refresco.average_cost == Decimal("74.3692")
+    assert snapshot.indicators.shrinkage == Decimal("148.74")
+    assert snapshot.indicators.inventory_value == Decimal("2974.77")
     assert "posponer_retiro" not in [a["codigo"] for a in business_plan.computed["alternativas"]]
     assert completeness(business).percent == 100
 

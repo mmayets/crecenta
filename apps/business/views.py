@@ -36,6 +36,7 @@ from apps.business.services.sales import (
     register_payable,
     register_receivable,
     register_sale,
+    stock_warnings,
 )
 from apps.core.money import amount_or_zero
 from apps.onboarding.business_forms import ProductForm
@@ -107,6 +108,8 @@ def sale_new(request: HttpRequest, workspace: Workspace) -> HttpResponse:
         else:
             if created:
                 messages.success(request, "Venta registrada.")
+                for warning in stock_warnings(sale):
+                    messages.warning(request, warning)
             return redirect("business:sale_detail", ws=workspace.pk, sale_id=sale.pk)
     return render(
         request,
