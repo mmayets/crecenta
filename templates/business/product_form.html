@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load icons %}
+{% block title %}Producto · Crecenta{% endblock %}
+{% block content %}
+  <a class="underline" href="{% url 'business:products' ws=workspace.pk %}">← Productos</a>
+  <h1 class="mt-2">{% if product.pk %}{{ product.name }}{% else %}Nuevo producto o servicio{% endif %}</h1>
+  <form method="post" class="mt-4 space-y-4">
+    {% csrf_token %}
+    <div class="card space-y-4">{% include "partials/form.html" %}</div>
+    <section class="card space-y-3">
+      <h2 class="text-base">¿De qué se compone el costo? (opcional)</h2>
+      <p class="muted">Si agregas componentes, el costo por unidad se calcula solo: la comisión es un porcentaje del precio (0.10 = 10 %).</p>
+      {{ components.management_form }}{{ components.non_form_errors }}
+      {% for f in components %}
+        <fieldset class="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 p-3">
+          {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+          {% for field in f.visible_fields %}<div class="field {% if field.name == 'name' %}col-span-2{% endif %}">{% if field.name == "DELETE" %}<label class="flex items-center gap-2 font-normal">{{ field }} Quitar</label>{% else %}{{ field.label_tag }}{{ field }}{% endif %}{{ field.errors }}</div>{% endfor %}
+        </fieldset>
+      {% endfor %}
+    </section>
+    <button type="submit" class="btn-primary w-full">Guardar</button>
+  </form>
+{% endblock %}

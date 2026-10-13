@@ -120,3 +120,14 @@ def test_aviso_antes_de_retirar():
     assert no.message.endswith(
         "Si retiras RD$10,000.00, quedarían RD$2,000.00 de pagos sin cubrir."
     )
+
+
+def test_aviso_de_retiro_mayor_que_el_efectivo():
+    from apps.business.services.cash import check_withdrawal
+
+    r = operating_reserve(D("3000"), HOY, [CashItem(HOY, D("3500"), "Harina", "cxp")])
+    check = check_withdrawal(r, D("999999"), "DOP")
+    assert check.shortfall == D("3500") and "solo tiene RD$3,000.00" in check.message
+    assert check.message.endswith("quedarían RD$3,500.00 de pagos sin cubrir.")
+    parcial = check_withdrawal(r, D("100"), "DOP")
+    assert parcial.shortfall == D("600")

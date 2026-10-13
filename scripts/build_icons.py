@@ -50,6 +50,12 @@ ICONS = [
     "hand-coins",
     "arrow-down-left",
     "arrow-up-right",
+    "calculator",
+    "package",
+    "shopping-cart",
+    "users",
+    "tag",
+    "clock",
 ]
 OUTPUT = Path(__file__).resolve().parent.parent / "templates" / "icons" / "sprite.svg"
 

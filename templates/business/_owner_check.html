@@ -1,0 +1,6 @@
+{% load icons %}
+{% if check %}
+  <p class="flex gap-2 rounded-xl p-3 text-sm {% if check.covered %}bg-emerald-50 text-emerald-900{% else %}bg-amber-50 text-amber-900{% endif %}" role="status">
+    {% if check.covered %}{% icon "circle-check" "h-5 w-5 shrink-0" %}{% else %}{% icon "triangle-alert" "h-5 w-5 shrink-0" %}{% endif %}{{ check.message }}{% if not check.covered %} Puedes hacerlo igual: tú decides.{% endif %}
+  </p>
+{% endif %}

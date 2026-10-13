@@ -4,6 +4,7 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from apps.reports.services.business_dashboard import build_business_dashboard
 from apps.reports.services.dashboard import build_personal_dashboard
 
 from .forms import UsageForm
@@ -49,8 +50,10 @@ def selector(request: HttpRequest) -> HttpResponse:
 @workspace_required
 def dashboard(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     if workspace.is_business:
-        # El tablero de negocio (ventas, costos, ganancia y efectivo) llega en la Fase 2.
-        return render(request, "workspaces/dashboard_business.html", {"workspace": workspace})
+        business = build_business_dashboard(workspace, timezone.localdate())
+        return render(
+            request, "workspaces/dashboard_business.html", {"workspace": workspace, "d": business}
+        )
     data = build_personal_dashboard(workspace, timezone.localdate())
     chart = {
         "labels": list(data.spending_by_group),

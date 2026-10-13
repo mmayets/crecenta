@@ -13,6 +13,13 @@ QUICK_KINDS = [
     (TxKind.INGRESO, "Ingreso"),
     (TxKind.PAGO_DEUDA, "Cuota"),
 ]
+# En el negocio las ventas se registran desde Ventas (con productos y costo).
+BUSINESS_QUICK_KINDS = [
+    (TxKind.GASTO, "Gasto"),
+    (TxKind.COMPRA_INVENTARIO, "Compra de materiales"),
+    (TxKind.INGRESO, "Otro ingreso"),
+    (TxKind.PAGO_DEUDA, "Cuota de préstamo"),
+]
 
 
 def _today() -> date:
@@ -71,6 +78,8 @@ class QuickEntryForm(_WorkspaceForm):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        if self.workspace.is_business:
+            self.fields["kind"].choices = BUSINESS_QUICK_KINDS
         self.fields["category"].queryset = (
             Category.objects.for_workspace(self.workspace)
             .filter(is_archived=False)

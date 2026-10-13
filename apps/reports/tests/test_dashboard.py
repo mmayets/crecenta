@@ -131,7 +131,7 @@ def test_vista_sin_datos_y_negocio(client, user, personal_ws, business_ws):
     assert "Completar mi perfil" in html
     html = client.get(reverse("espacio:dashboard", kwargs={"ws": business_ws.pk})).content.decode()
     assert "¿Cuánto gané?" in html and "Conoce tus costos" in html
-    assert "Comprobantes" in html  # navegación de negocio
+    assert "Precios" in html and "Ventas" in html  # navegación de negocio
 
 
 def test_ajustes(client, user, personal_ws):

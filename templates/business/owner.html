@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load icons money %}
+{% block title %}Retiros y aportes · Crecenta{% endblock %}
+{% block content %}
+  <h1>Dinero entre tú y tu negocio</h1>
+  <p class="card mt-3 flex gap-2 text-sm">{% icon "shield-check" "h-5 w-5 shrink-0 text-sky-700" %}{{ message }}</p>
+  <form method="post" class="card mt-4 space-y-4" hx-post="{% url 'business:owner_check' ws=workspace.pk %}" hx-trigger="input changed delay:400ms from:#id_amount, change from:input[name=kind]" hx-target="#aviso-retiro" hx-swap="innerHTML">
+    {% csrf_token %}
+    {% include "partials/form.html" %}
+    <div id="aviso-retiro" aria-live="polite"></div>
+    <p class="muted">Un retiro es un ingreso en tus finanzas personales, no un gasto del negocio. Un aporte no es gasto personal: es dinero que pones en tu negocio.</p>
+    <button type="submit" class="btn-primary w-full">Registrar</button>
+  </form>
+{% endblock %}

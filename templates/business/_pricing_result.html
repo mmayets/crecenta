@@ -1,0 +1,20 @@
+{% load icons money %}
+{% with cur=workspace.currency %}
+{% if form.errors %}
+  <div class="rounded-xl bg-red-50 p-3 text-sm text-red-800" role="alert">{% for field, errs in form.errors.items %}{% for e in errs %}<p>{{ e }}</p>{% endfor %}{% endfor %}</div>
+{% elif result %}
+  <section class="card border-marca-200 bg-marca-50">
+    <p class="text-sm text-slate-700">Precio sugerido{% if result.published_price != result.net_price %} (con ITBIS){% endif %}</p>
+    <p class="amount text-3xl text-marca-800" data-testid="precio-sugerido">{{ result.published_price|money:cur }}</p>
+    {% if result.published_price != result.net_price %}<p class="muted">{{ result.net_price|money:cur }} + ITBIS {{ result.tax|money:cur }}</p>{% elif result.tax %}<p class="muted">Más ITBIS al cobrar: {{ result.tax|money:cur }} (total {{ result.gross_price|money:cur }})</p>{% endif %}
+    <p class="mt-2 text-sm">Te deja {{ result.economics.profit|money:cur }} por unidad: margen {{ result.economics.margin_pct|pct }}, que equivale a un recargo de {{ markup_equivalent|pct }} sobre el costo.</p>
+    <p class="text-sm">Precio mínimo para no perder: <strong>{{ result.minimum_price|money:cur }}</strong></p>
+  </section>
+  {% if current %}<p class="card mt-3 text-sm">A tu precio actual ({{ price|money:cur }}) te queda {{ current.profit|money:cur }} por unidad: margen {{ current.margin_pct|pct }}.</p>{% endif %}
+  {% if discount %}<p class="card mt-3 text-sm">Con el descuento habitual cobras {{ discount.economics.effective_price|money:cur }} y el margen queda en {{ discount.economics.margin_pct|pct }}. No descuentes más de {{ discount.max_discount_pct|pct }} o venderás a pérdida.</p>{% endif %}
+  {% if break_even %}<p class="card mt-3 text-sm">Para cubrir tus gastos fijos necesitas vender <strong>{{ break_even.units|floatformat:"0u" }} unidades</strong> al mes ({{ break_even.sales|money:cur }}).</p>{% endif %}
+  {% if sensitivity %}<p class="card mt-3 text-sm">Si el proveedor sube {{ sensitivity.increase_pct|pct }}, tu costo pasa a {{ sensitivity.new_cost|money:cur }} y el margen baja a {{ sensitivity.after.margin_pct|pct }}. Para mantenerlo tendrías que vender a {{ sensitivity.price_to_keep_margin|money:cur }} ({{ sensitivity.price_change_pct|pct }} más).</p>{% endif %}
+  {% if capacity %}<p class="card mt-3 text-sm">Con tus horas caben {{ capacity.max_units }} servicios al mes: como máximo {{ capacity.max_sales|money:cur }} en ventas ({{ capacity.price_per_hour|money:cur }} por hora).</p>{% endif %}
+  <details class="card mt-3 text-sm"><summary class="cursor-pointer font-medium">Supuestos</summary><ul class="mt-2 list-disc pl-5">{% for s in result.assumptions %}<li>{{ s }}</li>{% endfor %}</ul></details>
+{% endif %}
+{% endwith %}

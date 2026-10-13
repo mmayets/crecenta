@@ -13,4 +13,5 @@ urlpatterns = [
     path("", include("apps.alerts.ws_urls")),
     path("", include("apps.receipts.ws_urls")),
     path("", include("apps.onboarding.ws_urls")),
+    path("", include("apps.business.ws_urls")),
 ]

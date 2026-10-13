@@ -220,15 +220,18 @@ class WithdrawalCheck:
 
 
 def check_withdrawal(reserve: ReserveResult, amount: Decimal, currency: str) -> WithdrawalCheck:
-    """Aviso antes de un retiro del propietario. El retiro se permite igual: decide la persona."""
-    shortfall = max(ZERO, amount - reserve.max_safe_withdrawal)
+    """Aviso antes de un retiro del propietario. El retiro se permite igual: decide la persona.
+
+    Lo que quedaría sin cubrir nunca supera los compromisos más la reserva."""
+    needed = reserve.committed + reserve.reserve
+    shortfall = min(needed, max(ZERO, needed - (reserve.cash - amount)))
     if shortfall == 0:
         return WithdrawalCheck(amount, True, ZERO, reserve.message(currency))
-    return WithdrawalCheck(
-        amount,
-        False,
-        shortfall,
-        reserve.message(currency)
-        + f" Si retiras {fmt(amount, currency)}, quedarían {fmt(shortfall, currency)} de pagos"
-        " sin cubrir.",
+    message = reserve.message(currency)
+    if amount > reserve.cash:
+        message += f" Además, el negocio solo tiene {fmt(reserve.cash, currency)} en efectivo."
+    message += (
+        f" Si retiras {fmt(amount, currency)}, quedarían {fmt(shortfall, currency)} de pagos"
+        " sin cubrir."
     )
+    return WithdrawalCheck(amount, False, shortfall, message)

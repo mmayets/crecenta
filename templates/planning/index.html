@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% load money %}
-{% block title %}Mi plan · Crecenta{% endblock %}
+{% block title %}{% if workspace.is_business %}Plan del negocio{% else %}Mi plan{% endif %} · Crecenta{% endblock %}
 {% block content %}
-  <h1>Mi plan</h1>
+  <h1>{% if workspace.is_business %}Plan del negocio{% else %}Mi plan{% endif %}</h1>
+  {% if workspace.is_business %}<p class="mt-1 text-slate-600">Calcula cuánto venderías, ganarías y podrías retirar este mes con lo que esperas vender.</p>{% endif %}
   {% if budget %}
     <section class="mt-4 card">
       <h2 class="font-semibold">Plan vigente: {{ budget }}</h2>

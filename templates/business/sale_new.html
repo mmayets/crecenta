@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load icons %}
+{% block title %}Nueva venta · Crecenta{% endblock %}
+{% block content %}
+  <h1>Registrar venta</h1>
+  <form method="post" class="card mt-4 space-y-4">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="rounded-xl bg-red-50 p-3 text-sm text-red-800" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+    {{ form.client_uuid }}
+    {% for row in form.rows %}
+      {% if forloop.counter == 2 %}<details class="rounded-xl border border-dashed border-slate-300 p-3" {% if form.is_bound %}open{% endif %}><summary class="cursor-pointer text-sm font-medium">Agregar otros productos a esta venta</summary><div class="mt-3 space-y-3">{% endif %}
+      <fieldset class="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 p-3">
+        <legend class="px-1 text-sm font-medium">{% if forloop.first %}Qué vendiste{% else %}Otro producto{% endif %}</legend>
+        {% for field in row %}<div class="field {% if forloop.first %}col-span-2{% endif %}">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}
+      </fieldset>
+      {% if forloop.last and not forloop.first %}</div></details>{% endif %}
+    {% endfor %}
+    {% include "partials/field.html" with field=form.payment %}
+    {% include "partials/field.html" with field=form.account %}
+    {% include "partials/field.html" with field=form.due_date %}
+    {% include "partials/field.html" with field=form.customer_name %}
+    {% if form.apply_tax %}{% include "partials/field.html" with field=form.apply_tax %}{% endif %}
+    {% include "partials/field.html" with field=form.date %}
+    {% include "partials/field.html" with field=form.note %}
+    <p class="muted">A crédito: cuenta como venta hoy y queda por cobrar; el dinero entra cuando registres el cobro.</p>
+    <button type="submit" class="btn-primary w-full">{% icon "circle-check" "h-5 w-5" %}Guardar venta</button>
+  </form>
+{% endblock %}

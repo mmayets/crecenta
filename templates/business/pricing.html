@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load icons %}
+{% block title %}Calculadora de precios · Crecenta{% endblock %}
+{% block content %}
+  <h1 class="flex items-center gap-2">{% icon "calculator" "h-6 w-6 text-marca-700" %}¿A cuánto vendo?</h1>
+  <p class="muted">{% if product %}Con los datos de {{ product.name }}. {% endif %}<a href="{% url 'business:products' ws=workspace.pk %}">Ver mis productos y su margen</a></p>
+  <form method="post" class="card mt-4 grid grid-cols-2 gap-3" hx-post="{% url 'business:pricing' ws=workspace.pk %}" hx-trigger="input changed delay:400ms, change" hx-target="#resultado" hx-swap="innerHTML">
+    {% csrf_token %}
+    {% for field in form %}<div class="field {% if field.name == 'include_tax' %}col-span-2{% endif %}">{% if field.field.widget.input_type == "checkbox" %}<label class="flex items-center gap-2 font-normal">{{ field }} {{ field.label }}</label>{% else %}{{ field.label_tag }}{{ field }}{% endif %}{{ field.errors }}</div>{% endfor %}
+    <noscript><button class="btn-primary col-span-2">Calcular</button></noscript>
+  </form>
+  <div id="resultado" class="mt-4" aria-live="polite">{% include "business/_pricing_result.html" %}</div>
+{% endblock %}

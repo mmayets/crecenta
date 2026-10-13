@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load icons money %}
+{% block title %}Ventas · Crecenta{% endblock %}
+{% block content %}
+{% with cur=workspace.currency %}
+  <div class="flex items-end justify-between gap-3">
+    <div><h1>Ventas</h1><p class="muted">{{ start|date:"F Y" }} · {{ totals.subtotal|default:0|money:cur }} sin ITBIS</p></div>
+    <a class="btn-primary" href="{% url 'business:sale_new' ws=workspace.pk %}">{% icon "plus" "h-5 w-5" %}Vender</a>
+  </div>
+  <ul class="card mt-4 divide-y p-0">
+    {% for s in sales %}
+      <li><a class="flex items-center gap-3 px-4 py-3 text-slate-800 no-underline" href="{% url 'business:sale_detail' ws=workspace.pk sale_id=s.pk %}">
+        {% if s.payment == "credito" %}{% icon "clock" "h-5 w-5 text-amber-600" %}{% else %}{% icon "shopping-cart" "h-5 w-5 text-marca-700" %}{% endif %}
+        <span class="min-w-0 flex-1"><span class="block truncate">{% for l in s.lines.all %}{{ l.qty|floatformat:"-2u" }} {{ l.description }}{% if not forloop.last %}, {% endif %}{% endfor %}</span><span class="muted block">{{ s.date|date:"j/n" }}{% if s.customer %} · {{ s.customer }}{% endif %} · {{ s.get_payment_display }}</span></span>
+        <span class="amount">{{ s.total|money:cur }}</span>
+      </a></li>
+    {% empty %}
+      <li class="px-4 py-6 text-center text-slate-600">Aún no hay ventas este mes.</li>
+    {% endfor %}
+  </ul>
+  <div class="mt-4 grid grid-cols-2 gap-2 text-sm">
+    <a class="btn-secondary" href="{% url 'business:receivables' ws=workspace.pk %}">{% icon "users" "h-5 w-5" %}Por cobrar</a>
+    <a class="btn-secondary" href="{% url 'business:products' ws=workspace.pk %}">{% icon "package" "h-5 w-5" %}Productos</a>
+  </div>
+{% endwith %}
+{% endblock %}

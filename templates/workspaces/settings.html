@@ -6,8 +6,16 @@
   <ul class="card mt-4 divide-y p-0">
     {% if workspace.is_personal %}
       <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'onboarding:index' ws=workspace.pk %}">{% icon "user" "h-5 w-5" %}<span class="flex-1">Mi perfil financiero</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
-      <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'alerts:rules' ws=workspace.pk %}">{% icon "bell" "h-5 w-5" %}<span class="flex-1">Alertas</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
+    {% else %}
+      <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'onboarding:index' ws=workspace.pk %}">{% icon "briefcase" "h-5 w-5" %}<span class="flex-1">Datos del negocio y metas</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
+      <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'planning:index' ws=workspace.pk %}">{% icon "target" "h-5 w-5" %}<span class="flex-1">Plan del negocio</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
+      <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'business:products' ws=workspace.pk %}">{% icon "package" "h-5 w-5" %}<span class="flex-1">Productos y costos</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
+      <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'business:receivables' ws=workspace.pk %}">{% icon "users" "h-5 w-5" %}<span class="flex-1">Por cobrar</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
+      <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'business:payables' ws=workspace.pk %}">{% icon "credit-card" "h-5 w-5" %}<span class="flex-1">Por pagar</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
+      <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'business:owner' ws=workspace.pk %}">{% icon "arrow-left-right" "h-5 w-5" %}<span class="flex-1">Retiros y aportes</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
+      <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'ledger:movements' ws=workspace.pk %}">{% icon "list" "h-5 w-5" %}<span class="flex-1">Movimientos</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
     {% endif %}
+    <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'alerts:rules' ws=workspace.pk %}">{% icon "bell" "h-5 w-5" %}<span class="flex-1">Alertas</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
     <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'ledger:accounts' ws=workspace.pk %}">{% icon "landmark" "h-5 w-5" %}<span class="flex-1">Cuentas</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
     <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'ledger:categories' ws=workspace.pk %}">{% icon "list" "h-5 w-5" %}<span class="flex-1">Categorías</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
     <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'receipts:index' ws=workspace.pk %}">{% icon "receipt" "h-5 w-5" %}<span class="flex-1">Comprobantes</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>

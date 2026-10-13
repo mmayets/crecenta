@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load icons money %}
+{% block title %}Venta · Crecenta{% endblock %}
+{% block content %}
+{% with cur=workspace.currency %}
+  <a class="underline" href="{% url 'business:sales' ws=workspace.pk %}">← Ventas</a>
+  <h1 class="mt-2">Venta del {{ sale.date|date:"j \d\e F" }}</h1>
+  <p class="muted">{{ sale.get_payment_display }}{% if sale.customer %} · {{ sale.customer }}{% endif %}{% if sale.account %} · {{ sale.account }}{% endif %}</p>
+  <ul class="card mt-4 divide-y p-0">
+    {% for l in lines %}
+      <li class="px-4 py-3"><div class="flex justify-between"><span>{{ l.qty|floatformat:"-2u" }} × {{ l.description }}</span><span class="amount">{{ l.net_amount|money:cur }}</span></div>
+      <p class="muted">Precio {{ l.unit_price|money:cur }}{% if l.discount_pct %} · descuento {% widthratio l.discount_pct 1 100 %} %{% endif %} · costo {{ l.unit_cost_snapshot|money:cur }} c/u</p></li>
+    {% endfor %}
+  </ul>
+  <dl class="card mt-3 space-y-1 text-sm">
+    <div class="flex justify-between"><dt>Venta sin ITBIS</dt><dd class="amount">{{ sale.subtotal|money:cur }}</dd></div>
+    {% if sale.tax %}<div class="flex justify-between"><dt>ITBIS</dt><dd class="amount">{{ sale.tax|money:cur }}</dd></div>{% endif %}
+    <div class="flex justify-between font-semibold"><dt>Total cobrado al cliente</dt><dd class="amount">{{ sale.total|money:cur }}</dd></div>
+    <div class="flex justify-between pt-2"><dt>Costo de lo vendido</dt><dd class="amount">{{ cost|money:cur }}</dd></div>
+    <div class="flex justify-between font-semibold"><dt>Ganancia bruta</dt><dd class="amount">{{ profit|money:cur }}</dd></div>
+  </dl>
+  {% if receivable %}
+    <p class="card mt-3 text-sm">Por cobrar: <span class="amount">{{ receivable.balance|money:cur }}</span> ({{ receivable.get_status_display|lower }}{% if receivable.due_date %}, vence el {{ receivable.due_date|date:"j/n" }}{% endif %}). {% if receivable.balance %}<a href="{% url 'business:collect' ws=workspace.pk debt_id=receivable.pk %}">Registrar cobro</a>{% endif %}</p>
+  {% endif %}
+  <form method="post" action="{% url 'business:sale_delete' ws=workspace.pk sale_id=sale.pk %}" class="mt-6" hx-confirm="¿Anular esta venta? Se borra también su movimiento.">
+    {% csrf_token %}<button class="btn-secondary w-full">{% icon "trash-2" "h-5 w-5" %}Anular venta</button>
+  </form>
+{% endwith %}
+{% endblock %}
