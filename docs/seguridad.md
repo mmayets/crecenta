@@ -44,6 +44,16 @@ Revisión hecha al cierre de la Fase 1 (paso 12). Cada punto indica cómo se cum
 **Abuso**
 - Sincronización offline: lotes de máximo 100 elementos y 120 envíos por minuto por persona (429 al superarlo; el service worker reintenta luego).
 
+## Fase 2 (negocio)
+
+- **Aislamiento**: además del recorrido general de rutas, `tests/test_aislamiento_negocio.py` prueba las rutas de negocio contra el negocio de otra persona, objetos ajenos referidos por id en la URL del propio negocio (404) y ids ajenos en formularios (producto, cuenta, categoría, cuenta personal: rechazados). Los servicios validan por su lado que cuenta, cliente, producto y deuda pertenezcan al espacio.
+- **Transferencias entre espacios** solo entre espacios de los que la persona es dueña y propietaria (membresía), de la misma moneda; la cuenta personal se toma siempre del espacio personal de quien hace la solicitud.
+- **Idempotencia y concurrencia**: ventas, deudas, cobros, pagos y transferencias con `client_uuid` y restricción única; cobros y pagos bloquean la deuda (`select_for_update`) y nunca superan el saldo (también una restricción en la base de datos).
+- **Parámetros libres de htmx** (avisos de gasto y de retiro): montos no válidos, infinitos, negativos o que no caben en 14 dígitos se ignoran (antes un valor como `1e999999` producía un error 500 en el aviso de gasto de la Fase 1; corregido).
+- **IA del negocio**: misma tubería que la personal (consentimiento, límites, esquema, verificador de cifras, narrativa por reglas); la extracción conversacional no se guarda hasta confirmar y el prompt prohíbe transcribir cuentas, tarjetas, RNC o cédulas.
+- **Privacidad**: la exportación incluye los datos de negocio (productos y componentes, gastos, clientes, proveedores, ventas y líneas, por cobrar y por pagar, perfil, metas y transferencias entre espacios) y eliminar la cuenta borra todo, incluido un negocio con ventas y deudas (probado con la demo completa).
+- **Dependencias**: `pip-audit` sin vulnerabilidades conocidas al cierre de la fase.
+
 ## Pendiente para fases siguientes
 
 - Verificación del correo es `optional` en desarrollo y `mandatory` en producción; evaluar 2FA (allauth MFA) cuando haya negocios con varias personas.

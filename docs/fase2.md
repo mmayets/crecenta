@@ -263,3 +263,31 @@ Cada paso cierra con `make check` (ruff, mypy, pytest con cobertura ≥ 90 % en 
    **aporte** = salida neutra en lo personal.
 4. **ITBIS**: ventas sin ITBIS e "ITBIS por pagar" informativo.
 5. **Período de análisis**: mensual por calendario (del 1 al último día) para el negocio.
+
+---
+
+## 8. Cierre de la Fase 2: criterios y evidencia
+
+| Criterio | Cómo se verifica |
+|---|---|
+| Ventas, ganancia y efectivo separados | `apps/business/tests/test_indicators.py::test_ventas_costo_ganancia_y_flujo_separados` (vende, pierde en el resultado y el flujo es otro) y `test_loaders.py::test_indicadores_desde_la_base` con ventas a crédito, comisiones, compras, transferencias internas, cuentas de ahorro y movimientos pendientes. En pantalla: las cuatro preguntas del inicio y el desplegable "Ventas, ganancia y efectivo no son lo mismo". |
+| Cobros de CxC, pagos de CxP, aportes y retiros no son venta ni gasto | `apps/ledger/tests/test_classification.py::test_clasificacion` (tipos nuevos) y `apps/workspaces/tests/test_transfers.py::test_aporte_es_neutro_en_ambos_lados`. |
+| 600 al 30 % = RD$857.14; margen vs. recargo; mínimo; descuento; equilibrio; sensibilidad; matriz; capacidad | `apps/pricing/tests/test_engine.py` (un test por cálculo) y la calculadora en `/precios/` (`apps/business/tests/test_views.py::test_calculadora_de_precios`). |
+| Venta a crédito no mueve efectivo hasta cobrarse; cobros parciales | `apps/business/tests/test_sales.py::test_venta_a_credito_no_mueve_efectivo_hasta_cobrarse`. |
+| Doble envío no duplica (también simultáneo) | `test_sales.py::test_doble_envio_no_duplica`, `test_carrera_de_venta_devuelve_la_existente`; transferencias: `test_transfers.py::test_reenvio_no_duplica`. |
+| Caso "RD$40,000 vs RD$32,000 → puedes retirar hasta RD$8,000" | `apps/business/tests/test_cash.py::test_reserva_operativa_caso_del_encargo` y la pantalla de retiros (`test_views.py::test_retiro_con_aviso_de_reserva`). |
+| Riesgo de caja por fechas | `test_cash.py::test_proyeccion_detecta_el_dia_sin_dinero` y la alerta `riesgo_caja_fechas`. |
+| Retiro del propietario = ingreso personal; aporte neutro; solo propietario | `test_transfers.py::test_retiro_crea_movimientos_espejo`, `test_solo_entre_espacios_propios`. |
+| Plan de negocio: ninguna cifra de la narrativa difiere del motor; alternativas recalculadas | `apps/planning/tests/test_business_plan.py::test_plan_de_negocio_con_ia_verificada`, `test_cifras_inventadas_de_la_ia_se_rechazan`; `apps/business/tests/test_plan.py` (estados, motivos y cada alternativa recalculada por el motor; narrativa por reglas verificada). |
+| Un test por regla de alerta de negocio | `apps/alerts/tests/test_rules_business.py` (4 reglas) y `test_evaluate_business.py` (las cuatro desde la base, sin duplicar, autorresolución, preferencias). |
+| Datos mínimos → primer plan de negocio (paso a paso y conversacional) | `apps/onboarding/tests/test_business.py::test_paso_a_paso_hasta_el_primer_plan` y `test_conversacional_extrae_confirma_y_genera_plan`. |
+| Interfaz del negocio sin errores de CSP | Tests de vistas (`apps/business/tests/test_views.py`) y revisión en Chromium a 390 × 844 de 11 pantallas, incluidas la calculadora y el aviso de retiro con htmx: sin errores de consola ni violaciones de CSP (decisión 165). |
+| `seed_demo` con indicadores reales | `apps/core/tests/test_seed_demo.py::test_demo_completa` (Dulces Ana con tres productos, ventas de contado y crédito de dos meses, cobro parcial, compra a crédito, retiro hacia la persona y plan del negocio "ajustado") y `test_seed_dates.py` (funciona el día 1, el 28 de febrero y el 31). |
+| Aislamiento: todas las rutas nuevas | `tests/test_aislamiento.py` (todas las rutas contra un espacio ajeno, inexistente y sin sesión) y `tests/test_aislamiento_negocio.py` (rutas contra el *negocio* de otra persona, objetos ajenos en la URL y en los formularios). |
+
+Comandos: `make check` (ruff, mypy, pytest con cobertura, `check --deploy`) y `make e2e`.
+
+**Pendiente o fuera de alcance de la Fase 2**: inventario (Fase 3; el costo de lo vendido es el
+costo guardado al vender), varias personas por negocio, declaraciones de ITBIS, monedas distintas
+entre la persona y el negocio, editar una venta (se anula y se vuelve a registrar) y la
+instalación real en teléfonos (solo verificada en Chromium).

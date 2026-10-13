@@ -2,8 +2,10 @@
 
 - Persona: el caso RD$50,000 (cobro el día 1), movimientos del mes en curso, ahorro apartado y un
   plan aceptado.
-- Negocio "Dulces Ana": perfil de repostería y un producto de costo RD$600 con precio por margen
-  del 30 % (RD$857.14).
+- Negocio "Dulces Ana": repostería con tres productos (el bizcocho de costo RD$600 a RD$857.14,
+  margen del 30 %), gastos fijos, metas, ventas de contado y a crédito de este mes y del anterior,
+  un cobro parcial, una compra a crédito, un retiro hacia la persona y una propuesta de plan del
+  negocio (ver `apps/business/services/demo.py`).
 
 Uso: python manage.py seed_demo [--email …] [--password …] [--reset]
 """
@@ -17,7 +19,8 @@ from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.alerts.services.evaluate import evaluate_workspace
-from apps.business.models import BusinessProfile, Product
+from apps.business.models import Product
+from apps.business.services.demo import BIZCOCHO, load_business_case
 from apps.ledger.choices import Direction, TxKind
 from apps.ledger.models import Account
 from apps.ledger.services.recording import (
@@ -26,11 +29,14 @@ from apps.ledger.services.recording import (
     record_transaction,
     record_transfer,
 )
-from apps.onboarding.services.steps import STEP_KEYS, get_state
+from apps.onboarding.services.steps import BUSINESS_STEP_KEYS, STEP_KEYS, get_state
 from apps.personal.services.demo import category, load_personal_case
-from apps.planning.services.generate import narrate_plan, request_personal_plan
+from apps.planning.services.generate import (
+    narrate_plan,
+    request_business_plan,
+    request_personal_plan,
+)
 from apps.planning.services.lifecycle import accept_plan
-from apps.pricing.services.margins import price_from_margin
 from apps.workspaces.services.workspaces import create_workspaces_for_usage
 
 DEFAULT_EMAIL = "demo@crecenta.app"
@@ -66,25 +72,36 @@ class Command(BaseCommand):
             personal, business = create_workspaces_for_usage(
                 user, "ambos", business_name="Dulces Ana"
             )
-            self._personal(user, personal, timezone.localdate())
-            self._business(business)
+            today = timezone.localdate()
+            self._personal(user, personal, today)
+            load_business_case(business, user, personal, today)
+            self._finish_onboarding(business)
         # Fuera de la transacción: la explicación del plan se genera aquí mismo (sin worker).
         plan = request_personal_plan(personal, user, timezone.localdate())
         plan = narrate_plan(plan.pk)
         accept_plan(plan, user)
         evaluate_workspace(personal)
+        business_plan = narrate_plan(request_business_plan(business, user, timezone.localdate()).pk)
+        evaluate_workspace(business)
 
         self.stdout.write(self.style.SUCCESS("Demo lista."))
         self.stdout.write(f"  Correo: {email}\n  Contraseña: {password}")
-        self.stdout.write(f"  Plan: {plan.plan_status} · Producto: {Product.objects.get().name}")
+        self.stdout.write(
+            f"  Plan personal: {plan.plan_status} · Plan del negocio: "
+            f"{business_plan.plan_status} · Producto: "
+            f"{Product.objects.get(workspace=business, name=BIZCOCHO).name}"
+        )
 
-    def _personal(self, user: User, ws, today: date) -> None:
-        load_personal_case(ws)
+    def _finish_onboarding(self, ws) -> None:
         state = get_state(ws)
-        for step in STEP_KEYS:
+        for step in BUSINESS_STEP_KEYS if ws.is_business else STEP_KEYS:
             state.mark(step)
         state.finished_at = timezone.now()
         state.save()
+
+    def _personal(self, user: User, ws, today: date) -> None:
+        load_personal_case(ws)
+        self._finish_onboarding(ws)
 
         banco = create_account(ws, "Banco Popular", "banco")
         ahorro = create_account(ws, "Ahorros", "banco", is_savings=True)
@@ -133,13 +150,3 @@ class Command(BaseCommand):
                 on=start.replace(day=2),
                 category=category(ws, "Ahorro"),
             )
-
-    def _business(self, ws) -> None:
-        BusinessProfile.objects.create(workspace=ws, activity="Repostería")
-        result = price_from_margin(Decimal("600"), Decimal("0.30"))
-        Product.objects.create(
-            workspace=ws,
-            name="Bizcocho de vainilla (1 lb)",
-            unit_cost=result.cost,
-            price=result.price,
-        )

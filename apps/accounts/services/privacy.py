@@ -16,6 +16,19 @@ from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.alerts.models import Alert, AlertRule
+from apps.business.models import (
+    BusinessGoal,
+    BusinessProfile,
+    CostComponent,
+    Customer,
+    OperatingExpense,
+    Payable,
+    Product,
+    Receivable,
+    Sale,
+    SaleLine,
+    Supplier,
+)
 from apps.ledger.models import Account, Category, Transaction
 from apps.personal.models import (
     Commitment,
@@ -28,7 +41,7 @@ from apps.personal.models import (
 )
 from apps.planning.models import PlanVersion
 from apps.receipts.models import Receipt
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import Workspace, WorkspaceTransfer
 
 SECTIONS: dict[str, Any] = {
     "cuentas": Account,
@@ -44,6 +57,14 @@ SECTIONS: dict[str, Any] = {
     "alertas": Alert,
     "reglas_de_alertas": AlertRule,
     "comprobantes": Receipt,
+    # Negocio (Fase 2)
+    "productos": Product,
+    "gastos_operativos": OperatingExpense,
+    "clientes": Customer,
+    "proveedores": Supplier,
+    "ventas": Sale,
+    "por_cobrar": Receivable,
+    "por_pagar": Payable,
 }
 CSV_COLUMNS = [
     "date",
@@ -79,6 +100,9 @@ def build_export(user: User) -> IO[bytes]:
                 "acepta_ia": user.ai_consent,
             },
             "espacios": [],
+            "transferencias_entre_espacios": _rows(
+                WorkspaceTransfer.objects.filter(from_workspace__owner=user)
+            ),
         }
         for workspace in owned_workspaces(user):
             entry: dict[str, Any] = {
@@ -90,6 +114,13 @@ def build_export(user: User) -> IO[bytes]:
             }
             for name, model in SECTIONS.items():
                 entry[name] = _rows(model.objects.for_workspace(workspace))
+            if workspace.is_business:
+                entry["perfil_negocio"] = _rows(BusinessProfile.objects.filter(workspace=workspace))
+                entry["objetivos"] = _rows(BusinessGoal.objects.filter(workspace=workspace))
+                entry["componentes_de_costo"] = _rows(
+                    CostComponent.objects.filter(product__workspace=workspace)
+                )
+                entry["lineas_de_venta"] = _rows(SaleLine.objects.filter(sale__workspace=workspace))
             data["espacios"].append(entry)
 
             text = io.StringIO()

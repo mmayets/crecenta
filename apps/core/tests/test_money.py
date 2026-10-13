@@ -115,3 +115,15 @@ class TestFormato:
     def test_porcentaje(self):
         assert pct(Decimal("257.14"), Decimal("857.14")) == Decimal("30.00")
         assert pct(Decimal("1"), Decimal("0")) == Decimal("0.00")
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [("150.50", "150.50"), ("1,000", "1000"), (None, "0"), ("", "0"), ("abc", "0"),
+     ("1e999999", "0"), ("NaN", "0"), ("Infinity", "0"), ("-5", "0"),
+     ("1000000000000", "0")],
+)  # fmt: skip
+def test_monto_de_parametro_libre(raw, expected):
+    from apps.core.money import amount_or_zero
+
+    assert amount_or_zero(raw) == Decimal(expected)

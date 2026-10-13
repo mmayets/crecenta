@@ -126,3 +126,32 @@ def test_cuenta_sin_contrasena_solo_confirma_correo(client, user):
     assert "Tu contraseña" not in client.get(reverse("accounts:delete")).content.decode()
     client.post(reverse("accounts:delete"), {"confirm_email": "ana@example.com"})
     assert not User.objects.filter(pk=user.pk).exists()
+
+
+def test_exportar_y_eliminar_con_datos_de_negocio(client):
+    """La demo completa (persona + negocio con ventas, deudas y transferencias) se exporta entera y
+    se elimina sin que las protecciones RESTRICT lo impidan."""
+    from django.core.management import call_command
+
+    from apps.business.models import Product, Sale
+    from apps.workspaces.models import WorkspaceTransfer
+
+    call_command("seed_demo", stdout=io.StringIO())
+    demo = User.objects.get(email="demo@crecenta.app")
+    client.force_login(demo)
+    response = client.get(reverse("accounts:export"))
+    archive = zipfile.ZipFile(io.BytesIO(b"".join(response.streaming_content)))
+    data = json.loads(archive.read("datos.json"))
+    negocio = next(e for e in data["espacios"] if e["tipo"] == "business")
+    assert negocio["ventas"] and negocio["lineas_de_venta"] and negocio["productos"]
+    assert negocio["componentes_de_costo"] and negocio["por_cobrar"] and negocio["por_pagar"]
+    assert negocio["perfil_negocio"] and negocio["objetivos"]
+    assert data["transferencias_entre_espacios"]
+
+    response = client.post(
+        reverse("accounts:delete"),
+        {"confirm_email": "demo@crecenta.app", "password": "Demo-Crecenta-2026"},
+    )
+    assert response.status_code == 302 and not User.objects.filter(pk=demo.pk).exists()
+    assert not Sale.objects.exists() and not Product.objects.exists()
+    assert not WorkspaceTransfer.objects.exists()

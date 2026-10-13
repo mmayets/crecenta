@@ -258,3 +258,10 @@ Reglas contables confirmadas en `docs/fase2.md` §1 y §7.
 163. **Porcentajes en pantalla con punto decimal** (filtro `pct`), igual que los montos: con la localización en español Django mostraba "20,00 %" junto a "RD$1,000.00".
 164. **Aviso de retiro**: lo que quedaría sin cubrir nunca supera los compromisos más la reserva, y si el monto supera el efectivo se dice (encontrado en la revisión en Chromium: con un monto enorme el aviso decía que quedaban sin cubrir RD$999,999.00).
 165. **Revisión en Chromium (390 × 844)** de inicio, ventas, nueva venta, productos, precios (con htmx), por cobrar, por pagar, retiros (con aviso htmx), alertas, plan y bienvenida del negocio: sin errores de consola ni violaciones de CSP. Seis íconos nuevos de Lucide (calculadora, paquete, carrito, usuarios, etiqueta, reloj).
+
+## Paso B10 — cierre de la Fase 2
+
+166. **Demo del negocio con los servicios reales** (`business/services/demo.py`): tres productos (el bizcocho de costo RD$600 por componentes a RD$857.14), gastos fijos, metas, ventas de contado y crédito del mes anterior y del actual, un cobro parcial, una compra a crédito y un retiro hacia la persona; luego se genera la propuesta del plan del negocio ("ajustado": gana, pero no llega a la meta) y se evalúan sus alertas. Las fechas se acotan a hoy, así la demo funciona cualquier día del mes.
+167. **Alternativas del plan de negocio, afinadas con la demo**: si a la caja no le falta nada, no se proponen alternativas que solo mejoran la caja (p. ej. posponer el retiro cuando el problema es la ganancia), y se ordenan primero las que dejan el plan en mejor estado y luego por cuánto mejoran.
+168. **Exportación y borrado incluyen el negocio**; probado con la demo completa (las protecciones `RESTRICT` entre productos, clientes y ventas no impiden borrar la cuenta porque todo se borra en la misma cascada).
+169. **Montos de parámetros libres** (`core.money.amount_or_zero`) para las vistas de avisos htmx: lo inválido, infinito, negativo o mayor que un campo de 14 dígitos cuenta como 0. Corrige un error 500 de la Fase 1 en el aviso de gasto.

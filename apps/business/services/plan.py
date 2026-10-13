@@ -414,6 +414,10 @@ def alternative_inputs(
 def alternatives_for(inputs: BusinessPlanInputs, base: BusinessPlanResult) -> list[Alternative]:
     if base.status == PlanStatus.VIABLE:
         return []
+    # Si a la caja no le falta nada, una alternativa que solo mejora la caja no ayuda.
+    cash_problem = bool(base.projection.gaps) or (
+        base.projection.lowest_balance < inputs.cash_reserve
+    )
     found = []
     for code in ALTERNATIVE_CODES:
         modified = alternative_inputs(inputs, code)
@@ -432,6 +436,8 @@ def alternatives_for(inputs: BusinessPlanInputs, base: BusinessPlanResult) -> li
             result_gain=new.operating_result - base.operating_result,
             cash_gain=new.projection.lowest_balance - base.projection.lowest_balance,
         )
-        if alt.improvement > 0:
+        if alt.result_gain > 0 or (cash_problem and alt.cash_gain > 0):
             found.append(alt)
-    return sorted(found, key=lambda a: (-a.improvement, a.code))
+    # Primero las que dejan el plan en mejor estado; entre ellas, las que más mejoran.
+    rank = {PlanStatus.VIABLE: 0, PlanStatus.AJUSTADO: 1, PlanStatus.NO_VIABLE: 2}
+    return sorted(found, key=lambda a: (rank[a.status], -a.improvement, a.code))

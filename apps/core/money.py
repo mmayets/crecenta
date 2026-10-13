@@ -100,3 +100,18 @@ def pct(part: Decimal, whole: Decimal) -> Decimal:
     if whole == 0:
         return ZERO.quantize(CENT)
     return q(part * 100 / whole)
+
+
+MAX_INPUT_AMOUNT = Decimal("999999999999.99")  # lo que cabe en un campo de 14 dígitos
+
+
+def amount_or_zero(raw: str | None) -> Decimal:
+    """Monto de un parámetro libre (avisos htmx): 0 si no es un monto válido, positivo y finito,
+    o si no cabe en un campo de dinero."""
+    try:
+        value = to_money(raw or "0")
+    except MoneyError:
+        return ZERO
+    if value <= 0 or value > MAX_INPUT_AMOUNT:
+        return ZERO
+    return value

@@ -258,3 +258,17 @@ def test_narrativa_por_reglas_usa_solo_cifras_del_motor(kw, inicio):
     assert verify_narrative(narrative, computed) == []
     if "planned_withdrawal" in kw:
         assert "El retiro que planeas (RD$90,000.00) supera" in narrative.resumen
+
+
+def test_si_la_caja_esta_bien_no_propone_posponer_el_retiro():
+    r = build_business_plan(dulces_ana(planned_withdrawal=D("1000")))
+    assert r.status == PlanStatus.AJUSTADO and r.projection.gaps == []
+    assert "posponer_retiro" not in [a.code for a in r.alternatives]
+
+
+def test_alternativas_que_arreglan_el_estado_van_primero():
+    r = build_business_plan(
+        dulces_ana(planned_withdrawal=D("20000"), today=datetime.date(2026, 10, 3))
+    )
+    assert r.alternatives[0].code == "posponer_retiro"  # es la única que quita el faltante
+    assert r.alternatives[0].status != PlanStatus.NO_VIABLE

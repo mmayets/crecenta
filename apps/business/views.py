@@ -37,6 +37,7 @@ from apps.business.services.sales import (
     register_receivable,
     register_sale,
 )
+from apps.core.money import amount_or_zero
 from apps.onboarding.business_forms import ProductForm
 from apps.pricing.services.engine import (
     PricingInputs,
@@ -447,10 +448,7 @@ def owner(request: HttpRequest, workspace: Workspace) -> HttpResponse:
 @require_POST
 def owner_check(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     """Aviso de reserva operativa mientras se escribe el monto del retiro (htmx)."""
-    try:
-        amount = Decimal(request.POST.get("amount") or "0")
-    except ArithmeticError:
-        amount = Decimal("0")
+    amount = amount_or_zero(request.POST.get("amount"))
     check = None
     if amount > 0 and request.POST.get("kind", "retiro_propietario") == "retiro_propietario":
         reserve = load_cash_outlook(workspace, timezone.localdate()).reserve

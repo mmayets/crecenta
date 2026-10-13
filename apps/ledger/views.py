@@ -1,7 +1,6 @@
 import json
 import uuid
 from datetime import date, timedelta
-from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.contrib import messages
@@ -16,6 +15,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from apps.ai.services.client import AIUnavailable
 from apps.alerts.services.evaluate import purchase_warnings
 from apps.business.services.sales import undo_settlement
+from apps.core.money import amount_or_zero
 from apps.core.ratelimit import hit
 from apps.onboarding.forms import AccountForm
 from apps.workspaces.mixins import workspace_required
@@ -241,10 +241,7 @@ def delete(request: HttpRequest, workspace: Workspace, tx_id) -> HttpResponse:
 @require_POST
 def warnings(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     """Avisos previos mientras se llena el formulario (htmx)."""
-    try:
-        amount = Decimal(request.POST.get("amount") or "0")
-    except InvalidOperation:
-        amount = Decimal("0")
+    amount = amount_or_zero(request.POST.get("amount"))
     category = None
     category_id = request.POST.get("category")
     if category_id and _is_uuid(category_id):

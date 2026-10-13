@@ -4,7 +4,7 @@ PWA de finanzas personales y para pequeños negocios (Django · PostgreSQL · HT
 
 > **Persona:** organiza tu dinero, conoce cuánto puedes gastar y recibe orientación antes de que tu
 > presupuesto se salga de control.
-> **Negocio** (Fase 2): conoce tus costos, fija precios rentables y descubre cuánto ganas realmente.
+> **Negocio:** conoce tus costos, fija precios rentables y descubre cuánto ganas realmente.
 
 Principio rector: **los números los calcula el código; la IA captura, explica y anticipa.** Las
 cifras salen de servicios Python con `Decimal`; la IA recibe el resultado ya calculado, responde
@@ -15,6 +15,7 @@ JSON validado y nunca aplica nada sin que la persona lo acepte.
 - [Arquitectura y plan](docs/arquitectura.md)
 - [Decisiones tomadas](docs/decisiones.md)
 - [Fase 1: criterios de aceptación y evidencia](docs/fase1.md)
+- [Fase 2: pequeños negocios (diseño, reglas contables y evidencia)](docs/fase2.md)
 - [Seguridad y privacidad](docs/seguridad.md)
 
 ## Arranque rápido con Docker
@@ -34,7 +35,7 @@ Requiere Python 3.12, PostgreSQL 16, Redis y [uv](https://docs.astral.sh/uv/).
 uv sync
 export DATABASE_URL=postgres://usuario:clave@localhost:5432/crecenta
 uv run python manage.py migrate
-uv run python manage.py seed_demo      # persona RD$50,000 + negocio con producto de costo RD$600
+uv run python manage.py seed_demo      # persona RD$50,000 + negocio Dulces Ana con ventas
 uv run python manage.py runserver
 uv run celery -A config worker -l info # explicaciones con IA, lectura de comprobantes, alertas
 uv run celery -A config beat -l info   # alertas diarias

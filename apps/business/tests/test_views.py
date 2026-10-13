@@ -283,3 +283,9 @@ def test_registro_rapido_del_negocio_ofrece_compras(logged, negocio):
         and 'value="compra_inventario" checked' in html.replace('" checked', '" checked')
         or "compra_inventario" in html
     )
+
+
+def test_aviso_de_retiro_ignora_montos_absurdos(logged, negocio):
+    for value in ("1e999999", "NaN", "-5", "Infinity"):
+        response = logged.post(u("owner_check", negocio), {"amount": value})
+        assert response.status_code == 200 and response.content.decode().strip() == ""

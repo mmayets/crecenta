@@ -3,13 +3,15 @@ from io import StringIO
 
 import pytest
 from django.core.management import CommandError, call_command
+from django.utils import timezone
 
 from apps.accounts.models import User
-from apps.business.models import BusinessProfile, Product
+from apps.business.models import BusinessProfile, Payable, Product, Receivable, Sale
+from apps.business.services.loaders import business_snapshot
 from apps.ledger.models import Transaction
 from apps.onboarding.services.steps import completeness
 from apps.planning.models import BudgetPeriod, PlanVersion
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import Workspace, WorkspaceTransfer
 
 pytestmark = pytest.mark.django_db
 
@@ -42,10 +44,23 @@ def test_demo_completa():
     assert Transaction.objects.for_workspace(personal).filter(kind="ingreso").exists()
     assert completeness(personal).percent == 100
 
-    product = Product.objects.for_workspace(business).get()
+    product = Product.objects.for_workspace(business).get(name="Bizcocho de vainilla (1 lb)")
     assert (product.unit_cost, product.price) == (Decimal("600.00"), Decimal("857.14"))
-    assert str(product) == "Bizcocho de vainilla (1 lb)"
+    assert product.components.count() == 3
     assert str(BusinessProfile.objects.get()) == "Dulces Ana · Repostería"
+
+    # Negocio con indicadores reales (pase lo que pase con la fecha de hoy).
+    snapshot = business_snapshot(business, timezone.localdate())
+    assert snapshot.indicators.sales > 0 and snapshot.indicators.cogs > 0
+    assert Sale.objects.for_workspace(business).filter(payment="credito").exists()
+    assert Receivable.objects.for_workspace(business).filter(status="parcial").exists()
+    assert Payable.objects.for_workspace(business).count() == 1
+    assert WorkspaceTransfer.objects.get().to_workspace == personal
+    business_plan = PlanVersion.objects.for_workspace(business).get()
+    assert business_plan.status == "propuesta" and business_plan.plan_status == "ajustado"
+    assert business_plan.computed["resultado"] == "2928.40"
+    assert "posponer_retiro" not in [a["codigo"] for a in business_plan.computed["alternativas"]]
+    assert completeness(business).percent == 100
 
 
 def test_idempotente_y_reset():

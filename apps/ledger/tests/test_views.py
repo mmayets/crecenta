@@ -68,3 +68,12 @@ def test_limite_de_sincronizacion(client, user, personal_ws, settings):
     client.force_login(user)
     assert post(client, personal_ws, {"items": []}).status_code == 200
     assert post(client, personal_ws, {"items": []}).status_code == 429
+
+
+def test_avisos_ignoran_montos_absurdos(client, user, personal_ws):
+    from django.urls import reverse
+
+    client.force_login(user)
+    url = reverse("ledger:warnings", kwargs={"ws": personal_ws.pk})
+    for value in ("1e999999", "NaN", "Infinity", "-1e9999"):
+        assert client.post(url, {"amount": value}).status_code == 200
