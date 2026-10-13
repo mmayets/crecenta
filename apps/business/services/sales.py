@@ -21,6 +21,7 @@ from apps.accounts.models import User
 from apps.business.models import (
     BusinessProfile,
     Customer,
+    InventoryMovement,
     Payable,
     Product,
     Receivable,
@@ -33,7 +34,8 @@ from apps.ledger.choices import CategoryGroup, Direction, TxKind, TxSource
 from apps.ledger.models import Account, Category, Transaction
 from apps.workspaces.models import Workspace
 
-from .inventory import record_sale_outflow, refresh_stock
+from .inventory import record_recipe_outflows, record_sale_outflow, refresh_stock
+from .product_cost import current_unit_cost
 from .sale_math import LineInput, sale_totals
 
 SALES_CATEGORY = "Ventas"
@@ -161,6 +163,8 @@ def _create_sale(
             line.product.workspace_id != workspace.pk or not line.product.is_active
         ):
             errors["lines"] = "Hay un producto que no está disponible en este negocio."
+        if line.product is not None and line.product.is_supply:
+            errors["lines"] = "Un insumo no se vende: véndelo como parte de un producto."
         if line.product is None and (line.unit_price is None or not line.description.strip()):
             errors["lines"] = "Sin producto, indica descripción y precio."
     _check_owned(workspace, data.account, "account")
@@ -206,6 +210,7 @@ def _create_sale(
     for line, price, net in zip(data.lines, prices, totals.line_nets, strict=True):
         product = line.product
         tracked = product is not None and product.tracks_inventory
+        has_recipe = product is not None and not tracked and product.recipe.exists()
         sale_line = SaleLine.objects.create(
             sale=sale,
             product=product,
@@ -215,12 +220,12 @@ def _create_sale(
             discount_pct=line.discount_pct,
             net_amount=net,
             # Con inventario, el costo es el promedio del momento; si no, el costo del producto.
-            unit_cost_snapshot=(
-                q(product.average_cost) if tracked else (product.unit_cost if product else ZERO)  # type: ignore[union-attr]
-            ),
+            unit_cost_snapshot=current_unit_cost(product) if product else ZERO,
         )
         if tracked:
             record_sale_outflow(workspace, sale_line, data.date)
+        elif has_recipe:
+            record_recipe_outflows(workspace, sale_line, data.date)
     concept = _sale_concept(sale)
     if data.payment == Sale.Payment.CONTADO:
         assert data.account is not None
@@ -263,11 +268,13 @@ def _sale_concept(sale: Sale) -> str:
 
 
 def _tracked_products(sale: Sale) -> list[Product]:
-    return [
-        line.product
-        for line in sale.lines.select_related("product")
-        if line.product is not None and line.product.tracks_inventory
-    ]
+    """Productos e insumos cuyo inventario movió la venta."""
+    ids = (
+        InventoryMovement.objects.filter(sale_line__sale=sale)
+        .values_list("product_id", flat=True)
+        .distinct()
+    )
+    return list(Product.objects.filter(pk__in=list(ids)))
 
 
 def _check_no_collections(sale: Sale, action: str) -> None:

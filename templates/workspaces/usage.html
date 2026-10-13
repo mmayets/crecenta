@@ -14,6 +14,7 @@
     </fieldset>
     <p><label for="{{ form.currency.id_for_label }}">{{ form.currency.label }}</label> {{ form.currency }}</p>
     <p><label for="{{ form.business_name.id_for_label }}">{{ form.business_name.label }} (opcional)</label> {{ form.business_name }}</p>
+    <p><label for="{{ form.business_currency.id_for_label }}">{{ form.business_currency.label }}</label> {{ form.business_currency }} <small class="muted block">{{ form.business_currency.help_text }}</small></p>
     <button type="submit" class="btn-primary w-full">Continuar</button>
   </form>
 {% endblock %}

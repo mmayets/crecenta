@@ -60,6 +60,8 @@ class Workspace(TimeStampedModel):
 class Membership(TimeStampedModel):
     class Role(models.TextChoices):
         OWNER = "owner", "Propietario"
+        ADMIN = "admin", "Administrador"
+        VENDEDOR = "vendedor", "Vendedor"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="memberships"
@@ -108,7 +110,12 @@ class WorkspaceTransfer(TimeStampedModel):
         Workspace, verbose_name="hacia", on_delete=models.CASCADE, related_name="+"
     )
     kind = models.CharField("tipo", max_length=20, choices=Kind.choices)
-    amount = models.DecimalField("monto", max_digits=14, decimal_places=2)
+    amount = models.DecimalField("monto", max_digits=14, decimal_places=2)  # en la moneda de origen
+    # Monedas distintas (Fase 4): monto que llega al destino y tasa usada (RD$ por US$).
+    in_amount = models.DecimalField("monto recibido", max_digits=14, decimal_places=2, null=True)
+    exchange_rate = models.DecimalField(
+        "tasa (RD$ por US$)", max_digits=10, decimal_places=4, null=True, blank=True
+    )
     date = models.DateField("fecha")
     note = models.CharField("nota", max_length=140, blank=True)
     out_tx = models.OneToOneField(
@@ -153,3 +160,32 @@ class WorkspaceTransfer(TimeStampedModel):
         return (
             f"{self.get_kind_display()} {self.amount} ({self.from_workspace} → {self.to_workspace})"
         )
+
+
+class Invitation(TimeStampedModel):
+    """Invitación a un negocio por enlace de un solo uso (docs/fase4.md §2). Se guarda solo el
+    hash del código; el enlace completo se muestra una vez al crearla."""
+
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="invitations")
+    email = models.EmailField("correo invitado")
+    role = models.CharField("rol", max_length=10, choices=Membership.Role.choices)
+    token_hash = models.CharField(max_length=64, unique=True, editable=False)
+    expires_at = models.DateTimeField("vence")
+    accepted_at = models.DateTimeField("aceptada", null=True, blank=True)
+    accepted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    revoked_at = models.DateTimeField("anulada", null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+
+    objects = WorkspaceScopedQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = "invitación"
+        verbose_name_plural = "invitaciones"
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.email} → {self.workspace} ({self.get_role_display()})"

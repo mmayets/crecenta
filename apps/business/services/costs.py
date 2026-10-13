@@ -50,7 +50,15 @@ def unit_cost(price: Decimal, components: Iterable[ComponentInput]) -> UnitCostB
 
 
 def refresh_unit_cost(product: Product) -> Decimal:
-    """Recalcula y guarda el costo unitario si el producto tiene componentes."""
+    """Recalcula y guarda el costo unitario si el producto tiene componentes o receta (con la
+    receta, el costo de los insumos al promedio de hoy)."""
+    if product.recipe.exists():
+        from .product_cost import current_unit_cost
+
+        new: Decimal = current_unit_cost(product)
+        product.unit_cost = new
+        product.save(update_fields=["unit_cost", "updated_at"])
+        return new
     components = [ComponentInput(c.type, c.amount) for c in product.components.all()]
     if not components:
         current: Decimal = product.unit_cost

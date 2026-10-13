@@ -79,3 +79,51 @@ def build_business_dashboard(workspace: Workspace, today: date) -> BusinessDashb
         pending_proposal=plans.filter(status=PlanVersion.Status.PROPUESTA).first(),
         today=today,
     )
+
+
+@dataclass(frozen=True)
+class SellerDashboard:
+    """Inicio del vendedor: lo que vendió y lo que falta cobrar; sin costos ni ganancias."""
+
+    today: date
+    sales_today_count: int
+    sales_today_total: Decimal
+    my_sales_today_total: Decimal
+    receivables: list[Receivable]
+    low_stock: list[tuple[str, Decimal]]
+
+
+def build_seller_dashboard(workspace: Workspace, user: Any, today: date) -> SellerDashboard:
+    from django.db.models import Count, Q, Sum
+
+    from apps.business.models import Product, Sale
+
+    agg = (
+        Sale.objects.for_workspace(workspace)
+        .filter(date=today)
+        .aggregate(
+            n=Count("id"),
+            amount=Sum("total", default=Decimal("0")),
+            mine=Sum("total", filter=Q(created_by=user), default=Decimal("0")),
+        )
+    )
+    low = [
+        (p.name, p.stock)
+        for p in Product.objects.for_workspace(workspace).filter(
+            tracks_inventory=True, is_active=True, is_supply=False
+        )
+        if p.stock <= p.stock_minimum
+    ]
+    return SellerDashboard(
+        today=today,
+        sales_today_count=agg["n"],
+        sales_today_total=agg["amount"],
+        my_sales_today_total=agg["mine"],
+        receivables=list(
+            Receivable.objects.for_workspace(workspace)
+            .exclude(status=DebtStatus.PAGADA)
+            .select_related("customer")
+            .order_by("due_date")[:8]
+        ),
+        low_stock=low,
+    )

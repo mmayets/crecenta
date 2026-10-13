@@ -58,7 +58,8 @@ def test_demo_completa():
     assert WorkspaceTransfer.objects.get().to_workspace == personal
     business_plan = PlanVersion.objects.for_workspace(business).get()
     assert business_plan.status == "propuesta" and business_plan.plan_status == "ajustado"
-    assert business_plan.computed["resultado"] == "12528.40"
+    # Los refrescos (con inventario) se valoran a su costo promedio, no a costo 0.
+    assert business_plan.computed["resultado"] == "6578.86"
     # Fase 3: inventario real del refresco (inicial + compras − ventas − merma).
     refresco = Product.objects.get(workspace=business, name="Refresco de 2 litros")
     assert refresco.stock == 40 and refresco.average_cost == Decimal("74.3692")

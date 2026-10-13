@@ -17,3 +17,9 @@ class UsageForm(forms.Form):
     )
     currency = forms.ChoiceField(label="Moneda", choices=CURRENCY_CHOICES, initial="DOP")
     business_name = forms.CharField(label="Nombre del negocio", max_length=80, required=False)
+    business_currency = forms.ChoiceField(
+        label="Moneda del negocio",
+        choices=[("", "La misma"), *CURRENCY_CHOICES],
+        required=False,
+        help_text="Si tu negocio vende en dólares y tú vives en pesos, elige dólares.",
+    )

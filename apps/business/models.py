@@ -11,7 +11,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import Q
 
@@ -19,6 +19,9 @@ from apps.core.models import TimeStampedModel, money_field
 from apps.workspaces.models import Workspace, WorkspaceScopedModel
 
 ZERO = Decimal("0")
+# Comprobante fiscal (RD): B + 2 dígitos de tipo + 8 de secuencia, o e-CF E + 2 + 10.
+NCF = RegexValidator(r"^(B\d{10}|E\d{12})$", "NCF inválido: B01 + 8 dígitos o E31 + 10 dígitos.")
+TAX_ID = RegexValidator(r"^(\d{9}|\d{11})$", "RNC (9 dígitos) o cédula (11 dígitos), sin guiones.")
 _NON_NEGATIVE = [MinValueValidator(ZERO)]
 _PCT = [MinValueValidator(ZERO), MaxValueValidator(Decimal("1"))]
 
@@ -85,6 +88,8 @@ class Product(WorkspaceScopedModel):
     is_active = models.BooleanField("activo", default=True)
     # Inventario (Fase 3): solo para mercancía que se compra y se revende.
     tracks_inventory = models.BooleanField("controlo su inventario", default=False)
+    # Insumo (Fase 4): se compra y se consume en recetas; no se vende.
+    is_supply = models.BooleanField("es un insumo", default=False)
     stock_minimum = models.DecimalField(
         "existencia mínima", max_digits=12, decimal_places=3, default=0, validators=_NON_NEGATIVE
     )
@@ -102,6 +107,44 @@ class Product(WorkspaceScopedModel):
 
     def __str__(self) -> str:
         return self.name
+
+
+class RecipeItem(TimeStampedModel):
+    """Ingrediente de un producto elaborado: `qty` unidades del insumo por unidad vendida."""
+
+    product = models.ForeignKey(
+        Product, verbose_name="producto", on_delete=models.CASCADE, related_name="recipe"
+    )
+    supply = models.ForeignKey(
+        Product, verbose_name="insumo", on_delete=models.RESTRICT, related_name="used_in"
+    )
+    qty = models.DecimalField("cantidad por unidad", max_digits=12, decimal_places=4)
+
+    class Meta:
+        verbose_name = "ingrediente"
+        verbose_name_plural = "receta"
+        ordering = ["created_at"]
+        constraints = [
+            models.CheckConstraint(condition=Q(qty__gt=0), name="receta_cantidad_positiva"),
+            models.UniqueConstraint(fields=["product", "supply"], name="receta_insumo_unico"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.qty} {self.supply} en {self.product}"
+
+    def clean(self) -> None:
+        errors = {}
+        supply = self.supply if self.supply_id else None
+        product = self.product if self.product_id else None
+        if supply is not None:
+            if not (supply.is_supply and supply.tracks_inventory):
+                errors["supply"] = "Elige un insumo con control de inventario."
+            if product is not None and supply.workspace_id != product.workspace_id:
+                errors["supply"] = "El insumo no pertenece a este negocio."
+            if product is not None and supply.pk == product.pk:
+                errors["supply"] = "Un producto no puede ser ingrediente de sí mismo."
+        if errors:
+            raise ValidationError(errors)
 
 
 class CostComponent(TimeStampedModel):
@@ -214,6 +257,7 @@ class BusinessGoal(models.Model):
 class Customer(WorkspaceScopedModel):
     name = models.CharField("nombre", max_length=120)
     phone = models.CharField("teléfono", max_length=30, blank=True)
+    tax_id = models.CharField("RNC o cédula", max_length=11, blank=True, validators=[TAX_ID])
 
     class Meta:
         verbose_name = "cliente"
@@ -230,6 +274,7 @@ class Customer(WorkspaceScopedModel):
 class Supplier(WorkspaceScopedModel):
     name = models.CharField("nombre", max_length=120)
     phone = models.CharField("teléfono", max_length=30, blank=True)
+    tax_id = models.CharField("RNC o cédula", max_length=11, blank=True, validators=[TAX_ID])
 
     class Meta:
         verbose_name = "proveedor"
@@ -279,6 +324,7 @@ class Sale(WorkspaceScopedModel):
     tax = money_field("ITBIS", default=0)
     total = money_field("total", default=0)
     note = models.CharField("nota", max_length=140, blank=True)
+    ncf = models.CharField("NCF", max_length=13, blank=True, validators=[NCF])
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
@@ -536,6 +582,7 @@ class Purchase(WorkspaceScopedModel):
     tax = money_field("ITBIS pagado", default=0, validators=_NON_NEGATIVE)
     total = money_field("total", default=0)
     note = models.CharField("nota", max_length=140, blank=True)
+    ncf = models.CharField("NCF del proveedor", max_length=13, blank=True, validators=[NCF])
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
@@ -602,8 +649,9 @@ class InventoryMovement(WorkspaceScopedModel):
     purchase_line = models.OneToOneField(
         PurchaseLine, null=True, blank=True, on_delete=models.CASCADE, related_name="movement"
     )
-    sale_line = models.OneToOneField(
-        SaleLine, null=True, blank=True, on_delete=models.CASCADE, related_name="movement"
+    # Una línea de venta descuenta su producto o, si tiene receta, cada insumo (varios movimientos).
+    sale_line = models.ForeignKey(
+        SaleLine, null=True, blank=True, on_delete=models.CASCADE, related_name="movements"
     )
     note = models.CharField("nota", max_length=140, blank=True)
     client_uuid = models.UUIDField("id del dispositivo", null=True, blank=True, editable=False)

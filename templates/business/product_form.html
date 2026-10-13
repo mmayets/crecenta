@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load icons %}
+{% load icons money %}
 {% block title %}Producto · Crecenta{% endblock %}
 {% block content %}
   <a class="underline" href="{% url 'business:products' ws=workspace.pk %}">← Productos</a>
@@ -7,6 +7,18 @@
   <form method="post" class="mt-4 space-y-4">
     {% csrf_token %}
     <div class="card space-y-4">{% include "partials/form.html" %}</div>
+    <section class="card space-y-3">
+      <h2 class="text-base">Receta con insumos (opcional)</h2>
+      <p class="muted">Si lo elaboras con insumos que controlas en el inventario (harina en libras, cajas…), indica cuánto lleva cada unidad: al venderlo se descuentan y su costo sale del costo promedio de los insumos.{% if recipe_cost is not None %} Costo de los insumos hoy: <strong>{{ recipe_cost|money:workspace.currency }}</strong>.{% endif %}</p>
+      {{ recipe.management_form }}{{ recipe.non_form_errors }}
+      {% for f in recipe %}
+        <fieldset class="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 p-3">
+          {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+          {% for field in f.visible_fields %}<div class="field">{% if field.name == "DELETE" %}<label class="flex items-center gap-2 font-normal">{{ field }} Quitar</label>{% else %}{{ field.label_tag }}{{ field }}{% endif %}{{ field.errors }}</div>{% endfor %}
+          {{ f.non_field_errors }}
+        </fieldset>
+      {% endfor %}
+    </section>
     <section class="card space-y-3">
       <h2 class="text-base">¿De qué se compone el costo? (opcional)</h2>
       <p class="muted">Si agregas componentes, el costo por unidad se calcula solo: la comisión es un porcentaje del precio (0.10 = 10 %).</p>

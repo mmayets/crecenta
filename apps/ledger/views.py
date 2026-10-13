@@ -220,7 +220,11 @@ def delete(request: HttpRequest, workspace: Workspace, tx_id) -> HttpResponse:
         return back
     linked = transfer_for(tx)
     if linked is not None:
-        delete_transfer(request.user, linked)  # type: ignore[arg-type]
+        try:
+            delete_transfer(request.user, linked)  # type: ignore[arg-type]
+        except ValidationError as exc:  # p. ej., un administrador: no es dueño del otro espacio
+            messages.error(request, " ".join(exc.messages))
+            return back
         messages.info(request, "Se eliminaron los dos movimientos de la transferencia.")
         return back
     if tx.receivable_id or tx.payable_id:

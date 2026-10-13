@@ -16,7 +16,8 @@ from django.core.exceptions import ValidationError
 from django.db.models import Model, QuerySet
 from django.http import Http404, HttpRequest, HttpResponse
 
-from .models import Workspace
+from .models import Membership, Workspace
+from .permissions import FINANZAS, can
 
 SESSION_KEY = "workspace_id"
 
@@ -26,7 +27,13 @@ def resolve_workspace(request: HttpRequest, workspace_id: Any) -> Workspace:
         workspace = Workspace.objects.for_user(request.user).get(pk=workspace_id)
     except (Workspace.DoesNotExist, ValueError, ValidationError) as exc:
         raise Http404("Espacio no encontrado") from exc
+    role = (
+        Membership.objects.filter(user=request.user, workspace=workspace)
+        .values_list("role", flat=True)
+        .first()
+    )
     request.workspace = workspace  # type: ignore[attr-defined]
+    request.workspace_role = role  # type: ignore[attr-defined]
     request.session[SESSION_KEY] = str(workspace.pk)
     return workspace
 
@@ -36,6 +43,7 @@ class WorkspaceRequiredMixin(LoginRequiredMixin):
 
     workspace: Workspace
     workspace_kind: str | None = None  # restringe a "personal" o "business" si se define
+    workspace_perm: str = FINANZAS
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         if not request.user.is_authenticated:
@@ -43,6 +51,8 @@ class WorkspaceRequiredMixin(LoginRequiredMixin):
         self.workspace = resolve_workspace(request, kwargs.pop("ws"))
         if self.workspace_kind and self.workspace.kind != self.workspace_kind:
             raise Http404("Esta sección no existe para este tipo de espacio")
+        if not can(request.workspace_role, self.workspace_perm):  # type: ignore[attr-defined]
+            raise Http404("No tienes acceso a esta sección")
         return super().dispatch(request, *args, **kwargs)
 
     def scoped(self, model: type[Model]) -> QuerySet:
@@ -56,9 +66,15 @@ class WorkspaceRequiredMixin(LoginRequiredMixin):
 
 
 def workspace_required(
-    view: Callable[..., HttpResponse] | None = None, *, kind: str | None = None
+    view: Callable[..., HttpResponse] | None = None,
+    *,
+    kind: str | None = None,
+    perm: str = FINANZAS,
 ) -> Any:
-    """Decorador para vistas-función: inyecta `workspace` como primer argumento tras request."""
+    """Decorador para vistas-función: inyecta `workspace` como primer argumento tras request.
+
+    `perm` es el permiso que exige la vista (por defecto `finanzas`). Sin permiso se responde 404,
+    igual que con un espacio ajeno: no se revela qué existe."""
 
     def decorator(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
         @wraps(func)
@@ -68,6 +84,8 @@ def workspace_required(
             workspace = resolve_workspace(request, ws)
             if kind and workspace.kind != kind:
                 raise Http404("Esta sección no existe para este tipo de espacio")
+            if not can(request.workspace_role, perm):  # type: ignore[attr-defined]
+                raise Http404("No tienes acceso a esta sección")
             return func(request, workspace, *args, **kwargs)
 
         return wrapper

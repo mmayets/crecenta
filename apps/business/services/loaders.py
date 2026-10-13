@@ -39,7 +39,6 @@ from .cash import (
     expected_inflows,
     operating_reserve,
 )
-from .costs import ComponentInput, unit_cost
 from .indicators import (
     BusinessPeriodInputs,
     ExpensePlan,
@@ -49,6 +48,7 @@ from .indicators import (
     compute_indicators,
 )
 from .plan import BusinessPlanInputs, PlanProduct
+from .product_cost import cost_basis
 
 
 def month_bounds(today: datetime.date) -> tuple[datetime.date, datetime.date]:
@@ -276,15 +276,10 @@ def load_business_plan_inputs(workspace: Workspace, today: datetime.date) -> Bus
     products = []
     for product in (
         Product.objects.for_workspace(workspace)
-        .filter(is_active=True)
+        .filter(is_active=True, is_supply=False)  # los insumos no se venden
         .prefetch_related("components")
     ):
-        components = [ComponentInput(c.type, c.amount) for c in product.components.all()]
-        if components:
-            breakdown = unit_cost(product.price, components)
-            base_cost, commission = breakdown.fixed_part, breakdown.commission_pct
-        else:
-            base_cost, commission = product.unit_cost, ZERO
+        base_cost, commission = cost_basis(product)
         units, estimated = product.expected_monthly_units, False
         if units is None:
             units = last_month.get(str(product.pk), ZERO)

@@ -32,7 +32,11 @@ def create_workspace(
 
 @transaction.atomic
 def create_workspaces_for_usage(
-    user: User, usage: Usage, currency: str | None = None, business_name: str | None = None
+    user: User,
+    usage: Usage,
+    currency: str | None = None,
+    business_name: str | None = None,
+    business_currency: str | None = None,
 ) -> list[Workspace]:
     """Paso 0 del onboarding. Idempotente: no duplica el espacio personal ni el de negocio."""
     if usage not in ("persona", "negocio", "ambos"):
@@ -43,7 +47,12 @@ def create_workspaces_for_usage(
         created.append(create_workspace(user, Workspace.Kind.PERSONAL, currency=currency))
     if usage in ("negocio", "ambos") and not owned.filter(kind=Workspace.Kind.BUSINESS).exists():
         created.append(
-            create_workspace(user, Workspace.Kind.BUSINESS, name=business_name, currency=currency)
+            create_workspace(
+                user,
+                Workspace.Kind.BUSINESS,
+                name=business_name,
+                currency=business_currency or currency,
+            )
         )
     return created
 

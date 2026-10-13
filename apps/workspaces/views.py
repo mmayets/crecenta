@@ -4,12 +4,16 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from apps.reports.services.business_dashboard import build_business_dashboard
+from apps.reports.services.business_dashboard import (
+    build_business_dashboard,
+    build_seller_dashboard,
+)
 from apps.reports.services.dashboard import build_personal_dashboard
 
 from .forms import UsageForm
 from .mixins import SESSION_KEY, workspace_required
 from .models import Workspace
+from .permissions import FINANZAS, VENDER, can
 from .services.workspaces import create_workspaces_for_usage, default_workspace
 
 
@@ -33,6 +37,7 @@ def usage(request: HttpRequest) -> HttpResponse:
             form.cleaned_data["usage"],
             currency=form.cleaned_data["currency"],
             business_name=form.cleaned_data["business_name"] or None,
+            business_currency=form.cleaned_data["business_currency"] or None,
         )
         target = created[0] if created else default_workspace(request.user)
         if created and target.is_personal:
@@ -47,8 +52,13 @@ def selector(request: HttpRequest) -> HttpResponse:
     return render(request, "workspaces/selector.html", {"workspaces": workspaces})
 
 
-@workspace_required
+@workspace_required(perm=VENDER)
 def dashboard(request: HttpRequest, workspace: Workspace) -> HttpResponse:
+    if workspace.is_business and not can(request.workspace_role, FINANZAS):  # type: ignore[attr-defined]
+        seller = build_seller_dashboard(workspace, request.user, timezone.localdate())
+        return render(
+            request, "workspaces/dashboard_seller.html", {"workspace": workspace, "d": seller}
+        )
     if workspace.is_business:
         business = build_business_dashboard(workspace, timezone.localdate())
         return render(
@@ -66,6 +76,6 @@ def dashboard(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     )
 
 
-@workspace_required
+@workspace_required(perm=VENDER)
 def settings_hub(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     return render(request, "workspaces/settings.html", {"workspace": workspace})

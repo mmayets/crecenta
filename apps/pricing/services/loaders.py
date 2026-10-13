@@ -5,7 +5,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from apps.business.services.costs import ComponentInput, unit_cost
+from apps.business.services.product_cost import cost_basis
 
 from .engine import PricingInputs
 
@@ -21,14 +21,10 @@ def inputs_for_product(
 ) -> PricingInputs:
     """Separa la comisión (porcentaje) del resto del costo: el motor la calcula sobre el precio.
 
-    Sin componentes, el costo unitario escrito a mano se toma completo y sin comisión.
+    El costo base sale de `cost_basis`: promedio si tiene inventario, receta + componentes si es
+    elaborado, componentes, o el costo escrito a mano.
     """
-    components = [ComponentInput(c.type, c.amount) for c in product.components.all()]
-    if components:
-        breakdown = unit_cost(product.price, components)
-        base_cost, commission = breakdown.fixed_part, breakdown.commission_pct
-    else:
-        base_cost, commission = product.unit_cost, Decimal("0")
+    base_cost, commission = cost_basis(product)
     return PricingInputs(
         unit_cost=base_cost,
         target_margin=target_margin,

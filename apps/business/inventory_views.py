@@ -28,12 +28,12 @@ from apps.reports.services.business_reports import (
 from apps.workspaces.models import Workspace
 
 from .forms import SALE_ROWS, PurchaseForm, SaleForm, StockActionForm
-from .views import _errors, _get, business_only
+from .views import _errors, _get, business_only, business_seller
 
 # ---------------------------------------------------------------------------- inventario
 
 
-@business_only
+@business_seller
 @require_GET
 def inventory(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     products = Product.objects.for_workspace(workspace).filter(tracks_inventory=True)

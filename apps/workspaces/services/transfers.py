@@ -47,6 +47,21 @@ def _system_category(workspace: Workspace, name: str, group: str) -> Category:
     return category
 
 
+def convert(amount: Decimal, from_currency: str, to_currency: str, rate: Decimal | None) -> Decimal:
+    """Convierte con la tasa del día, expresada siempre como RD$ por 1 US$."""
+    if from_currency == to_currency:
+        return amount
+    if rate is None or rate <= 0:
+        raise ValidationError(
+            {"exchange_rate": "Los espacios usan monedas distintas: escribe la tasa del día."}
+        )
+    if (from_currency, to_currency) == ("USD", "DOP"):
+        return q(amount * rate)
+    if (from_currency, to_currency) == ("DOP", "USD"):
+        return q(amount / rate)
+    raise ValidationError({"exchange_rate": "Conversión no soportada."})
+
+
 def validate_transfer(
     user: User,
     from_ws: Workspace,
@@ -68,8 +83,6 @@ def validate_transfer(
             errors["kind"] = "Un aporte va de tus finanzas personales a tu negocio."
     else:
         errors["kind"] = "Tipo de transferencia no válido."
-    if from_ws.currency != to_ws.currency:
-        errors["to_workspace"] = "Los dos espacios deben usar la misma moneda."
     if from_account.workspace_id != from_ws.pk or from_account.is_archived:
         errors["from_account"] = "La cuenta de origen no pertenece a ese espacio."
     if to_account.workspace_id != to_ws.pk or to_account.is_archived:
@@ -89,12 +102,17 @@ def transfer_between(
     to_account: Account,
     note: str = "",
     client_uuid: uuid.UUID | None = None,
+    exchange_rate: Decimal | None = None,
 ) -> tuple[WorkspaceTransfer, bool]:
-    """Crea la transferencia y sus dos movimientos espejo. Devuelve (transferencia, creada)."""
+    """Crea la transferencia y sus dos movimientos espejo. Devuelve (transferencia, creada).
+
+    `amount` está en la moneda del espacio de origen. Si las monedas son distintas hace falta la
+    tasa del día (RD$ por US$) y cada movimiento queda en la moneda de su espacio."""
     validate_transfer(user, from_ws, to_ws, kind, from_account, to_account)
     value = q(to_money(amount))
     if value <= 0:
         raise ValidationError({"amount": "El monto debe ser mayor que cero."})
+    in_value = convert(value, from_ws.currency, to_ws.currency, exchange_rate)
 
     def existing() -> WorkspaceTransfer | None:
         if client_uuid is None:
@@ -107,7 +125,7 @@ def transfer_between(
     try:
         with transaction.atomic():
             return _create(user, from_ws, to_ws, value, on, kind, from_account, to_account, note,
-                           client_uuid), True  # fmt: skip
+                           client_uuid, in_value, exchange_rate), True  # fmt: skip
     except IntegrityError:
         found = existing()
         if found is None:
@@ -126,6 +144,8 @@ def _create(
     to_account: Account,
     note: str,
     client_uuid: uuid.UUID | None,
+    in_value: Decimal,
+    exchange_rate: Decimal | None,
 ) -> WorkspaceTransfer:
     note = note.strip()[:140]
     if kind == WorkspaceTransfer.Kind.RETIRO_PROPIETARIO:
@@ -154,12 +174,13 @@ def _create(
         category: Category | None,
         text: str,
         suffix: str,
+        leg_amount: Decimal,
     ) -> Transaction:
         tx = Transaction(
             workspace=ws,
             account=account,
             date=on,
-            amount=value,
+            amount=leg_amount,
             direction=direction,
             kind=tx_kind,
             category=category,
@@ -171,13 +192,18 @@ def _create(
         tx.save()
         return tx
 
-    out_tx = leg(from_ws, from_account, Direction.OUT, out_kind, out_cat, out_text, "out")
-    in_tx = leg(to_ws, to_account, Direction.IN, in_kind, in_cat, in_text, "in")
+    if exchange_rate is not None and from_ws.currency != to_ws.currency:
+        rate_text = f" (tasa {exchange_rate.normalize():f})"
+        out_text, in_text = out_text + rate_text, in_text + rate_text
+    out_tx = leg(from_ws, from_account, Direction.OUT, out_kind, out_cat, out_text, "out", value)
+    in_tx = leg(to_ws, to_account, Direction.IN, in_kind, in_cat, in_text, "in", in_value)
     return WorkspaceTransfer.objects.create(
         from_workspace=from_ws,
         to_workspace=to_ws,
         kind=kind,
         amount=value,
+        in_amount=in_value,
+        exchange_rate=exchange_rate if from_ws.currency != to_ws.currency else None,
         date=on,
         note=note,
         out_tx=out_tx,

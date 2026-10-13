@@ -135,6 +135,10 @@ def test_productos_margen_y_componentes(logged, negocio):
         "componentes-1-name": "App",
         "componentes-1-type": "comision_pct",
         "componentes-1-amount": "0.10",
+        "receta-TOTAL_FORMS": "0",
+        "receta-INITIAL_FORMS": "0",
+        "receta-MIN_NUM_FORMS": "0",
+        "receta-MAX_NUM_FORMS": "1000",
     }
     response = logged.post(u("product_edit", negocio, product_id=cup.pk), data)
     assert response["Location"] == u("products", negocio)
@@ -289,3 +293,34 @@ def test_aviso_de_retiro_ignora_montos_absurdos(logged, negocio):
     for value in ("1e999999", "NaN", "-5", "Infinity"):
         response = logged.post(u("owner_check", negocio), {"amount": value})
         assert response.status_code == 200 and response.content.decode().strip() == ""
+
+
+def test_retiro_entre_monedas_pide_tasa(logged, user, personal_ws):
+    from apps.workspaces.services.workspaces import create_workspace
+
+    tienda = create_workspace(user, "business", name="Tienda USD", currency="USD")
+    html = logged.get(u("owner", tienda)).content.decode()
+    assert "Tasa del día (RD$ por 1 US$)" in html
+    data = {
+        "client_uuid": str(uuid.uuid4()),
+        "kind": "retiro_propietario",
+        "amount": "100",
+        "account": str(Account.objects.get(workspace=tienda).pk),
+        "personal_account": str(Account.objects.get(workspace=personal_ws).pk),
+        "date": "2026-10-13",
+    }
+    assert logged.post(u("owner", tienda), data).status_code == 400
+    logged.post(u("owner", tienda), {**data, "exchange_rate": "60.25"})
+    transfer = WorkspaceTransfer.objects.get()
+    assert transfer.amount == D("100.00") and transfer.in_amount == D("6025.00")
+    assert transfer.in_tx.amount == D("6025.00") and transfer.in_tx.workspace == personal_ws
+
+
+def test_negocio_en_dolares_al_crear(logged):
+    logged.post(
+        reverse("workspaces:usage"),
+        {"usage": "ambos", "currency": "DOP", "business_currency": "USD"},
+    )
+    from apps.workspaces.models import Workspace
+
+    assert Workspace.objects.get(kind="business").currency == "USD"

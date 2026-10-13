@@ -71,14 +71,17 @@
             {% icon "plus" "h-7 w-7" %}
           </button>
           <div x-show="open" x-cloak @click.outside="close" class="absolute bottom-20 left-1/2 w-64 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl" role="menu">
-            {% if current_workspace.is_business %}
+            {% if current_workspace.is_business and not can_finanzas %}
+              <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'business:sale_new' ws=ws %}">{% icon "shopping-cart" "h-5 w-5 text-emerald-600" %}Venta</a>
+              <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'business:receivables' ws=ws %}">{% icon "hand-coins" "h-5 w-5 text-emerald-600" %}Cobro a un cliente</a>
+            {% elif current_workspace.is_business %}
               <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'business:sale_new' ws=ws %}">{% icon "shopping-cart" "h-5 w-5 text-emerald-600" %}Venta</a>
               <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'ledger:new' ws=ws %}">{% icon "arrow-up-right" "h-5 w-5 text-red-600" %}Gasto</a>
               <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'business:purchase_new' ws=ws %}">{% icon "package" "h-5 w-5" %}Compra de mercancía</a>
               <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'ledger:new' ws=ws %}?tipo=compra_inventario">{% icon "receipt" "h-5 w-5" %}Compra de materiales</a>
               <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'business:receivables' ws=ws %}">{% icon "hand-coins" "h-5 w-5 text-emerald-600" %}Cobro a un cliente</a>
               <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'business:payables' ws=ws %}">{% icon "credit-card" "h-5 w-5" %}Pago a proveedor</a>
-              <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'business:owner' ws=ws %}">{% icon "arrow-left-right" "h-5 w-5" %}Retiro o aporte</a>
+              {% if can_propietario %}<a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'business:owner' ws=ws %}">{% icon "arrow-left-right" "h-5 w-5" %}Retiro o aporte</a>{% endif %}
               <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'receipts:index' ws=ws %}">{% icon "camera" "h-5 w-5" %}Foto de comprobante</a>
             {% else %}
               <a role="menuitem" class="flex items-center gap-3 rounded-xl p-3 text-slate-800 no-underline hover:bg-slate-50" href="{% url 'ledger:new' ws=ws %}">{% icon "arrow-up-right" "h-5 w-5 text-red-600" %}Gasto</a>
@@ -89,15 +92,20 @@
             {% endif %}
           </div>
         </div>
-        {% if current_workspace.is_business %}
-          <a class="nav-item" href="{% url 'business:pricing' ws=ws %}" {% if name == "business:pricing" or "business:product" in name %}aria-current="page"{% endif %}>{% icon "calculator" "h-6 w-6" %}Precios</a>
+        {% if current_workspace.is_business and not can_finanzas %}
+          <a class="nav-item" href="{% url 'business:inventory' ws=ws %}" {% if name == "business:inventory" %}aria-current="page"{% endif %}>{% icon "package" "h-6 w-6" %}Inventario</a>
+          <a class="nav-item" href="{% url 'business:receivables' ws=ws %}" {% if name == "business:receivables" %}aria-current="page"{% endif %}>{% icon "hand-coins" "h-6 w-6" %}Cobros</a>
         {% else %}
-          <a class="nav-item" href="{% url 'planning:index' ws=ws %}" {% if "planning:" in name %}aria-current="page"{% endif %}>{% icon "target" "h-6 w-6" %}Plan</a>
+          {% if current_workspace.is_business %}
+            <a class="nav-item" href="{% url 'business:pricing' ws=ws %}" {% if name == "business:pricing" or "business:product" in name %}aria-current="page"{% endif %}>{% icon "calculator" "h-6 w-6" %}Precios</a>
+          {% else %}
+            <a class="nav-item" href="{% url 'planning:index' ws=ws %}" {% if "planning:" in name %}aria-current="page"{% endif %}>{% icon "target" "h-6 w-6" %}Plan</a>
+          {% endif %}
+          <a class="nav-item relative" href="{% url 'alerts:index' ws=ws %}" {% if "alerts:" in name %}aria-current="page"{% endif %}>
+            {% icon "bell" "h-6 w-6" %}Alertas
+            {% if new_alerts %}<span class="absolute right-1/4 top-1 rounded-full bg-red-600 px-1.5 text-[10px] font-bold text-white" aria-label="{{ new_alerts }} nuevas">{{ new_alerts }}</span>{% endif %}
+          </a>
         {% endif %}
-        <a class="nav-item relative" href="{% url 'alerts:index' ws=ws %}" {% if "alerts:" in name %}aria-current="page"{% endif %}>
-          {% icon "bell" "h-6 w-6" %}Alertas
-          {% if new_alerts %}<span class="absolute right-1/4 top-1 rounded-full bg-red-600 px-1.5 text-[10px] font-bold text-white" aria-label="{{ new_alerts }} nuevas">{{ new_alerts }}</span>{% endif %}
-        </a>
       </div>
     </nav>
     {% endwith %}

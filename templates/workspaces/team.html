@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load icons %}
+{% block title %}Equipo · Crecenta{% endblock %}
+{% block content %}
+  <h1>Equipo de {{ workspace.name }}</h1>
+  <p class="muted">Tus finanzas personales nunca se comparten: solo este negocio.</p>
+  {% if link %}
+    <section class="card mt-4 border-marca-200 bg-marca-50" role="status">
+      <p class="font-semibold">Enlace de invitación (válido 7 días, un solo uso)</p>
+      <p class="mt-2 break-all rounded-lg bg-white p-2 font-mono text-sm" data-testid="enlace-invitacion">{{ link }}</p>
+      <p class="muted mt-2">Compártelo por WhatsApp o correo. Solo podrá usarlo quien inicie sesión con el correo invitado. No lo volveremos a mostrar.</p>
+    </section>
+  {% endif %}
+  <ul class="card mt-4 divide-y p-0">
+    {% for m in members %}
+      <li class="flex flex-wrap items-center gap-2 px-4 py-3">
+        <span class="min-w-0 flex-1"><span class="block truncate">{{ m.user.email }}</span><span class="muted">{{ m.get_role_display }}</span></span>
+        {% if m.role != "owner" %}
+          <form method="post" action="{% url 'espacio:member_role' ws=workspace.pk member_id=m.pk %}" class="flex items-center gap-1">{% csrf_token %}<label class="sr-only" for="rol-{{ m.pk }}">Rol</label><select id="rol-{{ m.pk }}" name="role" class="py-1 text-sm">{% for value, label in roles %}<option value="{{ value }}" {% if value == m.role %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button class="btn-secondary btn-sm">Cambiar</button></form>
+          <form method="post" action="{% url 'espacio:member_remove' ws=workspace.pk member_id=m.pk %}" hx-confirm="¿Quitar el acceso a {{ m.user.email }}?">{% csrf_token %}<button class="btn-secondary btn-sm">Quitar</button></form>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+  {% if pending %}
+    <h2 class="mt-6">Invitaciones pendientes</h2>
+    <ul class="card mt-2 divide-y p-0 text-sm">{% for i in pending %}<li class="flex items-center justify-between gap-2 px-4 py-2"><span>{{ i.email }} · {{ i.get_role_display }} · vence {{ i.expires_at|date:"j/n" }}</span><form method="post" action="{% url 'espacio:invitation_revoke' ws=workspace.pk invitation_id=i.pk %}">{% csrf_token %}<button class="btn-secondary btn-sm">Anular</button></form></li>{% endfor %}</ul>
+  {% endif %}
+  <h2 class="mt-6">Invitar a alguien</h2>
+  <form method="post" class="card mt-2 space-y-4">{% csrf_token %}{% include "partials/form.html" %}<button class="btn-primary w-full">{% icon "users" "h-5 w-5" %}Crear enlace de invitación</button></form>
+{% endblock %}

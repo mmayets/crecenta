@@ -20,7 +20,7 @@
   </ul>
   <div class="mt-4 grid grid-cols-2 gap-2 text-sm">
     <a class="btn-secondary" href="{% url 'business:receivables' ws=workspace.pk %}">{% icon "users" "h-5 w-5" %}Por cobrar</a>
-    <a class="btn-secondary" href="{% url 'business:products' ws=workspace.pk %}">{% icon "package" "h-5 w-5" %}Productos</a>
+    {% if can_finanzas %}<a class="btn-secondary" href="{% url 'business:products' ws=workspace.pk %}">{% icon "package" "h-5 w-5" %}Productos</a>{% else %}<a class="btn-secondary" href="{% url 'business:inventory' ws=workspace.pk %}">{% icon "package" "h-5 w-5" %}Inventario</a>{% endif %}
   </div>
 {% endwith %}
 {% endblock %}

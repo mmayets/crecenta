@@ -10,7 +10,14 @@ from django import forms
 from django.forms import inlineformset_factory
 from django.utils import timezone
 
-from apps.business.models import BusinessProfile, CostComponent, Product, Purchase, Sale
+from apps.business.models import (
+    BusinessProfile,
+    CostComponent,
+    Product,
+    Purchase,
+    RecipeItem,
+    Sale,
+)
 from apps.business.services.purchases import PurchaseData, PurchaseLineData
 from apps.business.services.sales import DebtData, SaleData, SaleLineData
 from apps.ledger.choices import CategoryGroup
@@ -69,7 +76,9 @@ class SaleForm(_Base):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        products = Product.objects.for_workspace(self.workspace).filter(is_active=True)
+        products = Product.objects.for_workspace(self.workspace).filter(
+            is_active=True, is_supply=False
+        )
         self.rows = []
         for i in range(1, SALE_ROWS + 1):
             self.fields[f"producto_{i}"] = forms.ModelChoiceField(
@@ -184,11 +193,21 @@ class OwnerForm(_Base):
         label="Tu cuenta personal", queryset=Account.objects.none()
     )
     date = _date_field("Fecha", initial=timezone.localdate)
+    exchange_rate = forms.DecimalField(
+        label="Tasa del día (RD$ por 1 US$)", min_value=Decimal("0.0001"), max_digits=10,
+        decimal_places=4, required=False,
+        help_text="El monto va en la moneda de donde sale el dinero.",
+    )  # fmt: skip
     note = forms.CharField(label="Nota (opcional)", max_length=140, required=False)
 
     def __init__(self, *args: Any, personal: Workspace, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.personal = personal
+        self.needs_rate = personal.currency != self.workspace.currency
+        if self.needs_rate:
+            self.fields["exchange_rate"].required = True
+        else:
+            del self.fields["exchange_rate"]
         self.fields["personal_account"].queryset = _accounts(personal)  # type: ignore[attr-defined]
         self.fields["personal_account"].initial = _accounts(personal).first()
 
@@ -333,3 +352,21 @@ class StockActionForm(forms.Form):
         if data.get("action") == "inicial" and data.get("unit_cost") is None:
             self.add_error("unit_cost", "Indica cuánto te costó cada unidad.")
         return data
+
+
+class RecipeItemForm(forms.ModelForm):
+    class Meta:
+        model = RecipeItem
+        fields = ["supply", "qty"]
+        labels = {"supply": "Insumo", "qty": "Cantidad por unidad"}
+
+    def __init__(self, *args: Any, workspace: Workspace, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields["supply"].queryset = Product.objects.for_workspace(workspace).filter(  # type: ignore[attr-defined]
+            is_supply=True, tracks_inventory=True
+        )
+
+
+RecipeFormSet = inlineformset_factory(
+    Product, RecipeItem, form=RecipeItemForm, fk_name="product", extra=2, can_delete=True
+)

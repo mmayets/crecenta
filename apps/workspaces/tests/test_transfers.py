@@ -124,9 +124,33 @@ def test_validaciones(user, personal_ws, business_ws):
         retiro(user, business_ws, personal_ws, amount="0")
     assert "amount" in exc.value.message_dict
     usd = create_workspace(user, "business", name="Tienda USD", currency="USD")
-    with pytest.raises(ValidationError) as exc:
+    with pytest.raises(ValidationError) as exc:  # monedas distintas sin tasa
         retiro(user, usd, personal_ws)
-    assert "to_workspace" in exc.value.message_dict
+    assert "exchange_rate" in exc.value.message_dict
+
+
+def test_monedas_distintas_con_tasa(user, personal_ws):
+    from apps.workspaces.services.transfers import convert
+
+    usd = create_workspace(user, "business", name="Tienda USD", currency="USD")
+    t, _ = retiro(user, usd, personal_ws, amount="100", exchange_rate=D("60.50"))
+    assert t.amount == D("100") and t.in_amount == D("6050.00")
+    assert t.exchange_rate == D("60.5000")
+    assert t.out_tx.amount == D("100.00") and t.in_tx.amount == D("6050.00")
+    assert "(tasa 60.5)" in t.in_tx.description
+    aporte, _ = transfer_between(
+        user, personal_ws, usd, "6050", HOY, APORTE, caja(personal_ws), caja(usd),
+        exchange_rate=D("60.50"),
+    )  # fmt: skip
+    assert aporte.in_tx.amount == D("100.00")
+    assert convert(D("5"), "DOP", "DOP", None) == D("5")
+    with pytest.raises(ValidationError):
+        convert(D("5"), "USD", "DOP", D("0"))
+    with pytest.raises(ValidationError):
+        convert(D("5"), "USD", "EUR", D("1"))
+    same, _ = retiro(user, create_workspace(user, "business", name="Otro"), personal_ws,
+                     exchange_rate=D("60"))  # fmt: skip
+    assert same.exchange_rate is None and same.in_amount == same.amount
 
 
 def test_borrar_transferencia_borra_ambos_movimientos(user, other_user, personal_ws, business_ws):

@@ -28,6 +28,7 @@ from apps.business.models import (
     Purchase,
     PurchaseLine,
     Receivable,
+    RecipeItem,
     Sale,
     SaleLine,
     Supplier,
@@ -44,7 +45,7 @@ from apps.personal.models import (
 )
 from apps.planning.models import PlanVersion
 from apps.receipts.models import Receipt
-from apps.workspaces.models import Workspace, WorkspaceTransfer
+from apps.workspaces.models import Invitation, Membership, Workspace, WorkspaceTransfer
 
 SECTIONS: dict[str, Any] = {
     "cuentas": Account,
@@ -129,6 +130,16 @@ def build_export(user: User) -> IO[bytes]:
                 entry["lineas_de_venta"] = _rows(SaleLine.objects.filter(sale__workspace=workspace))
                 entry["lineas_de_compra"] = _rows(
                     PurchaseLine.objects.filter(purchase__workspace=workspace)
+                )
+                entry["recetas"] = _rows(RecipeItem.objects.filter(product__workspace=workspace))
+                entry["equipo"] = list(
+                    Membership.objects.filter(workspace=workspace).values("user__email", "role")
+                )
+                # Sin el hash del código: el archivo no debe servir para aceptar invitaciones.
+                entry["invitaciones"] = list(
+                    Invitation.objects.filter(workspace=workspace).values(
+                        "email", "role", "created_at", "expires_at", "accepted_at", "revoked_at"
+                    )
                 )
             data["espacios"].append(entry)
 

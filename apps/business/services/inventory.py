@@ -149,6 +149,19 @@ def record_sale_outflow(workspace: Workspace, line: SaleLine, on: datetime.date)
     return cost
 
 
+def record_recipe_outflows(workspace: Workspace, line: SaleLine, on: datetime.date) -> None:
+    """Descuenta los insumos de la receta de un producto elaborado al costo promedio."""
+    product = line.product
+    assert product is not None
+    for item in product.recipe.select_related("supply"):
+        supply = item.supply
+        qty = (item.qty * line.qty).quantize(QTY_PLACES)
+        if qty == 0:
+            continue
+        _create(workspace, None, supply, "venta", -qty, on, q4(supply.average_cost), sale_line=line)
+        refresh_stock(supply)
+
+
 def register_adjustment(
     workspace: Workspace,
     user: User | None,

@@ -78,7 +78,7 @@ class ProductForm(WorkspaceModelForm):
         model = Product
         fields = [
             "name", "price", "unit_cost", "expected_monthly_units", "is_service", "labor_minutes",
-            "tracks_inventory", "stock_minimum",
+            "tracks_inventory", "stock_minimum", "is_supply",
         ]  # fmt: skip
         labels = {
             "name": "Producto o servicio",
@@ -89,6 +89,7 @@ class ProductForm(WorkspaceModelForm):
             "labor_minutes": "Minutos que te toma (servicios)",
             "tracks_inventory": "Lo compro hecho y quiero controlar su inventario",
             "stock_minimum": "Avísame cuando queden (unidades)",
+            "is_supply": "Es un insumo (lo uso para elaborar, no lo vendo)",
         }
         help_texts = {
             "unit_cost": "Materiales, empaque, entrega y comisiones de una unidad.",
@@ -103,6 +104,12 @@ class ProductForm(WorkspaceModelForm):
             # Sin valor inicial: una fila vacía del formset no cuenta como "cambiada".
             self.fields["stock_minimum"].initial = None
             self.initial.pop("stock_minimum", None)
+
+    def clean(self) -> dict[str, Any]:
+        data = super().clean()
+        if data.get("is_supply") and not data.get("tracks_inventory"):
+            self.add_error("tracks_inventory", "Un insumo necesita control de inventario.")
+        return data
 
     def clean_stock_minimum(self) -> Decimal:
         return self.cleaned_data.get("stock_minimum") or Decimal("0")

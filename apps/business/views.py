@@ -29,6 +29,7 @@ from apps.business.services.cash import check_withdrawal
 from apps.business.services.costs import refresh_unit_cost
 from apps.business.services.indicators import MONTHLY_FACTOR
 from apps.business.services.loaders import load_cash_outlook, month_bounds
+from apps.business.services.product_cost import recipe_cost
 from apps.business.services.sales import (
     collect_receivable,
     delete_sale,
@@ -52,12 +53,23 @@ from apps.pricing.services.engine import (
 from apps.pricing.services.loaders import inputs_for_product
 from apps.workspaces.mixins import workspace_required
 from apps.workspaces.models import Workspace
+from apps.workspaces.permissions import FINANZAS, PROPIETARIO, VENDER, can
 from apps.workspaces.services.transfers import transfer_between
 
-from .forms import ComponentFormSet, DebtForm, OwnerForm, PricingForm, SaleForm, SettleForm
+from .forms import (
+    ComponentFormSet,
+    DebtForm,
+    OwnerForm,
+    PricingForm,
+    RecipeFormSet,
+    SaleForm,
+    SettleForm,
+)
 
 HUNDRED = Decimal("100")
 business_only = workspace_required(kind="business")
+business_seller = workspace_required(kind="business", perm=VENDER)
+business_owner = workspace_required(kind="business", perm=PROPIETARIO)
 
 
 def _get(model: Any, workspace: Workspace, pk: Any) -> Any:
@@ -74,7 +86,7 @@ def _errors(exc: ValidationError) -> list[str]:
 # ---------------------------------------------------------------------------- ventas
 
 
-@business_only
+@business_seller
 @require_GET
 def sales(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     start, end = month_bounds(timezone.localdate())
@@ -92,11 +104,15 @@ def sales(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     )
 
 
-@business_only
+@business_seller
 @require_http_methods(["GET", "POST"])
 def sale_new(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     form = SaleForm(request.POST or None, workspace=workspace)
-    if not Product.objects.for_workspace(workspace).filter(is_active=True).exists():
+    sellable = Product.objects.for_workspace(workspace).filter(is_active=True, is_supply=False)
+    if not sellable.exists():
+        if not can(request.workspace_role, FINANZAS):  # type: ignore[attr-defined]
+            messages.info(request, "Aún no hay productos. Pide al propietario que los registre.")
+            return redirect("espacio:dashboard", ws=workspace.pk)
         messages.info(request, "Primero registra lo que vendes.")
         return redirect("business:product_new", ws=workspace.pk)
     if request.method == "POST" and form.is_valid():
@@ -119,7 +135,7 @@ def sale_new(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     )
 
 
-@business_only
+@business_seller
 @require_GET
 def sale_detail(request: HttpRequest, workspace: Workspace, sale_id: Any) -> HttpResponse:
     sale = _get(Sale, workspace, sale_id)
@@ -181,6 +197,12 @@ def products(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     )
 
 
+def _has_recipe(recipe: Any) -> bool:
+    return any(
+        f.cleaned_data.get("supply") and not f.cleaned_data.get("DELETE") for f in recipe.forms
+    )
+
+
 @business_only
 @require_http_methods(["GET", "POST"])
 def product_edit(
@@ -189,18 +211,47 @@ def product_edit(
     product = _get(Product, workspace, product_id) if product_id else Product(workspace=workspace)
     form = ProductForm(request.POST or None, instance=product, workspace=workspace)
     components = ComponentFormSet(request.POST or None, instance=product, prefix="componentes")
-    if request.method == "POST" and form.is_valid() and components.is_valid():
+    recipe = RecipeFormSet(
+        request.POST or None,
+        instance=product,
+        prefix="receta",
+        form_kwargs={"workspace": workspace},
+    )
+    valid = form.is_valid() and components.is_valid() and recipe.is_valid()
+    if (
+        valid
+        and _has_recipe(recipe)
+        and (form.cleaned_data.get("tracks_inventory") or form.cleaned_data.get("is_supply"))
+    ):
+        form.add_error(
+            None,
+            "Un producto con receta descuenta sus insumos al venderse: no lleva inventario propio "
+            "ni puede ser insumo.",
+        )
+        valid = False
+    if request.method == "POST" and valid:
         with transaction.atomic():
             product = form.save()
             components.instance = product
             components.save()
+            recipe.instance = product
+            recipe.save()
             refresh_unit_cost(product)
         messages.success(request, "Producto guardado.")
         return redirect("business:products", ws=workspace.pk)
     return render(
         request,
         "business/product_form.html",
-        {"workspace": workspace, "form": form, "components": components, "product": product},
+        {
+            "workspace": workspace,
+            "form": form,
+            "components": components,
+            "recipe": recipe,
+            "product": product,
+            "recipe_cost": recipe_cost(product)
+            if product.pk and not product._state.adding
+            else None,
+        },
         status=400 if request.method == "POST" else 200,
     )
 
@@ -316,6 +367,8 @@ def _defaults(form_class: type[PricingForm]) -> dict[str, Any]:
 
 def _debt_page(request: HttpRequest, workspace: Workspace, *, payable: bool) -> HttpResponse:
     model = Payable if payable else Receivable
+    if request.method == "POST" and not can(request.workspace_role, FINANZAS):  # type: ignore[attr-defined]
+        raise Http404("El vendedor cobra; registrar deudas antiguas es del propietario")
     form = DebtForm(request.POST or None, workspace=workspace, payable=payable)
     if request.method == "POST" and form.is_valid():
         register = register_payable if payable else register_receivable
@@ -349,7 +402,7 @@ def _debt_page(request: HttpRequest, workspace: Workspace, *, payable: bool) -> 
     )
 
 
-@business_only
+@business_seller
 @require_http_methods(["GET", "POST"])
 def receivables(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     return _debt_page(request, workspace, payable=False)
@@ -388,7 +441,7 @@ def _settle_page(
     )
 
 
-@business_only
+@business_seller
 @require_http_methods(["GET", "POST"])
 def collect(request: HttpRequest, workspace: Workspace, debt_id: Any) -> HttpResponse:
     return _settle_page(request, workspace, debt_id, payable=False)
@@ -407,7 +460,7 @@ def _personal(request: HttpRequest) -> Workspace | None:
     return Workspace.objects.filter(owner=request.user, kind=Workspace.Kind.PERSONAL).first()
 
 
-@business_only
+@business_owner
 @require_http_methods(["GET", "POST"])
 def owner(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     personal = _personal(request)
@@ -426,6 +479,7 @@ def owner(request: HttpRequest, workspace: Workspace) -> HttpResponse:
                 request.user, source, target, d["amount"], d["date"], d["kind"],
                 *(accounts if withdrawal else accounts[::-1]),
                 note=d["note"], client_uuid=d["client_uuid"],
+                exchange_rate=d.get("exchange_rate"),
             )  # fmt: skip
         except ValidationError as exc:
             for message in _errors(exc):
@@ -447,7 +501,7 @@ def owner(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     )
 
 
-@business_only
+@business_owner
 @require_POST
 def owner_check(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     """Aviso de reserva operativa mientras se escribe el monto del retiro (htmx)."""

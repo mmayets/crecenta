@@ -130,7 +130,7 @@ def test_inventario_inicial_compra_y_venta(business_ws, user, refresco, caja):
 
     venta, _ = vender(business_ws, user, refresco, "5", caja)
     line = venta.lines.get()
-    assert line.unit_cost_snapshot == D("60.00") and line.movement.qty == D("-5.000")
+    assert line.unit_cost_snapshot == D("60.00") and line.movements.get().qty == D("-5.000")
     refresco.refresh_from_db()
     assert refresco.stock == 15 and stock_warnings(venta) == []
 

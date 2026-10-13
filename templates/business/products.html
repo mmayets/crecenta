@@ -17,6 +17,7 @@
         <p class="text-sm">Precio {{ r.product.price|money:cur }} · costo {{ r.product.unit_cost|money:cur }} · te deja {{ r.economics.profit|money:cur }} por unidad</p>
         {% if r.suggested and r.suggested != r.product.price %}<p class="muted">Precio sugerido para tu margen: {{ r.suggested|money:cur }}</p>{% endif %}
         {% if not r.product.is_active %}<p class="muted">Inactivo</p>{% endif %}
+        {% if r.product.is_supply %}<p class="muted">Insumo: se usa en recetas, no se vende.</p>{% endif %}
         {% if r.product.tracks_inventory %}<p class="muted">Inventario: {{ r.product.stock|floatformat:"-3u" }} · costo promedio {{ r.product.average_cost|money:cur }} · <a href="{% url 'business:stock_product' ws=workspace.pk product_id=r.product.pk %}">ver</a></p>{% endif %}
         <a class="mt-2 inline-flex items-center gap-1 text-sm" href="{% url 'business:pricing' ws=workspace.pk %}?producto={{ r.product.pk }}">{% icon "calculator" "h-4 w-4" %}Calcular precio</a>
       </li>
