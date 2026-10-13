@@ -15,13 +15,15 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.business.services.plan_edits import apply_business_edits
+from apps.business.services.plan_serialize import business_inputs_from_dict
 from apps.ledger.models import Category
 from apps.personal.services.budget_engine import build_personal_plan
 from apps.personal.services.serialize import inputs_from_dict
 from apps.personal.services.types import BudgetResult
 from apps.planning.models import BudgetLine, BudgetPeriod, PlanVersion
 from apps.planning.services.editing import apply_edits
-from apps.planning.services.generate import request_personal_plan
+from apps.planning.services.generate import request_business_plan, request_personal_plan
 from apps.workspaces.models import Workspace
 
 S = PlanVersion.Status
@@ -40,6 +42,8 @@ def _lock_open(plan: PlanVersion) -> PlanVersion:
 
 @transaction.atomic
 def accept_plan(plan: PlanVersion, user: User | None) -> PlanVersion:
+    """Acepta la propuesta. En un plan personal crea el presupuesto del período; en un plan de
+    negocio la versión aceptada queda como la meta del mes (no cambia precios ni registra nada)."""
     plan = _lock_open(plan)
     workspace = plan.workspace
     same_period = (
@@ -50,6 +54,8 @@ def accept_plan(plan: PlanVersion, user: User | None) -> PlanVersion:
     same_period.filter(status__in=[S.ACEPTADO, S.PROPUESTA, S.GENERANDO]).update(
         status=S.REEMPLAZADO, updated_at=timezone.now()
     )
+    if plan.kind == PlanVersion.Kind.BUSINESS:
+        return _mark_accepted(plan)
     BudgetPeriod.objects.for_workspace(workspace).filter(
         start=plan.period_start, is_active=True
     ).update(is_active=False)
@@ -74,6 +80,10 @@ def accept_plan(plan: PlanVersion, user: User | None) -> PlanVersion:
         )
         for line in plan.computed["lineas"]
     )
+    return _mark_accepted(plan)
+
+
+def _mark_accepted(plan: PlanVersion) -> PlanVersion:
     plan.status = S.ACEPTADO
     plan.accepted_at = timezone.now()
     plan.save(update_fields=["status", "accepted_at", "updated_at"])
@@ -95,10 +105,18 @@ def edit_plan(
     """Crea una nueva propuesta con los cambios (recalculada por el motor); la anterior queda
     `reemplazado`. Lanza ValidationError si los cambios no son válidos."""
     plan = _lock_open(plan)
-    new_inputs = apply_edits(inputs_from_dict(plan.inputs_snapshot), edits)
-    new_plan = request_personal_plan(
-        plan.workspace, user, today, inputs=new_inputs, parent=plan, edits=edits
-    )
+    if plan.kind == PlanVersion.Kind.BUSINESS:
+        business_inputs = apply_business_edits(
+            business_inputs_from_dict(plan.inputs_snapshot), edits
+        )
+        new_plan = request_business_plan(
+            plan.workspace, user, today, inputs=business_inputs, parent=plan, edits=edits
+        )
+    else:
+        new_inputs = apply_edits(inputs_from_dict(plan.inputs_snapshot), edits)
+        new_plan = request_personal_plan(
+            plan.workspace, user, today, inputs=new_inputs, parent=plan, edits=edits
+        )
     plan.status = S.REEMPLAZADO
     plan.save(update_fields=["status", "updated_at"])
     return new_plan
@@ -145,7 +163,24 @@ _CONCEPTS = [
 ]
 
 
+_BUSINESS_CONCEPTS = [
+    ("ventas", "Ventas"),
+    ("costo_de_lo_vendido", "Costo de lo vendido"),
+    ("ganancia_bruta", "Ganancia bruta"),
+    ("gastos_operativos", "Gastos operativos"),
+    ("resultado", "Resultado del mes"),
+    ("retiro_planeado", "Retiro del propietario"),
+    ("retiro_maximo", "Retiro máximo"),
+]
+
+
 def compare_plans(a: PlanVersion, b: PlanVersion) -> list[ComparisonRow]:
+    if a.kind == PlanVersion.Kind.BUSINESS:
+        return [
+            ComparisonRow(label, Decimal(a.computed[key]), Decimal(b.computed[key]))
+            for key, label in _BUSINESS_CONCEPTS
+        ]
+
     def value(plan: PlanVersion, key: str) -> Decimal:
         computed = plan.computed
         raw = computed[key] if key in computed else computed["totales"].get(key, "0")

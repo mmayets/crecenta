@@ -22,8 +22,15 @@ from django.db import transaction
 from apps.accounts.models import User
 from apps.ai.schemas import PlanNarrative
 from apps.ai.services.client import run_structured
-from apps.ai.services.fallback import fallback_plan_narrative
+from apps.ai.services.fallback import fallback_business_narrative, fallback_plan_narrative
 from apps.ai.services.guards import plan_validator
+from apps.business.services.loaders import load_business_plan_inputs
+from apps.business.services.plan import BusinessPlanInputs, build_business_plan
+from apps.business.services.plan_edits import business_missing_data
+from apps.business.services.plan_serialize import (
+    business_inputs_to_dict,
+    serialize_business_plan,
+)
 from apps.ledger.models import Category
 from apps.personal.services.budget_engine import build_personal_plan
 from apps.personal.services.loaders import load_personal_inputs
@@ -70,6 +77,40 @@ def request_personal_plan(
     return plan
 
 
+def request_business_plan(
+    workspace: Workspace,
+    user: User | None,
+    today: date,
+    *,
+    inputs: BusinessPlanInputs | None = None,
+    parent: PlanVersion | None = None,
+    edits: dict[str, Any] | None = None,
+) -> PlanVersion:
+    """Plan de negocio del mes: mismo flujo y estados que el personal."""
+    inputs = inputs or load_business_plan_inputs(workspace, today)
+    result = build_business_plan(inputs)
+    plan = PlanVersion.objects.create(
+        workspace=workspace,
+        kind=PlanVersion.Kind.BUSINESS,
+        status=PlanVersion.Status.GENERANDO,
+        period_start=inputs.start,
+        period_end=inputs.end,
+        plan_status=result.status.value,
+        inputs_snapshot=business_inputs_to_dict(inputs),
+        computed=serialize_business_plan(result),
+        assumptions=list(result.assumptions),
+        missing_data=business_missing_data(inputs),
+        edits=edits or {},
+        parent=parent,
+        created_by=user,
+    )
+    from apps.planning.tasks import narrate_plan_task
+
+    plan_id = str(plan.pk)
+    transaction.on_commit(lambda: narrate_plan_task.delay(plan_id))
+    return plan
+
+
 def _ai_context(plan: PlanVersion, computed_for_ai: dict[str, Any]) -> dict[str, Any]:
     names = {
         str(pk): name
@@ -95,17 +136,30 @@ def narrate_plan(plan_id: UUID | str) -> PlanVersion:
         return plan
     computed_for_ai = strip_refs(plan.computed)
     currency = plan.workspace.currency
+    is_business = plan.kind == PlanVersion.Kind.BUSINESS
+    name = "plan_negocio" if is_business else "plan_personal"
 
     def fallback() -> PlanNarrative:
-        return fallback_plan_narrative(computed_for_ai, plan.missing_data, currency)
+        builder = fallback_business_narrative if is_business else fallback_plan_narrative
+        return builder(computed_for_ai, plan.missing_data, currency)
 
+    context = (
+        {
+            "moneda": currency,
+            "estado": plan.computed["estado"],
+            "calculado": computed_for_ai,
+            "datos_faltantes": plan.missing_data,
+        }
+        if is_business
+        else _ai_context(plan, computed_for_ai)
+    )
     try:
         result = run_structured(
             workspace=plan.workspace,
             user=plan.created_by,
-            purpose="plan_personal",
-            prompt_name="plan_personal",
-            context=_ai_context(plan, computed_for_ai),
+            purpose=name,
+            prompt_name=name,
+            context=context,
             schema=PlanNarrative,
             fallback=fallback,
             validator=plan_validator(computed_for_ai),

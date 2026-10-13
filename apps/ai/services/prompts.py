@@ -29,6 +29,7 @@ PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
 # Versión vigente de cada plantilla (cambiarla aquí es el único paso para publicar una nueva).
 VERSIONS = {
     "plan_personal": "v1",
+    "plan_negocio": "v1",
     "onboarding_extraccion": "v1",
     "comprobante_ocr": "v1",
     "registro_rapido": "v1",

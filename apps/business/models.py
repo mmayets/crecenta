@@ -192,6 +192,8 @@ class BusinessGoal(models.Model):
     target_margin_pct = pct_field("margen bruto objetivo", null=True, blank=True)
     target_profit = money_field("ganancia objetivo del mes", null=True, blank=True)
     cash_reserve = money_field("reserva de efectivo", default=0, validators=_NON_NEGATIVE)
+    # Lo que la persona quiere retirar del negocio cada mes para vivir (lo usa el plan).
+    planned_owner_draw = money_field("retiro mensual deseado", default=0, validators=_NON_NEGATIVE)
 
     class Meta:
         verbose_name = "objetivo del negocio"

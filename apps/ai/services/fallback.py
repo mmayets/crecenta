@@ -101,3 +101,71 @@ def fallback_plan_narrative(
             item["pregunta"] for item in missing if item.get("pregunta")
         ][:6],
     )
+
+
+def fallback_business_narrative(
+    computed: dict[str, Any], missing: list[dict[str, str]] | None = None, currency: str = "DOP"
+) -> PlanNarrative:
+    """Explicación por reglas del plan de negocio: ventas, ganancia y caja por separado."""
+
+    def m(value: str) -> str:
+        return fmt(Decimal(value), currency)
+
+    status = computed["estado"]
+    low = computed["caja"]["saldo_mas_bajo"]
+    parts = [
+        f"Con las ventas esperadas el negocio vendería {m(computed['ventas'])} y le quedarían "
+        f"{m(computed['ganancia_bruta'])} de ganancia bruta ({computed['margen_bruto']}).",
+        f"Después de {m(computed['gastos_operativos'])} de gastos fijos, el resultado del mes "
+        f"sería {m(computed['resultado'])}.",
+        f"En caja, el saldo más bajo del mes sería {m(low['monto'])} el {_day(low['fecha'])}.",
+    ]
+    if status == "viable":
+        parts.insert(0, "Tu plan del mes funciona.")
+    elif status == "ajustado":
+        parts.insert(0, "Tu plan funciona, pero queda justo.")
+    else:
+        parts.insert(0, "Tu plan del mes no funciona tal como está.")
+    parts.extend(computed["motivos"][:2])
+    if Decimal(computed["retiro_planeado"]) > Decimal(computed["retiro_maximo"]):
+        parts.append(
+            f"El retiro que planeas ({m(computed['retiro_planeado'])}) supera lo que el negocio "
+            f"puede soltar sin quedarse sin efectivo ({m(computed['retiro_maximo'])})."
+        )
+
+    recommendations = [
+        Recomendacion(
+            titulo=alt["nombre"],
+            detalle=f"{alt['descripcion']} Mejora {m(alt['libera'])}.",
+            impacto_rd=Decimal(alt["libera"]),
+            datos_usados=[c["concepto"] for c in alt["cambios"]] or ["plan del mes"],
+            es_proyeccion=True,
+            accion_sugerida=AccionSugerida(
+                tipo="aplicar_alternativa", parametros={"codigo": alt["codigo"]}
+            ),
+        )
+        for alt in computed["alternativas"][:4]
+    ]
+    alternatives = [
+        AlternativaIA(
+            codigo=alt["codigo"],
+            nombre=alt["nombre"],
+            cambios=[
+                CambioIA(categoria=c["concepto"], de=Decimal(c["de"]), a=Decimal(c["a"]))
+                for c in alt["cambios"]
+            ],
+            explicacion=alt["descripcion"],
+        )
+        for alt in computed["alternativas"]
+    ]
+    missing = missing or []
+    return PlanNarrative(
+        resumen=" ".join(parts)[:1200],
+        estado=status,
+        recomendaciones=recommendations,
+        alternativas=alternatives,
+        advertencias_datos_faltantes=[item["mensaje"] for item in missing][:10],
+        preguntas_para_mejorar_el_plan=[
+            item["pregunta"] for item in missing if item.get("pregunta")
+        ][:6],
+    )

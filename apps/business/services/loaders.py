@@ -10,14 +10,16 @@ from django.db.models import F, Q, QuerySet, Sum
 
 from apps.business.models import (
     BusinessGoal,
+    BusinessProfile,
     DebtStatus,
     OperatingExpense,
     Payable,
+    Product,
     Receivable,
     Sale,
     SaleLine,
 )
-from apps.core.dates import clamp_day
+from apps.core.dates import add_months, clamp_day
 from apps.core.money import ZERO
 from apps.ledger.choices import CategoryGroup, Direction, TxKind
 from apps.ledger.models import Transaction
@@ -36,6 +38,7 @@ from .cash import (
     expected_inflows,
     operating_reserve,
 )
+from .costs import ComponentInput, unit_cost
 from .indicators import (
     BusinessPeriodInputs,
     ExpensePlan,
@@ -44,6 +47,7 @@ from .indicators import (
     SoldLine,
     compute_indicators,
 )
+from .plan import BusinessPlanInputs, PlanProduct
 
 
 def month_bounds(today: datetime.date) -> tuple[datetime.date, datetime.date]:
@@ -227,4 +231,73 @@ def business_snapshot(workspace: Workspace, today: datetime.date) -> BusinessSna
     return BusinessSnapshot(
         indicators=compute_indicators(load_business_inputs(workspace, start, end, today)),
         cash=load_cash_outlook(workspace, today),
+    )
+
+
+def _units_sold(
+    workspace: Workspace, start: datetime.date, end: datetime.date
+) -> dict[str, Decimal]:
+    rows = (
+        SaleLine.objects.filter(
+            sale__workspace=workspace, sale__date__range=(start, end), product__isnull=False
+        )
+        .values_list("product_id")
+        .annotate(units=Sum("qty"))
+    )
+    return {str(pk): units for pk, units in rows}
+
+
+def load_business_plan_inputs(workspace: Workspace, today: datetime.date) -> BusinessPlanInputs:
+    """Entradas del plan del mes en curso. Si un producto no tiene unidades esperadas, se usan las
+    vendidas el mes anterior (y se marca como estimado)."""
+    start, end = month_bounds(today)
+    year, month = add_months(today.year, today.month, -1)
+    last_month = _units_sold(workspace, datetime.date(year, month, 1), clamp_day(year, month, 31))
+    products = []
+    for product in (
+        Product.objects.for_workspace(workspace)
+        .filter(is_active=True)
+        .prefetch_related("components")
+    ):
+        components = [ComponentInput(c.type, c.amount) for c in product.components.all()]
+        if components:
+            breakdown = unit_cost(product.price, components)
+            base_cost, commission = breakdown.fixed_part, breakdown.commission_pct
+        else:
+            base_cost, commission = product.unit_cost, ZERO
+        units, estimated = product.expected_monthly_units, False
+        if units is None:
+            units = last_month.get(str(product.pk), ZERO)
+            estimated = units > 0
+        products.append(
+            PlanProduct(
+                ref=str(product.pk),
+                name=product.name,
+                price=product.price,
+                base_cost=base_cost,
+                commission_pct=commission,
+                expected_units=units,
+                units_estimated=estimated,
+                is_service=product.is_service,
+                labor_minutes=product.labor_minutes,
+            )
+        )
+    goal = BusinessGoal.objects.filter(workspace=workspace).first()
+    profile = BusinessProfile.objects.filter(workspace=workspace).first()
+    return BusinessPlanInputs(
+        start=start,
+        end=end,
+        today=today,
+        currency=workspace.currency,
+        products=tuple(products),
+        expenses=tuple(_expense_plan(workspace)),
+        cash_now=business_cash_now(workspace, today),
+        receivables=tuple(_debts(_open(Receivable, workspace))),
+        payables=tuple(_debts(_open(Payable, workspace))),
+        paid_this_month=_paid_this_month(workspace, today),
+        target_margin=goal.target_margin_pct if goal else None,
+        target_profit=goal.target_profit if goal else None,
+        cash_reserve=goal.cash_reserve if goal else ZERO,
+        planned_withdrawal=goal.planned_owner_draw if goal else ZERO,
+        hours_available=profile.hours_available_month if profile else None,
     )
