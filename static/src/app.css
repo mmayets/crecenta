@@ -42,7 +42,7 @@
   .bar.over > span { @apply bg-red-600; }
   .bar.warn > span { @apply bg-amber-500; }
   .choice-list ul, ul.choice-list, .choice-list > div { @apply grid gap-2; }
-  .choice-inline > div { @apply grid-cols-3; }
+  .choice-inline > div { @apply auto-cols-fr grid-flow-col; }
   .choice-list label { @apply mb-0 flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 font-normal; }
   .choice-list label:has(input:checked) { @apply border-marca-600 bg-marca-50 font-semibold text-marca-800; }
   .nav-item { @apply flex flex-1 flex-col items-center gap-0.5 py-2 text-xs text-slate-600 no-underline; }

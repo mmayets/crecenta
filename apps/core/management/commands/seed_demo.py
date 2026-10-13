@@ -2,6 +2,7 @@
 
 - Persona: el caso RD$50,000 (cobro el día 1), movimientos del mes en curso, ahorro apartado y un
   plan aceptado.
+- Vendedora "vendedor@crecenta.app" (misma contraseña) con rol vendedor en Dulces Ana (Fase 4).
 - Negocio "Dulces Ana": repostería con tres productos (el bizcocho de costo RD$600 a RD$857.14,
   margen del 30 %), gastos fijos, metas, ventas de contado y a crédito de este mes y del anterior,
   un cobro parcial, una compra a crédito, un retiro hacia la persona y una propuesta de plan del
@@ -37,10 +38,12 @@ from apps.planning.services.generate import (
     request_personal_plan,
 )
 from apps.planning.services.lifecycle import accept_plan
+from apps.workspaces.models import Membership
 from apps.workspaces.services.workspaces import create_workspaces_for_usage
 
 DEFAULT_EMAIL = "demo@crecenta.app"
 DEFAULT_PASSWORD = "Demo-Crecenta-2026"  # noqa: S105 - cuenta de demostración local
+SELLER_EMAIL = "vendedor@crecenta.app"
 
 
 class Command(BaseCommand):
@@ -72,9 +75,10 @@ class Command(BaseCommand):
             personal, business = create_workspaces_for_usage(
                 user, "ambos", business_name="Dulces Ana"
             )
+            seller = self._seller(business, password)
             today = timezone.localdate()
             self._personal(user, personal, today)
-            load_business_case(business, user, personal, today)
+            load_business_case(business, user, personal, today, seller=seller)
             self._finish_onboarding(business)
         # Fuera de la transacción: la explicación del plan se genera aquí mismo (sin worker).
         plan = request_personal_plan(personal, user, timezone.localdate())
@@ -86,11 +90,25 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("Demo lista."))
         self.stdout.write(f"  Correo: {email}\n  Contraseña: {password}")
+        if seller is not None:
+            self.stdout.write(f"  Vendedora de Dulces Ana: {seller.email} (misma contraseña)")
         self.stdout.write(
             f"  Plan personal: {plan.plan_status} · Plan del negocio: "
             f"{business_plan.plan_status} · Producto: "
             f"{Product.objects.get(workspace=business, name=BIZCOCHO).name}"
         )
+
+    def _seller(self, business, password: str) -> User | None:
+        """Vendedora de la demo. Una cuenta con espacios propios no se toca."""
+        existing = User.objects.filter(email=SELLER_EMAIL).first()
+        if existing is not None:
+            if existing.owned_workspaces.exists():
+                self.stdout.write(f"  {SELLER_EMAIL} ya tiene espacios propios: sin vendedora.")
+                return None
+            existing.delete()
+        seller = User.objects.create_user(SELLER_EMAIL, password, first_name="Carla")
+        Membership.objects.create(user=seller, workspace=business, role=Membership.Role.VENDEDOR)
+        return seller
 
     def _finish_onboarding(self, ws) -> None:
         state = get_state(ws)

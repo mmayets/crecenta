@@ -61,8 +61,17 @@ Revisión hecha al cierre de la Fase 1 (paso 12). Cada punto indica cómo se cum
 - Los movimientos de compras y ventas no se borran desde el inventario (solo anulando su documento), para que efectivo, deudas y existencias no se descuadren.
 - La exportación de datos incluye compras, líneas de compra y movimientos de inventario; el CSV de reportes se sirve solo al propietario del espacio.
 
+## Fase 4 (equipo, recetas, monedas, ventas sin conexión y 606/607)
+
+- **Roles verificados en el servidor**: cada vista declara su permiso (`workspace_required(perm=…)`) y, si no declara ninguno, exige *finanzas*: una vista nueva queda cerrada para el vendedor. Sin permiso → 404. `tests/test_roles.py` recorre todas las rutas como vendedor y administrador.
+- **Invitaciones**: código de 256 bits (`secrets.token_urlsafe(32)`) mostrado una sola vez; en la base solo su SHA-256. Un solo uso (bloqueo de fila al aceptar), vence en 7 días y solo lo acepta la sesión con el correo invitado. La exportación de datos no incluye el hash.
+- **El espacio personal nunca se comparte**; retiros, aportes y equipo son solo del propietario. Un administrador no puede borrar un retiro (afectaría el espacio personal del dueño).
+- **Quitar acceso** borra la membresía de inmediato; lo registrado se conserva (`created_by` con `SET_NULL`), también si la persona borra su cuenta.
+- **Ventas sin conexión**: el teléfono guarda los campos del formulario sin el token CSRF; el envío usa el token vigente de la sesión, se valida con el mismo formulario y tiene límite de tamaño (50) y de frecuencia.
+- **Archivos 606/607**: solo para *finanzas*; contienen RNC o cédula de clientes y proveedores, por eso no se sirven al vendedor.
+
 ## Pendiente para fases siguientes
 
-- Verificación del correo es `optional` en desarrollo y `mandatory` en producción; evaluar 2FA (allauth MFA) cuando haya negocios con varias personas.
+- Verificación del correo es `optional` en desarrollo y `mandatory` en producción; evaluar 2FA (allauth MFA) ahora que hay negocios con varias personas.
 - Cifrado de comprobantes en reposo depende del almacenamiento (activar cifrado del bucket S3).
 - Política de retención/borrado de `AIInteraction` y de alertas antiguas.

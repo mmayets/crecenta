@@ -1,6 +1,7 @@
-# Fase 4 — Equipo, producción con insumos, monedas y ventas sin conexión: propuesta de diseño
+# Fase 4 — Equipo, producción con insumos, monedas y ventas sin conexión
 
-> Para revisión **antes de escribir código**. Recoge lo que quedó fuera de la Fase 3 y lo que más
+> Diseño revisado antes de escribir código; las siete decisiones de §7 se confirmaron (incluida la
+> 7: NCF y 606/607 como archivo de apoyo). La evidencia de cierre está en §8. Recoge lo que quedó fuera de la Fase 3 y lo que más
 > pide un negocio pequeño cuando crece. Se mantiene el principio rector: **los números los calcula
 > el código; la IA explica.**
 
@@ -89,3 +90,25 @@ Solo los **espacios de negocio** se comparten; el espacio personal nunca.
 7. **NCF + exportación 606/607**: ¿la incluyo? Es útil para el contador en RD, pero el formato
    oficial cambia y la app no puede garantizar su validez; propongo hacerlo como "archivo de apoyo"
    que el contador revisa. Si no lo necesitas, lo dejo fuera.
+
+---
+
+## 8. Cierre de la Fase 4: criterios y evidencia
+
+| Criterio | Cómo se verifica |
+|---|---|
+| Permisos en el servidor, cerrados por defecto; recorrido de rutas por rol | `tests/test_roles.py` (todas las rutas de `/e/<ws>/` como vendedor y administrador) |
+| Invitación de un solo uso, 7 días, solo el correo invitado; código guardado como hash | `apps/workspaces/tests/test_team.py` (aceptar, vencida, anulada, otro correo, carrera, pantalla) |
+| El vendedor no ve costos ni ganancias; vende y cobra | `test_team.py::test_vendedor_vende_sin_ver_costos` (inicio, detalle, inventario, cobros) |
+| Quitar a alguien conserva lo registrado; el administrador no borra retiros del propietario | `test_team.py::test_anular_cambiar_rol_y_quitar`, `test_admin_no_borra_retiros_del_propietario` |
+| Costo de receta exacto; la venta descuenta insumos; anular/editar revierte; el insumo no se vende | `apps/business/tests/test_recetas.py` |
+| Precio sugerido y plan usan el costo de receta | `test_recetas.py::test_costo_de_receta`, `test_plan_usa_costo_de_receta_y_excluye_insumos` |
+| Cada pata en su moneda, tasa guardada, validaciones | `apps/workspaces/tests/test_transfers.py::test_monedas_distintas_con_tasa`, `test_views.py::test_retiro_entre_monedas_pide_tasa` |
+| Venta sin conexión → reconexión → una sola venta | `apps/business/tests/test_sale_sync.py` y `make e2e` (vendedora con dos ventas offline y reenvío) |
+| NCF validado y sin repetir; 606/607 con las columnas de la DGII | `apps/reports/tests/test_dgii.py` |
+| Demo con vendedora, recetas y NCF | `apps/core/tests/test_seed_demo.py` (insumos RD$2,612.00 en el inventario, bizcochito a RD$32.00) |
+| Privacidad: exportación con recetas y equipo, sin hashes de invitación | `apps/accounts/tests/test_privacy.py` |
+| Interfaz | Revisión en Chromium (390 × 844): inicio, venta, inventario, cobros y ventas de la vendedora; equipo con enlace, receta, productos, inventario y reportes del propietario; sin errores de consola ni de CSP |
+
+Comandos: `make check` (1145 pruebas, cobertura 99 %), `make e2e` y `pip-audit` sin
+vulnerabilidades conocidas.

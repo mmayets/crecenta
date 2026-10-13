@@ -75,7 +75,9 @@ def team(request: HttpRequest, workspace: Workspace) -> HttpResponse:
             "workspace": workspace,
             "form": form,
             "link": link,
-            "members": Membership.objects.filter(workspace=workspace).select_related("user"),
+            "members": Membership.objects.filter(workspace=workspace)
+            .select_related("user")
+            .order_by("created_at"),
             "pending": Invitation.objects.filter(
                 workspace=workspace, accepted_at=None, revoked_at=None
             ),

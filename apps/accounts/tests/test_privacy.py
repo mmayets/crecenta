@@ -149,6 +149,11 @@ def test_exportar_y_eliminar_con_datos_de_negocio(client):
     assert negocio["compras"] and negocio["lineas_de_compra"]
     assert negocio["movimientos_de_inventario"]
     assert data["transferencias_entre_espacios"]
+    assert (
+        negocio["recetas"]
+        and {"user__email": "vendedor@crecenta.app", "role": "vendedor"} in (negocio["equipo"])
+    )
+    assert "token_hash" not in json.dumps(negocio)
 
     response = client.post(
         reverse("accounts:delete"),

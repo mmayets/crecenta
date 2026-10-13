@@ -64,9 +64,35 @@ def test_demo_completa():
     refresco = Product.objects.get(workspace=business, name="Refresco de 2 litros")
     assert refresco.stock == 40 and refresco.average_cost == Decimal("74.3692")
     assert snapshot.indicators.shrinkage == Decimal("148.74")
-    assert snapshot.indicators.inventory_value == Decimal("2974.77")
+    # Refrescos RD$2,974.77 + insumos 49 × 32 + 56 × 9 + 36 × 15 = RD$2,612.00.
+    assert snapshot.indicators.inventory_value == Decimal("5586.77")
     assert "posponer_retiro" not in [a["codigo"] for a in business_plan.computed["alternativas"]]
     assert completeness(business).percent == 100
+
+    # Fase 4: receta, vendedora y NCF.
+    bizcochito = Product.objects.get(workspace=business, name="Bizcochito de chocolate")
+    assert bizcochito.unit_cost == Decimal("32.00") and bizcochito.recipe.count() == 3
+    harina = Product.objects.get(workspace=business, name="Harina de trigo (lb)")
+    assert harina.is_supply and harina.stock == 49  # 50 − 4 × 0.25
+    vendedora = User.objects.get(email="vendedor@crecenta.app")
+    assert vendedora.check_password("Demo-Crecenta-2026")
+    assert business.memberships.get(user=vendedora).role == "vendedor"
+    venta = Sale.objects.get(workspace=business, lines__product=bizcochito)
+    assert venta.created_by == vendedora and venta.lines.get().unit_cost_snapshot == 32
+    assert Sale.objects.get(workspace=business, ncf="B0100000001").customer.tax_id == "130123456"
+    from apps.business.models import Purchase
+
+    assert Purchase.objects.get(workspace=business, ncf="B0100004521").supplier.tax_id
+
+
+def test_vendedora_con_cuenta_propia_no_se_toca(user):
+    user.email = "vendedor@crecenta.app"
+    user.save()
+    from apps.workspaces.services.workspaces import create_workspace
+
+    create_workspace(user, "personal")
+    assert "sin vendedora" in run()
+    assert User.objects.get(email="vendedor@crecenta.app").pk == user.pk
 
 
 def test_idempotente_y_reset():

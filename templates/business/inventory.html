@@ -21,7 +21,7 @@
       <li class="card text-slate-600">Ningún producto controla su inventario todavía.{% if can_finanzas %} En <a href="{% url 'business:products' ws=workspace.pk %}">Productos</a> marca "Lo compro hecho y quiero controlar su inventario" en lo que revendes.{% endif %}</li>
     {% endfor %}
   </ul>
-  {% if rows and untracked %}<p class="muted mt-3">Los productos que elaboras (con su costo por componentes) no llevan inventario.</p>{% endif %}
+  {% if rows and untracked %}<p class="muted mt-3">Los productos que elaboras no llevan inventario: si tienen receta, al venderlos se descuentan sus insumos.</p>{% endif %}
   {% if can_finanzas %}<a class="btn-secondary mt-4 w-full" href="{% url 'business:purchases' ws=workspace.pk %}">{% icon "receipt" "h-5 w-5" %}Ver compras</a>{% endif %}
 {% endwith %}
 {% endblock %}

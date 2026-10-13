@@ -8,6 +8,9 @@
   una compra a crédito y un retiro del propietario hacia la persona.
 - Fase 3: refrescos de reventa con inventario (inventario inicial, compras de contado con ITBIS y
   a crédito, ventas al costo promedio y una merma) y un gasto con ITBIS.
+- Fase 4: insumos (harina, huevos y cajas) y un bizcochito de chocolate con receta que los
+  descuenta al venderse; una vendedora registra sus ventas; NCF en el pedido del hotel y en la
+  compra a la distribuidora.
 """
 
 from __future__ import annotations
@@ -22,6 +25,7 @@ from apps.business.models import (
     CostComponent,
     OperatingExpense,
     Product,
+    RecipeItem,
     Sale,
 )
 from apps.business.services.costs import refresh_unit_cost
@@ -45,6 +49,7 @@ from apps.workspaces.services.transfers import transfer_between
 
 D = Decimal
 BIZCOCHO = "Bizcocho de vainilla (1 lb)"
+BIZCOCHITO = "Bizcochito de chocolate"
 
 
 def _product(
@@ -60,7 +65,11 @@ def _product(
 
 
 def load_business_case(
-    ws: Workspace, user: User, personal: Workspace, today: datetime.date
+    ws: Workspace,
+    user: User,
+    personal: Workspace,
+    today: datetime.date,
+    seller: User | None = None,
 ) -> None:
     BusinessProfile.objects.create(
         workspace=ws, activity="Repostería", tax_rate_itbis=D("0"), hours_available_month=160
@@ -116,7 +125,10 @@ def load_business_case(
         limit = today if base == start else clamp_day(year, month, 31)
         return min(clamp_day(base.year, base.month, day), limit)
 
-    def sell(when: datetime.date, lines: list, credit: str = "", account: Account = caja) -> Sale:
+    def sell(
+        when: datetime.date, lines: list, credit: str = "", account: Account = caja,
+        by: User | None = None, ncf: str = "", customer_tax_id: str = "",
+    ) -> Sale:  # fmt: skip
         data = SaleData(
             date=when,
             lines=[SaleLineData(p, D(q)) for p, q in lines],
@@ -124,17 +136,21 @@ def load_business_case(
             account=None if credit else account,
             customer_name=credit,
             due_date=when + datetime.timedelta(days=15) if credit else None,
+            ncf=ncf,
+            customer_tax_id=customer_tax_id,
         )
-        return register_sale(ws, user, data)[0]
+        return register_sale(ws, by or user, data)[0]
 
     def buy(
         when: datetime.date, product: Product, qty: str, cost: str, account: Account | None = None,
-        tax: str = "0", supplier: str = "", due: datetime.date | None = None,
+        tax: str = "0", supplier: str = "", due: datetime.date | None = None, ncf: str = "",
+        supplier_tax_id: str = "",
     ) -> None:  # fmt: skip
         data = PurchaseData(
             date=when, lines=[PurchaseLineData(product, D(qty), D(cost))],
             payment="contado" if account else "credito", account=account,
-            supplier_name=supplier, tax=D(tax), due_date=due,
+            supplier_name=supplier, tax=D(tax), due_date=due, ncf=ncf,
+            supplier_tax_id=supplier_tax_id,
         )  # fmt: skip
         register_purchase(ws, user, data)
 
@@ -160,7 +176,8 @@ def load_business_case(
 
     # Mes en curso (hasta hoy).
     buy(on(start, 1), refresco, "48", "75", supplier="Distribuidora del Este",
-        due=today + datetime.timedelta(days=10))  # fmt: skip
+        due=today + datetime.timedelta(days=10), ncf="B0100004521",
+        supplier_tax_id="101654321")  # fmt: skip
     sell(on(start, 2), [(biz, "6"), (cup, "25"), (refresco, "18")])
     register_adjustment(ws, user, refresco, "merma", D("2"), on(start, 5), note="Botellas rotas")
     Transaction.objects.create(
@@ -169,7 +186,8 @@ def load_business_case(
         description="Luz e internet (con comprobante)", tax_amount=D("450"), created_by=user,
     )  # fmt: skip
     sell(on(start, 4), [(biz, "4")], credit="Luisa Pérez")
-    pedido = sell(on(start, 6), [(boda, "1")], credit="Hotel Bella Vista")
+    pedido = sell(on(start, 6), [(boda, "1")], credit="Hotel Bella Vista", ncf="B0100000001",
+                  customer_tax_id="130123456")  # fmt: skip
     sell(on(start, 8), [(cup, "40")], account=banco)
     collect_receivable(ws, user, pedido.receivable, "3000", banco, on(start, 9))
     spend(on(start, 1), "7500", "Materia prima", TxKind.COMPRA_INVENTARIO)
@@ -186,3 +204,21 @@ def load_business_case(
         user, ws, personal, "5000", on(start, 7), WorkspaceTransfer.Kind.RETIRO_PROPIETARIO,
         caja, efectivo_personal, note="Para la casa",
     )  # fmt: skip
+
+    # Fase 4: insumos y un producto con receta; la vendedora registra su venta.
+    supplies = {}
+    for name, qty, cost in (("Harina de trigo (lb)", "50", "32"), ("Huevos", "60", "9"),
+                            ("Caja individual", "40", "15")):  # fmt: skip
+        supplies[name] = Product.objects.create(
+            workspace=ws, name=name, price=D("0"), unit_cost=D("0"), is_supply=True,
+            tracks_inventory=True, stock_minimum=D("10"),
+        )  # fmt: skip
+        register_adjustment(ws, user, supplies[name], "inicial", D(qty), on(start, 1),
+                            unit_cost=D(cost))  # fmt: skip
+    bizcochito = Product.objects.create(
+        workspace=ws, name=BIZCOCHITO, price=D("150"), unit_cost=D("0")
+    )
+    for name, qty in (("Harina de trigo (lb)", "0.25"), ("Huevos", "1"), ("Caja individual", "1")):
+        RecipeItem.objects.create(product=bizcochito, supply=supplies[name], qty=D(qty))
+    refresh_unit_cost(bizcochito)  # 0.25 × 32 + 9 + 15 = RD$32
+    sell(on(start, 3), [(bizcochito, "4")], by=seller)

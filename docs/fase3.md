@@ -193,5 +193,6 @@ export_csv(ws, start, end) -> bytes
 
 Comandos: `make check` y `make e2e`.
 
-**Queda para una Fase 4**: varias personas por negocio (roles), varias monedas, recetas con
-insumos para productos elaborados y declaraciones fiscales.
+**Fase 4** ([docs/fase4.md](fase4.md)): varias personas por negocio (roles), varias monedas,
+recetas con insumos, ventas sin conexión y archivos de apoyo 606/607. Las declaraciones fiscales
+siguen fuera de alcance.

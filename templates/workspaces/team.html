@@ -13,12 +13,12 @@
   {% endif %}
   <ul class="card mt-4 divide-y p-0">
     {% for m in members %}
-      <li class="flex flex-wrap items-center gap-2 px-4 py-3">
-        <span class="min-w-0 flex-1"><span class="block truncate">{{ m.user.email }}</span><span class="muted">{{ m.get_role_display }}</span></span>
-        {% if m.role != "owner" %}
+      <li class="px-4 py-3">
+        <p class="truncate">{{ m.user.email }}</p><p class="muted">{{ m.get_role_display }}</p>
+        {% if m.role != "owner" %}<div class="mt-2 flex flex-wrap items-center gap-2">
           <form method="post" action="{% url 'espacio:member_role' ws=workspace.pk member_id=m.pk %}" class="flex items-center gap-1">{% csrf_token %}<label class="sr-only" for="rol-{{ m.pk }}">Rol</label><select id="rol-{{ m.pk }}" name="role" class="py-1 text-sm">{% for value, label in roles %}<option value="{{ value }}" {% if value == m.role %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button class="btn-secondary btn-sm">Cambiar</button></form>
           <form method="post" action="{% url 'espacio:member_remove' ws=workspace.pk member_id=m.pk %}" hx-confirm="¿Quitar el acceso a {{ m.user.email }}?">{% csrf_token %}<button class="btn-secondary btn-sm">Quitar</button></form>
-        {% endif %}
+        </div>{% endif %}
       </li>
     {% endfor %}
   </ul>

@@ -17,6 +17,7 @@ JSON validado y nunca aplica nada sin que la persona lo acepte.
 - [Fase 1: criterios de aceptación y evidencia](docs/fase1.md)
 - [Fase 2: pequeños negocios (diseño, reglas contables y evidencia)](docs/fase2.md)
 - [Fase 3: inventario, compras, reportes e ITBIS (diseño y evidencia)](docs/fase3.md)
+- [Fase 4: equipo, recetas, monedas, ventas sin conexión y 606/607 (diseño y evidencia)](docs/fase4.md)
 - [Seguridad y privacidad](docs/seguridad.md)
 - [Abrir en PyCharm con PostgreSQL local](docs/pycharm.md)
 
@@ -27,6 +28,7 @@ cp .env.example .env
 docker compose up --build            # web, db, redis, worker, beat
 docker compose exec web python manage.py seed_demo
 # http://localhost:8000  ·  demo@crecenta.app / Demo-Crecenta-2026
+# vendedora de Dulces Ana: vendedor@crecenta.app (misma contraseña)
 ```
 
 ## PyCharm / desarrollo local con PostgreSQL instalado
