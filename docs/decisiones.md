@@ -160,3 +160,17 @@ Decisiones tomadas donde el encargo no especifica. Formato: decisión · motivo.
 106. **`seed_demo`** crea la persona del caso RD$50,000 (con movimientos del mes en curso, ahorro apartado, perfil completo y plan aceptado) y el negocio "Dulces Ana" con el producto de costo RD$600 a RD$857.14 (margen 30 %). Es idempotente (`--reset` para recrear) y se niega a borrar una cuenta que no sea de demostración. Corre la explicación del plan en el mismo proceso, sin depender de Redis ni de un worker.
 107. **Precio por margen y por recargo** (`pricing/services/margins.py`) con desglose de ITBIS; se adelantan a la Fase 2 porque `seed_demo` los usa.
 108. **Refuerzos de la revisión de seguridad**: contraseña obligatoria para eliminar la cuenta, ruta del admin configurable, límites de subida de comprobantes (60/h) y de sincronización (120/min). Detalle en `docs/seguridad.md`.
+
+# Fase 2 — Pequeños negocios
+
+Reglas contables confirmadas en `docs/fase2.md` §1 y §7.
+
+## Paso B1 — modelos y tipos de movimiento
+
+109. **Cuatro tipos de movimiento nuevos, neutros para el resultado**: `cobro_cxc` (solo entrada), `pago_cxp` y `retiro_propietario` (solo salida) y `aporte_propietario` (entrada en el negocio, salida en la persona). Mueven efectivo pero no cuentan como venta ni como gasto; el saldo de las cuentas sí los incluye.
+110. **Retiro del propietario visto desde la persona = ingreso** con la categoría del sistema nueva "Retiros de mi negocio" (los espacios personales nuevos tienen ahora 21 categorías; los ya existentes la reciben al registrar su primer retiro). El **aporte** del lado personal es una salida `aporte_propietario` sin categoría: no es gasto de consumo y no consume presupuesto.
+111. **Costo unitario derivado de componentes** (`business/services/costs.py`): materia prima, empaque, entrega y mano de obra son montos por unidad; la comisión es una fracción del precio (0.10 = 10 %). Si el producto no tiene componentes, se respeta el costo escrito a mano.
+112. **CxC y CxP con estado derivado de lo abonado** (`pendiente`/`parcial`/`pagada`, recalculado en cada `save`); "vencida" no se guarda: se calcula con `is_overdue(hoy)` para que no dependa de una tarea diaria. La base de datos impide abonar más que el monto.
+113. **Venta**: de contado exige cuenta y crea el movimiento; a crédito no lleva cuenta y crea una CxC (paso B3). Los montos de la venta (`subtotal` sin ITBIS, `tax`, `total`) se guardan calculados por el servicio; cada línea guarda el costo unitario del producto al vender (`unit_cost_snapshot`), así las ventas pasadas no cambian si cambia el costo. `client_uuid` único por espacio hace idempotente el registro.
+114. **Borrado**: productos, clientes, proveedores y categorías usados en ventas o deudas quedan protegidos con `RESTRICT` (se desactivan con `is_active`); eliminar una venta borra sus líneas, su CxC y sus movimientos; eliminar una CxC o CxP deja sus movimientos (se desvinculan) porque el dinero sí se movió.
+115. **`WorkspaceTransfer`** guarda la pareja de movimientos espejo (`out_tx`, `in_tx`) entre la persona y su negocio; los nombres de producto, cliente y proveedor son únicos por espacio.

@@ -81,7 +81,7 @@ def test_exportar_todo(client, user, datos):
     assert data["usuario"]["correo"] == "ana@example.com"
     (espacio,) = data["espacios"]
     assert espacio["movimientos"][0]["description"] == "Colmado Juan"
-    assert len(espacio["categorias"]) == 20 and espacio["comprobantes"]
+    assert len(espacio["categorias"]) == 21 and espacio["comprobantes"]
     csv_name = next(n for n in names if n.endswith(".csv"))
     assert "Colmado Juan" in archive.read(csv_name).decode("utf-8-sig")
     assert b"Secreto de Beto" not in b"".join(archive.read(n) for n in names)

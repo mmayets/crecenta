@@ -6,6 +6,7 @@ from .choices import CategoryGroup as G
 PERSONAL = [
     ("Salario", G.INGRESO),
     ("Otros ingresos", G.INGRESO),
+    ("Retiros de mi negocio", G.INGRESO),
     ("Alquiler o hipoteca", G.COMPROMISO_FIJO),
     ("Electricidad", G.COMPROMISO_FIJO),
     ("Agua", G.COMPROMISO_FIJO),

@@ -111,6 +111,31 @@ class Transaction(WorkspaceScopedModel):
         on_delete=models.SET_NULL,
         related_name="transactions",
     )
+    # Vínculos de negocio (Fase 2): de qué venta, cobro o pago a proveedor sale el movimiento.
+    sale = models.ForeignKey(
+        "business.Sale",
+        verbose_name="venta",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="transactions",
+    )
+    receivable = models.ForeignKey(
+        "business.Receivable",
+        verbose_name="cuenta por cobrar",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="transactions",
+    )
+    payable = models.ForeignKey(
+        "business.Payable",
+        verbose_name="cuenta por pagar",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="transactions",
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )

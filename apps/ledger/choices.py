@@ -54,6 +54,11 @@ class TxKind(models.TextChoices):
     PAGO_DEUDA = "pago_deuda", "Pago de deuda"
     VENTA = "venta", "Venta"
     COMPRA_INVENTARIO = "compra_inventario", "Compra de inventario"
+    # Negocio (Fase 2): mueven efectivo pero no son venta ni gasto del resultado.
+    COBRO_CXC = "cobro_cxc", "Cobro de cuenta por cobrar"
+    PAGO_CXP = "pago_cxp", "Pago a proveedor"
+    APORTE_PROPIETARIO = "aporte_propietario", "Aporte del propietario"
+    RETIRO_PROPIETARIO = "retiro_propietario", "Retiro del propietario"
 
 
 class TxStatus(models.TextChoices):

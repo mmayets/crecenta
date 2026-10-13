@@ -27,6 +27,12 @@ from apps.ledger.services.classification import (
         (TxKind.RETIRO_EFECTIVO, Direction.IN, False, False),
         (TxKind.PRESTAMO, Direction.IN, False, False),
         (TxKind.PRESTAMO, Direction.OUT, False, False),
+        # Negocio: mueven efectivo, pero no son venta ni gasto del resultado.
+        (TxKind.COBRO_CXC, Direction.IN, False, False),
+        (TxKind.PAGO_CXP, Direction.OUT, False, False),
+        (TxKind.APORTE_PROPIETARIO, Direction.IN, False, False),
+        (TxKind.APORTE_PROPIETARIO, Direction.OUT, False, False),
+        (TxKind.RETIRO_PROPIETARIO, Direction.OUT, False, False),
     ],
 )
 def test_clasificacion(kind, direction, expense, income):
@@ -38,6 +44,10 @@ def test_sentidos_permitidos():
     assert allowed_directions(TxKind.GASTO) == {Direction.OUT}
     assert allowed_directions(TxKind.INGRESO) == {Direction.IN}
     assert allowed_directions(TxKind.PRESTAMO) == {Direction.IN, Direction.OUT}
+    assert allowed_directions(TxKind.COBRO_CXC) == {Direction.IN}
+    assert allowed_directions(TxKind.PAGO_CXP) == {Direction.OUT}
+    assert allowed_directions(TxKind.RETIRO_PROPIETARIO) == {Direction.OUT}
+    assert allowed_directions(TxKind.APORTE_PROPIETARIO) == {Direction.IN, Direction.OUT}
     with pytest.raises(ValueError):
         allowed_directions("otro")
 
