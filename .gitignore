@@ -12,3 +12,6 @@ htmlcov/
 .ruff_cache/
 node_modules/
 bin/tailwindcss
+
+# PyCharm: la carpeta .idea es personal; las configuraciones compartidas están en .run/
+.idea/

@@ -17,6 +17,7 @@ JSON validado y nunca aplica nada sin que la persona lo acepte.
 - [Fase 1: criterios de aceptación y evidencia](docs/fase1.md)
 - [Fase 2: pequeños negocios (diseño, reglas contables y evidencia)](docs/fase2.md)
 - [Seguridad y privacidad](docs/seguridad.md)
+- [Abrir en PyCharm con PostgreSQL local](docs/pycharm.md)
 
 ## Arranque rápido con Docker
 
@@ -27,7 +28,21 @@ docker compose exec web python manage.py seed_demo
 # http://localhost:8000  ·  demo@crecenta.app / Demo-Crecenta-2026
 ```
 
-## Desarrollo local (sin Docker)
+## PyCharm / desarrollo local con PostgreSQL instalado
+
+Guía paso a paso: [docs/pycharm.md](docs/pycharm.md). En resumen:
+
+```bash
+uv sync
+cp .env.local.example .env          # ajuste la clave de su usuario postgres
+uv run python manage.py preparar_bd_local   # crea usuario y base, migra y carga la demo
+uv run python manage.py runserver
+```
+
+En PyCharm las configuraciones de ejecución ya vienen en `.run/` ("1 · Preparar base de datos
+local" y "2 · Servidor Django"). Redis es opcional en local.
+
+## Desarrollo local (sin Docker, manual)
 
 Requiere Python 3.12, PostgreSQL 16, Redis y [uv](https://docs.astral.sh/uv/).
 
