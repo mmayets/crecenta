@@ -15,10 +15,12 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from apps.ai.services.client import AIUnavailable
 from apps.alerts.services.evaluate import purchase_warnings
+from apps.business.services.sales import undo_settlement
 from apps.core.ratelimit import hit
 from apps.onboarding.forms import AccountForm
 from apps.workspaces.mixins import workspace_required
 from apps.workspaces.models import Workspace
+from apps.workspaces.services.transfers import delete_transfer, transfer_for
 
 from .choices import Direction, TxStatus
 from .forms import CategoryForm, FreeTextForm, QuickEntryForm, TransferForm
@@ -211,6 +213,20 @@ def delete(request: HttpRequest, workspace: Workspace, tx_id) -> HttpResponse:
         tx = Transaction.objects.for_workspace(workspace).get(pk=tx_id)
     except (Transaction.DoesNotExist, ValidationError) as exc:
         raise Http404 from exc
+    back = redirect("ledger:movements", ws=workspace.pk)
+    # Movimientos vinculados: se borran con su flujo para no dejar deudas o espejos descuadrados.
+    if tx.sale_id:
+        messages.error(request, "Este movimiento es de una venta: anula la venta desde Ventas.")
+        return back
+    linked = transfer_for(tx)
+    if linked is not None:
+        delete_transfer(request.user, linked)  # type: ignore[arg-type]
+        messages.info(request, "Se eliminaron los dos movimientos de la transferencia.")
+        return back
+    if tx.receivable_id or tx.payable_id:
+        undo_settlement(workspace, tx)
+        messages.info(request, "Movimiento eliminado; su monto volvió al saldo pendiente.")
+        return back
     with transaction.atomic():
         pair = tx.transfer_pair
         Transaction.objects.filter(pk__in=[tx.pk] + ([pair.pk] if pair else [])).update(
@@ -218,7 +234,7 @@ def delete(request: HttpRequest, workspace: Workspace, tx_id) -> HttpResponse:
         )
         Transaction.objects.filter(pk__in=[tx.pk] + ([pair.pk] if pair else [])).delete()
     messages.info(request, "Movimiento eliminado.")
-    return redirect("ledger:movements", ws=workspace.pk)
+    return back
 
 
 @workspace_required

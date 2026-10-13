@@ -107,3 +107,16 @@ def test_reserva_operativa_caso_del_encargo():
     assert "no hay pagos registrados" in libre.message("USD") and "US$500.00" in libre.message(
         "USD"
     )
+
+
+def test_aviso_antes_de_retirar():
+    from apps.business.services.cash import check_withdrawal
+
+    r = operating_reserve(D("40000"), HOY, [CashItem(HOY, D("32000"), "Compromisos", "gasto")])
+    ok = check_withdrawal(r, D("8000"), "DOP")
+    assert ok.covered and ok.shortfall == 0 and "hasta RD$8,000.00" in ok.message
+    no = check_withdrawal(r, D("10000"), "DOP")
+    assert not no.covered and no.shortfall == D("2000")
+    assert no.message.endswith(
+        "Si retiras RD$10,000.00, quedarían RD$2,000.00 de pagos sin cubrir."
+    )

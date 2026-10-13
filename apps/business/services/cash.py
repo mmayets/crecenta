@@ -209,3 +209,26 @@ def operating_reserve(
         horizon_end=today + datetime.timedelta(days=horizon_days),
         items=outflows,
     )
+
+
+@dataclass(frozen=True)
+class WithdrawalCheck:
+    amount: Decimal
+    covered: bool  # el retiro no deja compromisos sin cubrir
+    shortfall: Decimal  # cuánto quedaría sin cubrir (0 si está cubierto)
+    message: str
+
+
+def check_withdrawal(reserve: ReserveResult, amount: Decimal, currency: str) -> WithdrawalCheck:
+    """Aviso antes de un retiro del propietario. El retiro se permite igual: decide la persona."""
+    shortfall = max(ZERO, amount - reserve.max_safe_withdrawal)
+    if shortfall == 0:
+        return WithdrawalCheck(amount, True, ZERO, reserve.message(currency))
+    return WithdrawalCheck(
+        amount,
+        False,
+        shortfall,
+        reserve.message(currency)
+        + f" Si retiras {fmt(amount, currency)}, quedarían {fmt(shortfall, currency)} de pagos"
+        " sin cubrir.",
+    )

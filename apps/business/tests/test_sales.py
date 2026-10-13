@@ -282,3 +282,24 @@ def test_deshacer_movimiento_sin_deuda(business_ws, user, caja):
     )
     undo_settlement(business_ws, tx)
     assert not Transaction.objects.exists()
+
+
+def test_borrar_desde_movimientos_respeta_ventas_y_cobros(
+    client, business_ws, user, bizcocho, caja
+):
+    from django.urls import reverse
+
+    client.force_login(user)
+
+    def borrar(tx):
+        return client.post(reverse("ledger:delete", kwargs={"ws": business_ws.pk, "tx_id": tx.pk}))
+
+    sale, _ = register_sale(business_ws, user, contado(bizcocho, caja))
+    borrar(Transaction.objects.get(sale=sale))
+    assert Transaction.objects.filter(sale=sale).exists()  # se anula desde Ventas
+
+    venta, _ = register_sale(business_ws, user, credito(bizcocho))
+    cobro, _ = collect_receivable(business_ws, user, venta.receivable, "200", caja, HOY)
+    borrar(cobro)
+    venta.receivable.refresh_from_db()
+    assert venta.receivable.paid == 0 and not Transaction.objects.filter(pk=cobro.pk).exists()
