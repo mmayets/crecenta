@@ -92,3 +92,19 @@ def test_vistas_de_alertas_en_el_negocio(client, user, negocio):
     client.post(reverse("alerts:rules", kwargs={"ws": negocio.pk}), data)
     regla = AlertRule.objects.get(workspace=negocio, code="costos_variables_crecen")
     assert not regla.enabled and regla.params == {"diferencia_pct": 20}
+
+
+def test_alertas_de_inventario_desde_la_base(business_ws, user):
+    from apps.business.services.inventory import register_adjustment
+    from apps.business.services.sales import SaleData, SaleLineData, register_sale
+
+    refresco = Product.objects.create(
+        workspace=business_ws, name="Refresco", price=D("120"), unit_cost=D("0"),
+        tracks_inventory=True, stock_minimum=D("5"),
+    )  # fmt: skip
+    register_adjustment(business_ws, user, refresco, "inicial", D("6"), HOY, unit_cost=D("60"))
+    caja = Account.objects.get(workspace=business_ws)
+    register_sale(business_ws, user, SaleData(date=HOY, lines=[SaleLineData(refresco, D("2"))],
+                                              account=caja))  # fmt: skip
+    codes = {a.code for a in evaluate_workspace(business_ws, HOY)}
+    assert "existencia_baja" in codes

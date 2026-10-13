@@ -38,6 +38,7 @@ DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
     "meta_en_riesgo": {"dias_gracia": 3},
     "compra_afecta_reserva": {},
     "buen_desempeno": {"avance_minimo_pct": 50},
+    "pago_anual_cercano": {"dias_antes": 30},
 }
 RULE_LABELS = {
     "categoria_80": "Consumo alto de una categoría",
@@ -46,6 +47,7 @@ RULE_LABELS = {
     "meta_en_riesgo": "Meta de ahorro atrasada",
     "compra_afecta_reserva": "Gastos que usan dinero comprometido",
     "buen_desempeno": "Buen desempeño",
+    "pago_anual_cercano": "Pago anual cercano",
 }
 # Se resuelven solas cuando la condición deja de cumplirse.
 AUTO_RESOLVE = frozenset(DEFAULT_PARAMS) - {"buen_desempeno"}
@@ -69,6 +71,14 @@ class AlertDraft:
 
 
 @dataclass(frozen=True)
+class AnnualDue:
+    ref: str
+    name: str
+    amount: Decimal
+    due_date: date
+
+
+@dataclass(frozen=True)
 class PersonalAlertContext:
     today: date
     plan: BudgetResult
@@ -79,6 +89,7 @@ class PersonalAlertContext:
     currency: str = "DOP"
     params: dict[str, dict[str, Any]] = field(default_factory=dict)
     enabled: frozenset[str] = frozenset(DEFAULT_PARAMS)
+    annual: tuple[AnnualDue, ...] = ()
 
     def param(self, code: str, name: str) -> Any:
         return {**DEFAULT_PARAMS[code], **self.params.get(code, {})}[name]
@@ -375,6 +386,32 @@ def good_performance(ctx: PersonalAlertContext) -> list[AlertDraft]:
     ]
 
 
+def annual_payment_near(ctx: PersonalAlertContext) -> list[AlertDraft]:
+    """Un compromiso anual vence pronto: recuerda el monto y que sale de lo apartado cada mes."""
+    days = int(ctx.param("pago_anual_cercano", "dias_antes"))
+    drafts = []
+    for item in ctx.annual:
+        left = (item.due_date - ctx.today).days
+        if 0 <= left <= days:
+            monthly = q(item.amount / 12)
+            drafts.append(
+                AlertDraft(
+                    code="pago_anual_cercano",
+                    severity="alta" if left <= 7 else "media",
+                    title=f"{item.name}: vence el {day_text(item.due_date)}",
+                    message=(
+                        f"Es un pago anual de {ctx.money(item.amount)}. Tu plan aparta "
+                        f"{ctx.money(monthly)} cada mes para cubrirlo; si no lo has apartado, "
+                        "prepara ese dinero antes de la fecha."
+                    ),
+                    dedupe_key=f"pago_anual_cercano:{item.ref}:{item.due_date.isoformat()}",
+                    data_used=_base_data(ctx, monto=item.amount, vence=item.due_date.isoformat()),
+                    is_projection=False,
+                )
+            )
+    return drafts
+
+
 RULES = {
     "categoria_80": category_usage,
     "riesgo_fin_periodo": end_of_period_risk,
@@ -382,6 +419,7 @@ RULES = {
     "meta_en_riesgo": savings_at_risk,
     "compra_afecta_reserva": committed_money_used,
     "buen_desempeno": good_performance,
+    "pago_anual_cercano": annual_payment_near,
 }
 
 

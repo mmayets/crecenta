@@ -128,3 +128,36 @@ def test_retiro_sin_cobertura():
 def test_reglas_desactivadas():
     contexto = ctx(month=indicators([CUP]), enabled=frozenset())
     assert evaluate_business(contexto) == []
+
+
+def test_alertas_de_inventario():
+    from apps.alerts.services.rules_business import (
+        StockInfo,
+        idle_inventory,
+        low_stock,
+        negative_stock,
+    )
+
+    stocks = [
+        StockInfo("a", "Refresco 2L", D("4"), D("6"), D("240"), HOY),
+        StockInfo("b", "Galletas", D("-2"), D("0"), D("0"), HOY),
+        StockInfo("c", "Vino", D("10"), D("2"), D("5000"), datetime.date(2026, 7, 1)),
+        StockInfo("d", "Velas", D("3"), D("0"), D("1500"), None),
+        StockInfo("e", "Agua", D("50"), D("10"), D("500"), HOY),
+    ]
+    contexto = ctx(stocks=stocks)
+    baja = low_stock(contexto)
+    assert [d.title for d in baja] == ["Quedan pocas unidades de Refresco 2L"]
+    assert "Tienes 4 y tu mínimo es 6" in baja[0].message
+    negativa = negative_stock(contexto)
+    assert negativa[0].title == "Vendiste más Galletas de lo registrado"
+    quieto = idle_inventory(contexto)
+    assert [d.title for d in quieto] == [
+        "Tienes RD$5,000.00 parados en Vino",
+        "Tienes RD$1,500.00 parados en Velas",
+    ]
+    assert "no se vende desde el 1 de julio" in quieto[0].message
+    assert "no se ha vendido" in quieto[1].message
+    assert {d.code for d in evaluate_business(contexto)} >= {
+        "existencia_baja", "existencia_negativa", "inventario_quieto",
+    }  # fmt: skip

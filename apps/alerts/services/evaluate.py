@@ -13,6 +13,7 @@ from decimal import Decimal
 
 from django.core.cache import cache
 from django.db import transaction
+from django.db.models import Max
 from django.utils import timezone
 
 from apps.alerts.models import Alert, AlertRule
@@ -21,6 +22,7 @@ from apps.alerts.services.rules_business import (
     BUSINESS_DEFAULT_PARAMS,
     BUSINESS_RULE_LABELS,
     BusinessAlertContext,
+    StockInfo,
     Withdrawal,
     evaluate_business,
 )
@@ -29,11 +31,12 @@ from apps.alerts.services.rules_personal import (
     DEFAULT_PARAMS,
     RULE_LABELS,
     AlertDraft,
+    AnnualDue,
     PersonalAlertContext,
     check_purchase_impact,
     evaluate_personal,
 )
-from apps.business.models import BusinessGoal
+from apps.business.models import BusinessGoal, Product, SaleLine
 from apps.business.services.indicators import compute_indicators
 from apps.business.services.loaders import (
     load_business_inputs,
@@ -41,9 +44,11 @@ from apps.business.services.loaders import (
     month_bounds,
 )
 from apps.core.dates import add_months, clamp_day
+from apps.core.money import ZERO, q
 from apps.ledger.choices import CategoryGroup, Direction, TxKind
 from apps.ledger.models import Category
 from apps.ledger.services.balances import confirmed, spent_by_category
+from apps.personal.models import Commitment
 from apps.personal.services.budget_engine import build_personal_plan
 from apps.personal.services.loaders import load_personal_inputs, workspace_availability
 from apps.planning.services.lifecycle import accepted_result
@@ -87,6 +92,12 @@ def build_context(workspace: Workspace, today: date) -> PersonalAlertContext | N
         .values_list("id", flat=True)
     )
     enabled, params = rule_settings(workspace)
+    annual = tuple(
+        AnnualDue(str(c.pk), c.name, c.amount, next_annual_date(c.due_month, c.due_day, today))
+        for c in Commitment.objects.for_workspace(workspace).filter(
+            is_active=True, frequency="anual", due_month__isnull=False
+        )
+    )
     return PersonalAlertContext(
         today=today,
         plan=plan,
@@ -97,7 +108,14 @@ def build_context(workspace: Workspace, today: date) -> PersonalAlertContext | N
         currency=workspace.currency,
         params=params,
         enabled=enabled,
+        annual=annual,
     )
+
+
+def next_annual_date(month: int, day: int, today: date) -> date:
+    """Próximo vencimiento de un pago anual (este año o el siguiente)."""
+    this_year = clamp_day(today.year, month, day)
+    return this_year if this_year >= today else clamp_day(today.year + 1, month, day)
 
 
 def build_business_context(workspace: Workspace, today: date) -> BusinessAlertContext:
@@ -118,6 +136,24 @@ def build_business_context(workspace: Workspace, today: date) -> BusinessAlertCo
     ]
     goal = BusinessGoal.objects.filter(workspace=workspace).first()
     enabled, params = rule_settings(workspace)
+    last_sales = dict(
+        SaleLine.objects.filter(sale__workspace=workspace, product__tracks_inventory=True)
+        .values_list("product_id")
+        .annotate(last=Max("sale__date"))
+    )
+    stocks = [
+        StockInfo(
+            ref=str(p.pk),
+            name=p.name,
+            stock=p.stock,
+            minimum=p.stock_minimum,
+            value=q(max(p.stock, ZERO) * p.average_cost),
+            last_sale=last_sales.get(p.pk),
+        )
+        for p in Product.objects.for_workspace(workspace).filter(
+            tracks_inventory=True, is_active=True
+        )
+    ]
     return BusinessAlertContext(
         today=today,
         currency=workspace.currency,
@@ -131,6 +167,7 @@ def build_business_context(workspace: Workspace, today: date) -> BusinessAlertCo
         target_margin=goal.target_margin_pct if goal else None,
         params=params,
         enabled=enabled,
+        stocks=stocks,
     )
 
 

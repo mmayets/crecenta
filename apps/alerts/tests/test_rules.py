@@ -237,3 +237,32 @@ class TestAvisoAntesDeRegistrar:
         )
         assert [w.code for w in check_purchase_impact(c, D("200"), None)] == ["categoria_80"]
         assert check_purchase_impact(c, D("50"), "c-ocio") == []
+
+
+def test_pago_anual_cercano():
+    from dataclasses import replace
+    from datetime import date as _date
+    from datetime import timedelta
+    from decimal import Decimal as _D
+
+    from apps.alerts.services.evaluate import next_annual_date
+    from apps.alerts.services.rules_personal import AnnualDue, annual_payment_near
+
+    assert next_annual_date(3, 15, _date(2026, 3, 15)) == _date(2026, 3, 15)
+    assert next_annual_date(3, 15, _date(2026, 3, 16)) == _date(2027, 3, 15)
+    assert next_annual_date(2, 31, _date(2026, 1, 1)) == _date(2026, 2, 28)
+    base = ctx(_date(2026, 10, 10))
+    cerca = replace(
+        base, annual=(AnnualDue("m", "Marbete", _D("3600"), base.today + timedelta(days=5)),)
+    )
+    (alert,) = annual_payment_near(cerca)
+    assert alert.severity == "alta" and "Marbete: vence el" in alert.title
+    assert "Tu plan aparta RD$300.00 cada mes" in alert.message
+    medio = replace(
+        base, annual=(AnnualDue("m", "Marbete", _D("3600"), base.today + timedelta(days=20)),)
+    )
+    assert annual_payment_near(medio)[0].severity == "media"
+    lejos = replace(
+        base, annual=(AnnualDue("m", "Marbete", _D("3600"), base.today + timedelta(days=90)),)
+    )
+    assert annual_payment_near(lejos) == []

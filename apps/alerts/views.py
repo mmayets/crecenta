@@ -70,8 +70,9 @@ class RulesForm(forms.Form):
                 self.fields[f"{code}__{name}"] = forms.IntegerField(
                     label=name.replace("_", " ").capitalize(),
                     min_value=1,
-                    max_value=100,
+                    max_value=100 if name.endswith("_pct") else 1_000_000,
                     initial=value,
+                    required=False,  # vacío = valor por defecto
                 )
 
 
@@ -87,7 +88,10 @@ def rules(request: HttpRequest, workspace: Workspace) -> HttpResponse:
                 code=code,
                 defaults={
                     "enabled": form.cleaned_data[f"{code}__enabled"],
-                    "params": {name: form.cleaned_data[f"{code}__{name}"] for name in defaults},
+                    "params": {
+                        name: form.cleaned_data[f"{code}__{name}"] or default
+                        for name, default in defaults.items()
+                    },
                 },
             )
         messages.success(request, "Preferencias de alertas guardadas.")

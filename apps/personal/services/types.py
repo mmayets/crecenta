@@ -67,6 +67,7 @@ class CommitmentInput:
     due_day: int = 1  # día del mes (mensual/quincenal) o de la semana (semanal)
     category_ref: str | None = None
     is_fixed: bool = True
+    due_month: int | None = None  # solo anual
 
     def due_days(self) -> tuple[int, ...]:
         if self.frequency == Frequency.QUINCENAL:

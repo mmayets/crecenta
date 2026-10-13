@@ -147,6 +147,7 @@ def inputs_to_dict(inputs: PersonalInputs) -> dict[str, Any]:
                 "dia": c.due_day,
                 "categoria_ref": c.category_ref,
                 "fijo": c.is_fixed,
+                "mes": c.due_month,
             }
             for c in inputs.commitments
         ],
@@ -220,6 +221,7 @@ def inputs_from_dict(data: dict[str, Any]) -> PersonalInputs:
                 due_day=c["dia"],
                 category_ref=c["categoria_ref"],
                 is_fixed=c["fijo"],
+                due_month=c.get("mes"),
             )
             for c in data["compromisos"]
         ),

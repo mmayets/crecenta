@@ -280,3 +280,10 @@ Decisiones confirmadas en `docs/fase3.md` §8 (la persona pidió hacer la fase c
 175. **Mermas y ajustes** no mueven efectivo y son gasto del mes al costo promedio (`shrinkage` en los indicadores, restado del resultado); un ajuste positivo lo reduce. El conteo físico registra un ajuste por la diferencia. Compras y ventas no se borran desde el inventario: se anulan desde su pantalla.
 176. **Editar una venta** (`edit_sale`) conserva su id y su `client_uuid`: revierte líneas, salidas, movimiento de contado o CxC y las vuelve a registrar; no se permite si ya tiene cobros.
 177. **Indicadores**: valor del inventario (existencias positivas × promedio, al día de hoy) y días de inventario (valor ÷ costo de lo vendido por día del período).
+
+## Pasos C5–C6 — alertas de inventario y compromisos anuales
+
+178. **Tres alertas de inventario**: *existencia_baja* (existencia ≥ 0 y ≤ el mínimo, si hay mínimo), *existencia_negativa* (se vendió más de lo registrado) e *inventario_quieto* (informativa: valor ≥ RD$1,000 y sin ventas en 60 días; ambos configurables).
+179. **Pago anual cercano** (persona): avisa 30 días antes (configurable) con el monto y la provisión mensual; urgente a 7 días o menos. La fecha es la del año en curso o la del siguiente si ya pasó (día ajustado a fin de mes).
+180. **Compromisos anuales en el plan**: cada período aparta 1/12 del pago (línea "Apartar para …", fechada en el primer cobro); el pago completo sale de lo apartado y no se vuelve a descontar en su mes. Los ingresos no pueden ser anuales. Los planes guardados antes de la Fase 3 siguen leyéndose (sin mes).
+181. **Preferencias de alertas**: los parámetros vacíos toman su valor por defecto y los que no son porcentajes aceptan valores grandes (p. ej. el valor mínimo del inventario quieto).

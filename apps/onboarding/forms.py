@@ -136,14 +136,18 @@ class AccountForm(WorkspaceModelForm):
 class CommitmentForm(WorkspaceModelForm):
     class Meta:
         model = Commitment
-        fields = ["name", "category", "amount", "frequency", "due_day", "is_fixed"]
+        fields = ["name", "category", "amount", "frequency", "due_day", "due_month", "is_fixed"]
         labels = {
             "name": "Pago",
             "amount": "Monto",
             "due_day": "Día en que vence",
+            "due_month": "Mes en que vence (solo pagos anuales)",
             "is_fixed": "Siempre es el mismo monto",
         }
-        help_texts = {"due_day": "Para avisarte antes de cada pago."}
+        help_texts = {
+            "due_day": "Para avisarte antes de cada pago.",
+            "due_month": "Marbete, seguro, inscripción: el plan aparta 1/12 cada mes.",
+        }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

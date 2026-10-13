@@ -21,7 +21,14 @@ from decimal import Decimal
 
 from apps.core.dates import monthly_dates
 from apps.core.money import ZERO, fmt, q, split_proportionally
-from apps.core.periods import PayEvent, pay_events, scheduled_dates, total_income
+from apps.core.periods import (
+    Frequency,
+    PayEvent,
+    Period,
+    pay_events,
+    scheduled_dates,
+    total_income,
+)
 from apps.personal.services.cash_timeline import (
     ScheduledOutflow,
     build_timeline,
@@ -31,6 +38,7 @@ from apps.personal.services.cash_timeline import (
 from apps.personal.services.savings import contributions_in_period, split_across_pay_events
 from apps.personal.services.types import (
     BudgetResult,
+    CommitmentInput,
     LineKind,
     PayEventAllocation,
     PersonalInputs,
@@ -71,6 +79,44 @@ def _assign_to_pay_event(due: list[ScheduledOutflow], events: list[PayEvent]) ->
     return totals
 
 
+MONTH_NAMES = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+]  # fmt: skip
+
+
+def _annual_provision(
+    c: CommitmentInput,
+    period: Period,
+    events: list[PayEvent],
+    lines: list[PlanLine],
+    dated: list[ScheduledOutflow],
+    assumptions: list[str],
+) -> None:
+    """Un pago anual se cubre apartando 1/12 en cada período (docs/fase3.md, decisión 5); el pago
+    completo sale de lo apartado en su fecha, así que no se vuelve a descontar en el período."""
+    if c.amount <= 0:
+        return
+    provision = q(c.amount / 12)
+    when = events[0].date if events else period.start
+    lines.append(
+        PlanLine(
+            ref=c.ref,
+            kind=LineKind.COMPROMISO,
+            name=f"Apartar para {c.name}",
+            amount=provision,
+            category_ref=c.category_ref,
+            due_dates=(when,),
+        )
+    )
+    dated.append(ScheduledOutflow(when, provision, c.ref, f"Apartar para {c.name}"))
+    month = MONTH_NAMES[(c.due_month or 1) - 1]
+    assumptions.append(
+        f"{c.name}: pago anual de {fmt(q(c.amount))} en {month}; se apartan "
+        f"{fmt(provision)} en cada período para tenerlo listo."
+    )
+
+
 def compute_plan(inputs: PersonalInputs) -> BudgetResult:
     period = inputs.period
     events = pay_events(list(inputs.incomes), period)
@@ -81,6 +127,9 @@ def compute_plan(inputs: PersonalInputs) -> BudgetResult:
 
     # 2. Compromisos y deudas, con sus fechas.
     for c in inputs.commitments:
+        if c.frequency == Frequency.ANUAL:
+            _annual_provision(c, period, events, lines, dated, assumptions)
+            continue
         dates = scheduled_dates(c.frequency, c.due_days(), period)
         if c.amount <= 0 or not dates:
             continue

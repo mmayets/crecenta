@@ -140,6 +140,7 @@ def load_personal_inputs(
             due_day=c.due_day,
             category_ref=_ref(c.category_id),
             is_fixed=c.is_fixed,
+            due_month=c.due_month,
         )
         for c in Commitment.objects.for_workspace(workspace).filter(is_active=True)
     )

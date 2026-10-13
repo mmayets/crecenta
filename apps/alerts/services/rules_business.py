@@ -30,12 +30,18 @@ BUSINESS_DEFAULT_PARAMS: dict[str, dict[str, Any]] = {
     "costos_variables_crecen": {"diferencia_pct": 10},
     "riesgo_caja_fechas": {},
     "retiro_sin_cobertura": {},
+    "existencia_baja": {},
+    "existencia_negativa": {},
+    "inventario_quieto": {"dias_sin_venta": 60, "valor_minimo": 1000},
 }
 BUSINESS_RULE_LABELS = {
     "margen_bajo_objetivo": "Margen bajo el objetivo",
     "costos_variables_crecen": "Costos creciendo más que las ventas",
     "riesgo_caja_fechas": "Fechas con riesgo de quedarte sin efectivo",
     "retiro_sin_cobertura": "Retiros que dejan pagos sin cubrir",
+    "existencia_baja": "Productos por agotarse",
+    "existencia_negativa": "Ventas sin existencias registradas",
+    "inventario_quieto": "Mercancía que no se vende",
 }
 BUSINESS_AUTO_RESOLVE = frozenset(BUSINESS_DEFAULT_PARAMS)
 
@@ -44,6 +50,16 @@ BUSINESS_AUTO_RESOLVE = frozenset(BUSINESS_DEFAULT_PARAMS)
 class Withdrawal:
     date: datetime.date
     amount: Decimal
+
+
+@dataclass(frozen=True)
+class StockInfo:
+    ref: str
+    name: str
+    stock: Decimal
+    minimum: Decimal
+    value: Decimal  # existencia × costo promedio
+    last_sale: datetime.date | None
 
 
 @dataclass(frozen=True)
@@ -58,6 +74,7 @@ class BusinessAlertContext:
     target_margin: Decimal | None = None  # fracción
     params: dict[str, dict[str, Any]] = field(default_factory=dict)
     enabled: frozenset[str] = frozenset(BUSINESS_DEFAULT_PARAMS)
+    stocks: list[StockInfo] = field(default_factory=list)
 
     def param(self, code: str, name: str) -> Any:
         return {**BUSINESS_DEFAULT_PARAMS[code], **self.params.get(code, {})}[name]
@@ -232,11 +249,86 @@ def withdrawal_without_coverage(ctx: BusinessAlertContext) -> list[AlertDraft]:
     ]
 
 
+def _qty(value: Decimal) -> str:
+    return f"{value.normalize():f}"
+
+
+def low_stock(ctx: BusinessAlertContext) -> list[AlertDraft]:
+    return [
+        AlertDraft(
+            code="existencia_baja",
+            severity="media",
+            title=f"Quedan pocas unidades de {s.name}",
+            message=(
+                f"Tienes {_qty(s.stock)} y tu mínimo es {_qty(s.minimum)}. Haz el pedido a tu "
+                "proveedor antes de quedarte sin mercancía."
+            ),
+            dedupe_key=f"existencia_baja:{s.ref}:{ctx.key}",
+            data_used=_data(ctx, producto=s.name, existencia=s.stock, minimo=s.minimum),
+            suggested_action={"tipo": "registrar_compra", "producto": s.ref},
+        )
+        for s in ctx.stocks
+        if s.minimum > 0 and 0 <= s.stock <= s.minimum
+    ]
+
+
+def negative_stock(ctx: BusinessAlertContext) -> list[AlertDraft]:
+    return [
+        AlertDraft(
+            code="existencia_negativa",
+            severity="media",
+            title=f"Vendiste más {s.name} de lo registrado",
+            message=(
+                f"La existencia registrada es {_qty(s.stock)}. Seguramente falta registrar una "
+                "compra o hacer un conteo: mientras tanto el costo de lo vendido puede no ser "
+                "exacto."
+            ),
+            dedupe_key=f"existencia_negativa:{s.ref}:{ctx.key}",
+            data_used=_data(ctx, producto=s.name, existencia=s.stock),
+            suggested_action={"tipo": "contar_inventario", "producto": s.ref},
+        )
+        for s in ctx.stocks
+        if s.stock < 0
+    ]
+
+
+def idle_inventory(ctx: BusinessAlertContext) -> list[AlertDraft]:
+    days = int(ctx.param("inventario_quieto", "dias_sin_venta"))
+    minimum = Decimal(str(ctx.param("inventario_quieto", "valor_minimo")))
+    drafts = []
+    for s in ctx.stocks:
+        idle = s.last_sale is None or (ctx.today - s.last_sale).days >= days
+        if s.stock > 0 and s.value >= minimum and idle:
+            since = (
+                f"no se vende desde el {day_text(s.last_sale)}"
+                if s.last_sale
+                else "no se ha vendido"
+            )
+            drafts.append(
+                AlertDraft(
+                    code="inventario_quieto",
+                    severity="info",
+                    title=f"Tienes {ctx.money(s.value)} parados en {s.name}",
+                    message=(
+                        f"{s.name} {since} y tienes {_qty(s.stock)} unidades. Una oferta o un "
+                        "pedido más pequeño la próxima vez liberaría ese dinero."
+                    ),
+                    dedupe_key=f"inventario_quieto:{s.ref}:{ctx.key}",
+                    data_used=_data(ctx, producto=s.name, valor=s.value, existencia=s.stock),
+                    suggested_action={"tipo": "revisar_producto", "producto": s.ref},
+                )
+            )
+    return drafts
+
+
 BUSINESS_RULES = {
     "margen_bajo_objetivo": low_margin,
     "costos_variables_crecen": variable_costs_growing,
     "riesgo_caja_fechas": cash_risk_dates,
     "retiro_sin_cobertura": withdrawal_without_coverage,
+    "existencia_baja": low_stock,
+    "existencia_negativa": negative_stock,
+    "inventario_quieto": idle_inventory,
 }
 
 
