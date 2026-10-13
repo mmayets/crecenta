@@ -323,9 +323,13 @@ class SaleLine(TimeStampedModel):
     )
     description = models.CharField("descripción", max_length=120, blank=True)
     qty = models.DecimalField("cantidad", max_digits=10, decimal_places=2)
-    # Precio unitario sin ITBIS, antes del descuento.
+    # Precio unitario tal como se cobra (con ITBIS si el negocio publica precios con ITBIS),
+    # antes del descuento.
     unit_price = money_field("precio unitario", validators=_NON_NEGATIVE)
     discount_pct = pct_field("descuento", default=0)
+    # Lo que esta línea aporta a las ventas: con el descuento y sin ITBIS. Las líneas de una venta
+    # suman exactamente `Sale.subtotal`.
+    net_amount = money_field("importe sin ITBIS", default=0, validators=_NON_NEGATIVE)
     # Costo unitario del producto al momento de vender: las ventas pasadas no cambian.
     unit_cost_snapshot = money_field(
         "costo unitario al vender", default=0, validators=_NON_NEGATIVE
@@ -374,6 +378,10 @@ class _Debt(WorkspaceScopedModel):
     due_date = models.DateField("vence", null=True, blank=True)
     status = models.CharField(
         "estado", max_length=10, choices=DebtStatus.choices, default=DebtStatus.PENDIENTE
+    )
+    client_uuid = models.UUIDField("id del dispositivo", null=True, blank=True, editable=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
 
     class Meta:
@@ -428,6 +436,11 @@ class Receivable(_Debt):
                 condition=Q(paid__gte=0) & Q(paid__lte=models.F("amount")),
                 name="cxc_abonado_valido",
             ),
+            models.UniqueConstraint(
+                fields=["workspace", "client_uuid"],
+                condition=Q(client_uuid__isnull=False),
+                name="cxc_client_uuid_unico",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -461,6 +474,11 @@ class Payable(_Debt):
             models.CheckConstraint(
                 condition=Q(paid__gte=0) & Q(paid__lte=models.F("amount")),
                 name="cxp_abonado_valido",
+            ),
+            models.UniqueConstraint(
+                fields=["workspace", "client_uuid"],
+                condition=Q(client_uuid__isnull=False),
+                name="cxp_client_uuid_unico",
             ),
         ]
 

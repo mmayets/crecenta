@@ -24,6 +24,9 @@ NEUTRAL_KINDS = TRANSFER_KINDS | {TxKind.PRESTAMO, TxKind.APORTE_PROPIETARIO}
 # gasto del resultado del negocio (docs/fase2.md §1).
 CASH_IN_ONLY = frozenset({TxKind.COBRO_CXC})
 CASH_OUT_ONLY = frozenset({TxKind.PAGO_CXP, TxKind.RETIRO_PROPIETARIO})
+# Solo se crean desde su flujo (cobro, pago a proveedor, transferencia entre espacios), que
+# actualiza la deuda o crea la pata espejo; el registro genérico y la sincronización los rechazan.
+LINKED_KINDS = CASH_IN_ONLY | CASH_OUT_ONLY | {TxKind.APORTE_PROPIETARIO}
 
 _BOTH = frozenset({Direction.IN, Direction.OUT})
 

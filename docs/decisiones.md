@@ -185,3 +185,14 @@ Reglas contables confirmadas en `docs/fase2.md` §1 y §7.
 121. **Matriz volumen-margen**: volumen alto = unidades ≥ promedio de los productos; margen alto = margen ≥ objetivo del negocio (o, sin objetivo, el margen global). Cuatro cuadrantes con un consejo fijo cada uno; "Vende mucho pero deja poco" es el caso del encargo.
 122. **Capacidad de servicios**: servicios posibles = horas disponibles × 60 / minutos por servicio (hacia abajo); de ahí el techo de ventas y de ganancia del mes y el valor por hora.
 123. **Supuestos explícitos**: `compute_price` devuelve en texto cada supuesto usado (costo, margen, comisión, descuento, ITBIS) para mostrarlo junto al precio, como pide el encargo para toda recomendación.
+
+## Paso B3 — ventas, CxC y CxP
+
+124. **El ITBIS se calcula sobre el total de la venta, no por línea** (`business/services/sale_math.py`), para que subtotal + ITBIS = total al centavo. Con precios que ya incluyen ITBIS se separa del total y el subtotal se reparte entre las líneas por el método del mayor residuo: cada línea guarda su `net_amount` (con descuento y sin ITBIS) y las líneas suman exactamente el subtotal de la venta. Las ventas por producto (paso B4) usan ese importe.
+125. **Una venta puede no llevar ITBIS** (`apply_tax=False`) aunque el negocio lo tenga configurado: muchos negocios pequeños venden sin factura con comprobante fiscal.
+126. **El movimiento de una venta de contado es por el total cobrado** (con ITBIS): es el dinero que entra a la cuenta. Las ventas del resultado se calculan con las líneas (sin ITBIS), no con los movimientos.
+127. **Una venta a crédito crea su CxC por el total** (lo que el cliente debe) y ningún movimiento; cada cobro es un movimiento `cobro_cxc` vinculado a la CxC. Nunca se cobra ni se paga más que el saldo (se valida con la deuda bloqueada, `select_for_update`).
+128. **Idempotencia en todo el flujo**: venta, CxC, CxP, cobro y pago aceptan `client_uuid`; un reenvío devuelve el registro existente (también si dos envíos llegan a la vez: la restricción única decide y se devuelve el ganador). El movimiento de una venta de contado deriva su id del de la venta.
+129. **Los tipos vinculados no se registran por la vía genérica**: cobros, pagos a proveedor, aportes y retiros del propietario solo se crean desde su flujo (que actualiza la deuda o crea la pata espejo); la sincronización offline genérica los rechaza.
+130. **Clientes y proveedores por nombre**: se escriben al vender o registrar la deuda y se reutilizan sin distinguir mayúsculas ni espacios de más; no hace falta darlos de alta antes.
+131. **Anular**: una venta se puede anular mientras su CxC no tenga cobros (se borran líneas, movimiento y CxC). Un cobro o pago se deshace eliminándolo, y su monto vuelve al saldo de la deuda.

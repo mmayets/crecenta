@@ -187,3 +187,13 @@ def test_lote_mixto(personal_ws, user):
 def test_lote_demasiado_grande(personal_ws, user):
     with pytest.raises(ValidationError):
         sync_batch(personal_ws, user, [{}] * (MAX_BATCH + 1))
+
+
+@pytest.mark.parametrize(
+    "kind", ["cobro_cxc", "pago_cxp", "aporte_propietario", "retiro_propietario"]
+)
+def test_tipos_vinculados_no_se_registran_por_la_via_generica(personal_ws, kind):
+    raw = payload(personal_ws, kind=kind, category_id="", direction="out")
+    with pytest.raises(ValidationError) as exc:
+        parse_item(personal_ws, raw)
+    assert "kind" in exc.value.message_dict

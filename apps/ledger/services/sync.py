@@ -20,7 +20,11 @@ from apps.accounts.models import User
 from apps.core.money import MoneyError, q, to_money
 from apps.ledger.choices import TxKind, TxSource
 from apps.ledger.models import Account, Category, Transaction
-from apps.ledger.services.classification import TRANSFER_KINDS, allowed_directions
+from apps.ledger.services.classification import (
+    LINKED_KINDS,
+    TRANSFER_KINDS,
+    allowed_directions,
+)
 from apps.ledger.services.recording import TxData, record_transaction, record_transfer
 from apps.workspaces.models import Workspace
 
@@ -85,6 +89,8 @@ def parse_item(workspace: Workspace, raw: dict[str, Any]) -> SyncItem:
     direction = str(raw.get("direction", ""))
     if kind not in TxKind.values:
         errors["kind"] = "Tipo de movimiento inválido."
+    elif kind in LINKED_KINDS:
+        errors["kind"] = "Este tipo de movimiento se registra desde su propia pantalla."
     else:
         allowed = allowed_directions(kind)
         if not direction and len(allowed) == 1:
