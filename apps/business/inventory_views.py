@@ -8,7 +8,7 @@ from typing import Any
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.http import HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -25,6 +25,7 @@ from apps.reports.services.business_reports import (
     statements_csv,
     tax_summary,
 )
+from apps.reports.services.dgii import HEADERS_606, HEADERS_607, purchases_606, sales_607
 from apps.workspaces.models import Workspace
 
 from .forms import SALE_ROWS, PurchaseForm, SaleForm, StockActionForm
@@ -190,6 +191,8 @@ def _sale_initial(sale: Sale) -> dict[str, Any]:
         "apply_tax": sale.tax > 0,
         "note": sale.note,
         "client_uuid": sale.client_uuid,
+        "ncf": sale.ncf,
+        "customer_tax_id": sale.customer.tax_id if sale.customer else "",
     }
     receivable = Receivable.objects.filter(sale=sale).first()
     if receivable:
@@ -273,11 +276,33 @@ def reports(request: HttpRequest, workspace: Workspace) -> HttpResponse:
             "months": months,
             "chart": chart,
             "tax": tax_summary(workspace, start, end),
+            "dgii_files": [
+                ("607", "Ventas", sales_607(workspace, start, end)),
+                ("606", "Compras", purchases_606(workspace, start, end)),
+            ],
             "tax_month": month_label(start),
             "month_options": [(m.start.strftime("%Y-%m"), month_label(m.start)) for m in months],
             "selected": start.strftime("%Y-%m"),
         },
     )
+
+
+@business_only
+@require_GET
+def dgii_csv(request: HttpRequest, workspace: Workspace, form: str) -> HttpResponse:
+    """Archivo de apoyo 606 (compras) o 607 (ventas) del mes elegido, para el contador."""
+    if form not in ("606", "607"):
+        raise Http404("Formato desconocido")
+    start, end = _month_from(request, timezone.localdate())
+    file, headers = (
+        (sales_607(workspace, start, end), HEADERS_607)
+        if form == "607"
+        else (purchases_606(workspace, start, end), HEADERS_606)
+    )
+    response = HttpResponse("\ufeff" + file.to_csv(headers), content_type="text/csv; charset=utf-8")
+    name = f"crecenta-{form}-apoyo-{start:%Y%m}.csv"
+    response["Content-Disposition"] = f'attachment; filename="{name}"'
+    return response
 
 
 @business_only

@@ -65,6 +65,8 @@ class SaleData:
     note: str = ""
     client_uuid: uuid.UUID | None = None
     source: str = TxSource.MANUAL
+    ncf: str = ""  # comprobante fiscal emitido (opcional)
+    customer_tax_id: str = ""  # RNC o cédula del cliente (se guarda en el cliente)
 
 
 @dataclass(frozen=True)
@@ -111,6 +113,26 @@ def _idempotent[T: models.Model](
         if found is None:
             raise
         return found, False
+
+
+def clean_code(value: str) -> str:
+    """NCF, RNC o cédula: sin espacios ni guiones y en mayúsculas."""
+    return "".join(ch for ch in value if ch not in " -").upper()
+
+
+def set_tax_id(counterpart: Customer | Supplier | None, tax_id: str) -> None:
+    """Guarda el RNC o cédula de la contraparte (si se escribió) y lo valida."""
+    tax_id = clean_code(tax_id)
+    if tax_id and counterpart is None:
+        raise ValidationError({"tax_id": "Escribe también el nombre del cliente o proveedor."})
+    if counterpart is None or not tax_id or counterpart.tax_id == tax_id:
+        return
+    counterpart.tax_id = tax_id
+    try:
+        counterpart.full_clean(validate_constraints=False)
+    except ValidationError as exc:
+        raise ValidationError({"tax_id": exc.message_dict.get("tax_id", exc.messages)}) from exc
+    counterpart.save(update_fields=["tax_id", "updated_at"])
 
 
 def get_or_create_named[T: models.Model](
@@ -203,6 +225,12 @@ def _create_sale(
     sale.tax = totals.tax
     sale.total = totals.total
     sale.note = data.note.strip()[:140]
+    sale.ncf = clean_code(data.ncf)
+    set_tax_id(customer, data.customer_tax_id)
+    if sale.ncf and (
+        Sale.objects.for_workspace(workspace).filter(ncf=sale.ncf).exclude(pk=sale.pk).exists()
+    ):
+        raise ValidationError({"ncf": "Ese NCF ya está en otra venta."})
     if data.payment == Sale.Payment.CREDITO and data.account is not None:
         raise ValidationError({"account": "Una venta a crédito no mueve dinero hasta cobrarse."})
     sale.full_clean(validate_constraints=False)

@@ -12,14 +12,21 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from apps.accounts.models import User
-from apps.business.models import Payable, Product, Purchase, PurchaseLine, Supplier
+from apps.business.models import NCF, Payable, Product, Purchase, PurchaseLine, Supplier
 from apps.core.money import ZERO, q, to_money
 from apps.ledger.choices import CategoryGroup, Direction, TxKind
 from apps.ledger.models import Account, Category, Transaction
 from apps.workspaces.models import Workspace
 
 from .inventory import _create, refresh_stock
-from .sales import _check_owned, _idempotent, _require_business, get_or_create_named
+from .sales import (
+    _check_owned,
+    _idempotent,
+    _require_business,
+    clean_code,
+    get_or_create_named,
+    set_tax_id,
+)
 
 PURCHASE_CATEGORY = "Compras de mercancía"
 _TX_NS = uuid.UUID("3c1f9a7e-8b2d-4e61-a5c0-7d9e2f4b6a18")
@@ -43,6 +50,8 @@ class PurchaseData:
     due_date: datetime.date | None = None
     note: str = ""
     client_uuid: uuid.UUID | None = None
+    ncf: str = ""  # NCF de la factura del proveedor (opcional)
+    supplier_tax_id: str = ""  # RNC o cédula del proveedor (se guarda en el proveedor)
 
 
 def purchase_category(workspace: Workspace) -> Category:
@@ -74,6 +83,11 @@ def _validate(workspace: Workspace, data: PurchaseData) -> None:
             errors["lines"] = "Cantidad y costo deben ser positivos."
     if data.tax < 0:
         errors["tax"] = "El ITBIS no puede ser negativo."
+    if data.ncf:
+        try:
+            NCF(clean_code(data.ncf))
+        except ValidationError as exc:
+            errors["ncf"] = exc.messages[0]
     if data.payment == Purchase.Payment.CONTADO and data.account is None:
         errors["account"] = "Indica de qué cuenta salió el dinero."
     _check_owned(workspace, data.account, "account")
@@ -90,6 +104,7 @@ def _create_purchase(workspace: Workspace, user: User | None, data: PurchaseData
         raise ValidationError({"lines": "La compra debe tener un total mayor que cero."})
     credit = data.payment == Purchase.Payment.CREDITO
     supplier = get_or_create_named(Supplier, workspace, data.supplier_name)
+    set_tax_id(supplier, data.supplier_tax_id)
     purchase = Purchase.objects.create(
         workspace=workspace,
         date=data.date,
@@ -101,6 +116,7 @@ def _create_purchase(workspace: Workspace, user: User | None, data: PurchaseData
         tax=tax,
         total=total,
         note=data.note.strip()[:140],
+        ncf=clean_code(data.ncf),
         created_by=user,
     )
     for item in data.lines:

@@ -36,4 +36,5 @@ urlpatterns = [
     path("compras/<uuid:purchase_id>/anular/", inv.purchase_delete, name="purchase_delete"),
     path("reportes/", inv.reports, name="reports"),
     path("reportes/resultados.csv", inv.reports_csv, name="reports_csv"),
+    path("reportes/<str:form>-apoyo.csv", inv.dgii_csv, name="dgii_csv"),
 ]

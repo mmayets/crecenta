@@ -73,6 +73,13 @@ class SaleForm(_Base):
     due_date = _date_field("¿Cuándo te pagará? (crédito)", required=False)
     apply_tax = forms.BooleanField(label="Cobrar ITBIS en esta venta", required=False)
     note = forms.CharField(label="Nota (opcional)", max_length=140, required=False)
+    ncf = forms.CharField(
+        label="NCF que emitiste (opcional)", max_length=20, required=False,
+        help_text="Ej.: B0100000001 o E310000000001.",
+    )  # fmt: skip
+    customer_tax_id = forms.CharField(
+        label="RNC o cédula del cliente (opcional)", max_length=20, required=False
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -134,6 +141,8 @@ class SaleForm(_Base):
             apply_tax=d.get("apply_tax", False),
             note=d["note"],
             client_uuid=d["client_uuid"],
+            ncf=d.get("ncf", ""),
+            customer_tax_id=d.get("customer_tax_id", ""),
         )
 
 
@@ -274,6 +283,10 @@ class PurchaseForm(_Base):
         label="ITBIS de la factura (opcional)", min_value=0, required=False, **MONEY
     )
     note = forms.CharField(label="Nota (opcional)", max_length=140, required=False)
+    ncf = forms.CharField(label="NCF de la factura (opcional)", max_length=20, required=False)
+    supplier_tax_id = forms.CharField(
+        label="RNC o cédula del proveedor (opcional)", max_length=20, required=False
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -324,6 +337,8 @@ class PurchaseForm(_Base):
             due_date=d.get("due_date") if credit else None,
             note=d["note"],
             client_uuid=d["client_uuid"],
+            ncf=d.get("ncf", ""),
+            supplier_tax_id=d.get("supplier_tax_id", ""),
         )
 
 

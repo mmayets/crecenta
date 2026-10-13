@@ -5,7 +5,7 @@
 {% with cur=workspace.currency %}
   <a class="underline" href="{% url 'business:sales' ws=workspace.pk %}">← Ventas</a>
   <h1 class="mt-2">Venta del {{ sale.date|date:"j \d\e F" }}</h1>
-  <p class="muted">{{ sale.get_payment_display }}{% if sale.customer %} · {{ sale.customer }}{% endif %}{% if sale.account %} · {{ sale.account }}{% endif %}</p>
+  <p class="muted">{{ sale.get_payment_display }}{% if sale.customer %} · {{ sale.customer }}{% endif %}{% if sale.account %} · {{ sale.account }}{% endif %}{% if sale.ncf %} · NCF {{ sale.ncf }}{% endif %}</p>
   <ul class="card mt-4 divide-y p-0">
     {% for l in lines %}
       <li class="px-4 py-3"><div class="flex justify-between"><span>{{ l.qty|floatformat:"-2u" }} × {{ l.description }}</span><span class="amount">{{ l.net_amount|money:cur }}</span></div>

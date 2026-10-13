@@ -23,6 +23,10 @@
     {% if form.apply_tax %}{% include "partials/field.html" with field=form.apply_tax %}{% endif %}
     {% include "partials/field.html" with field=form.date %}
     {% include "partials/field.html" with field=form.note %}
+    <details class="rounded-xl border border-dashed border-slate-300 p-3" {% if form.ncf.value or form.ncf.errors or form.customer_tax_id.value %}open{% endif %}><summary class="cursor-pointer text-sm font-medium">Comprobante fiscal (NCF)</summary><div class="mt-3 space-y-3">
+      {% include "partials/field.html" with field=form.ncf %}
+      {% include "partials/field.html" with field=form.customer_tax_id %}
+    </div></details>
     <p class="muted">A crédito: cuenta como venta hoy y queda por cobrar; el dinero entra cuando registres el cobro.</p>
     <button type="submit" class="btn-primary w-full">{% icon "circle-check" "h-5 w-5" %}{% if editing %}Guardar cambios{% else %}Guardar venta{% endif %}</button>
   </form>

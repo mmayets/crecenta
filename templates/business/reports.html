@@ -31,6 +31,18 @@
     </dl>
     <p class="muted mt-2">{{ tax.note }}</p>
   </section>
+  <section class="mt-5" aria-labelledby="dgii">
+    <h2 id="dgii">Archivos de apoyo 606 y 607 · {{ tax_month }}</h2>
+    <p class="muted">Para tu contador: ventas y compras del mes con NCF, en el orden de columnas de los formatos de la DGII. No son el envío oficial; tu contador los revisa y completa (retenciones y otros datos que la app no conoce).</p>
+    <ul class="card mt-2 divide-y p-0 text-sm">
+      {% for code, label, f in dgii_files %}
+        <li class="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+          <span><strong>{{ code }}</strong> · {{ label }}: {{ f.rows|length }} con NCF{% if f.missing_ncf %} · <span class="text-amber-700">{{ f.missing_ncf }} sin NCF (no entran)</span>{% endif %}{% if f.missing_tax_id %} · <span class="text-amber-700">{{ f.missing_tax_id }} sin RNC o cédula</span>{% endif %}</span>
+          <a class="btn-secondary btn-sm" href="{% url 'business:dgii_csv' ws=workspace.pk form=code %}?mes={{ selected }}">{% icon "download" "h-4 w-4" %}{{ code }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
 {% endwith %}
 {% endblock %}
 {% block scripts %}

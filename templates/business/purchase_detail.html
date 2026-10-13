@@ -5,7 +5,7 @@
 {% with cur=workspace.currency %}
   <a class="underline" href="{% url 'business:purchases' ws=workspace.pk %}">← Compras</a>
   <h1 class="mt-2">Compra del {{ purchase.date|date:"j \d\e F" }}</h1>
-  <p class="muted">{{ purchase.get_payment_display }}{% if purchase.supplier %} · {{ purchase.supplier }}{% endif %}{% if purchase.account %} · {{ purchase.account }}{% endif %}</p>
+  <p class="muted">{{ purchase.get_payment_display }}{% if purchase.supplier %} · {{ purchase.supplier }}{% endif %}{% if purchase.account %} · {{ purchase.account }}{% endif %}{% if purchase.ncf %} · NCF {{ purchase.ncf }}{% endif %}</p>
   <ul class="card mt-4 divide-y p-0">{% for l in lines %}<li class="flex justify-between px-4 py-3"><span>{{ l.qty|floatformat:"-3u" }} × {{ l.product.name }}</span><span class="amount">{{ l.unit_cost|money:cur }} c/u</span></li>{% endfor %}</ul>
   <dl class="card mt-3 space-y-1 text-sm">
     <div class="flex justify-between"><dt>Subtotal</dt><dd class="amount">{{ purchase.subtotal|money:cur }}</dd></div>
