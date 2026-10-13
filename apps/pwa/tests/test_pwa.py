@@ -47,7 +47,7 @@ def test_paginas_sin_conexion_no_requieren_sesion(client):
     html = client.get(reverse("pwa:offline")).content.decode()
     assert "Estás sin conexión" in html and "data-pending-count" in html
     html = client.get(reverse("pwa:offline_saved")).content.decode()
-    assert "Guardamos tu movimiento en el teléfono" in html
+    assert "Lo guardamos en tu teléfono" in html
 
 
 def test_atajo_registrar(client, user, personal_ws):

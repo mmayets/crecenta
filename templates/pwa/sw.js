@@ -1,7 +1,7 @@
 {% load static %}/* Service worker de Crecenta (versión {{ version }}).
    - Estáticos: primero caché.
    - Páginas: primero red; sin conexión, la última copia guardada o la página "sin conexión".
-   - Registro rápido sin conexión: el POST del formulario se guarda en IndexedDB y se envía al
+   - Registro rápido y venta sin conexión: el POST del formulario se guarda en IndexedDB y se envía al
      recuperar la conexión (Background Sync, o aviso de la página en navegadores sin él). El
      servidor no duplica gracias al client_uuid. */
 importScripts("{% static 'js/offline-queue.js' %}");
@@ -14,6 +14,7 @@ const OFFLINE_URL = "{{ offline_url }}";
 const SAVED_URL = "{{ saved_url }}";
 const SYNC_TAG = "sync-movimientos";
 const QUICK_ENTRY = /\/e\/[0-9a-f-]+\/movimientos\/nuevo\/$/;
+const SALE_ENTRY = /\/e\/[0-9a-f-]+\/ventas\/nueva\/$/;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -34,7 +35,8 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (request.method === "POST" && request.mode === "navigate" && QUICK_ENTRY.test(url.pathname)) {
+  const queueable = QUICK_ENTRY.test(url.pathname) || SALE_ENTRY.test(url.pathname);
+  if (request.method === "POST" && request.mode === "navigate" && queueable) {
     event.respondWith(postOrQueue(event));
     return;
   }
@@ -68,6 +70,22 @@ async function networkFirst(request) {
 }
 
 function itemFromForm(form, url) {
+  if (SALE_ENTRY.test(url.pathname)) {
+    // Venta: se guardan los campos tal cual; el servidor los valida con el mismo formulario.
+    const fields = {};
+    for (const [name, value] of form.entries()) {
+      if (name !== "csrfmiddlewaretoken" && name !== "client_uuid" && typeof value === "string") {
+        fields[name] = value;
+      }
+    }
+    return {
+      client_uuid: form.get("client_uuid"),
+      form: fields,
+      syncUrl: url.pathname.replace(/nueva\/$/, "sync/"),
+      csrf: form.get("csrfmiddlewaretoken"),
+      createdAt: Date.now(),
+    };
+  }
   return {
     client_uuid: form.get("client_uuid"),
     account_id: form.get("account"),

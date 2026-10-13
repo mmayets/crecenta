@@ -121,7 +121,7 @@ document.addEventListener("htmx:configRequest", (event) => {
     } else if (extra) {
       setBanner(extra);
     } else if (pending) {
-      setBanner(`Enviando ${pending} movimiento(s) guardado(s) sin conexión…`);
+      setBanner(`Enviando ${pending} registro(s) guardado(s) sin conexión…`);
     } else {
       setBanner("");
     }

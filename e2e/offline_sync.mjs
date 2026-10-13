@@ -1,5 +1,6 @@
 // Prueba E2E del criterio de aceptación de la PWA:
-// "registrar un gasto sin conexión que se sincroniza al reconectar sin duplicarse".
+// "registrar un gasto sin conexión que se sincroniza al reconectar sin duplicarse", y lo mismo
+// con las ventas de una vendedora (Fase 4).
 //
 // Uso: make e2e   (prepara el usuario, levanta el servidor en :8766 y ejecuta esta prueba)
 import { spawn } from "node:child_process";
@@ -10,7 +11,7 @@ process.env.PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS = "1";
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
 const BASE = process.env.E2E_BASE || "http://localhost:8766";
-const { email, password, ws } = JSON.parse(process.argv[2]);
+const { email, password, ws, seller, business } = JSON.parse(process.argv[2]);
 
 function check(condition, message) {
   if (!condition) throw new Error("FALLA: " + message);
@@ -71,7 +72,7 @@ try {
     await Promise.all([page.waitForURL("**/sin-conexion/guardado/"), page.click("button:has-text('Guardar')")]);
   }
   await registrar("275", "Colmado sin señal");
-  check((await page.textContent("h1")).includes("Guardamos tu movimiento"), "confirmación offline");
+  check((await page.textContent("h1")).includes("Lo guardamos en tu teléfono"), "confirmación offline");
   await registrar("125", "Guagua sin señal");
   const queued = await page.evaluate(() => self.CrecentaQueue.all());
   check(queued.length === 2, "dos movimientos en la cola local");
@@ -99,6 +100,56 @@ try {
   const times = (text) => html.split(text).length - 1;
   check(times("Colmado sin señal") === 1, "el gasto de RD$275 aparece una sola vez");
   check(times("Guagua sin señal") === 1, "el gasto de RD$125 aparece una sola vez");
+
+  // 5. Ventas sin conexión de una vendedora.
+  const sellerContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const sp = await sellerContext.newPage();
+  sp.on("pageerror", (e) => errors.push(e.message));
+  await sp.goto(BASE + "/cuenta/login/");
+  await sp.fill("input[name=login]", seller);
+  await sp.fill("input[name=password]", password);
+  await sp.click("button[type=submit]");
+  await sp.waitForLoadState("networkidle");
+  const saleUrl = `${BASE}/e/${business}/ventas/nueva/`;
+  await sp.goto(saleUrl);
+  await sp.evaluate(() => navigator.serviceWorker.ready);
+  await sp.reload();
+  await sp.waitForLoadState("networkidle");
+  check(await sp.evaluate(() => !!navigator.serviceWorker.controller), "service worker de la vendedora");
+  await sellerContext.route("**/*", cutNetwork);
+  await sellerContext.setOffline(true);
+
+  async function vender(qty, note) {
+    await sp.goto(saleUrl);
+    await sp.selectOption("select[name=producto_1]", { label: "Refresco" });
+    await sp.fill("input[name=cantidad_1]", qty);
+    await sp.fill("input[name=note]", note);
+    await Promise.all([sp.waitForURL("**/sin-conexion/guardado/"), sp.click("button:has-text('Guardar venta')")]);
+  }
+  await vender("2", "Venta sin señal A");
+  await vender("3", "Venta sin señal B");
+  const sales = await sp.evaluate(() => self.CrecentaQueue.all());
+  check(sales.length === 2 && sales.every((i) => i.form), "dos ventas en la cola local");
+
+  await sellerContext.unroute("**/*", cutNetwork);
+  await sellerContext.setOffline(false);
+  await sp.goto(`${BASE}/e/${business}/`);
+  await sp.waitForFunction(async () => (await self.CrecentaQueue.count()) === 0, null, { timeout: 15000 });
+  check(true, "las ventas se enviaron al reconectar");
+  await sp.evaluate(async (item) => {
+    await self.CrecentaQueue.add(item);
+    navigator.serviceWorker.controller.postMessage({
+      type: "flush",
+      csrf: document.querySelector('meta[name="csrf-token"]').content,
+    });
+  }, sales[0]);
+  await sp.waitForFunction(async () => (await self.CrecentaQueue.count()) === 0, null, { timeout: 15000 });
+  await sp.goto(`${BASE}/e/${business}/ventas/`);
+  const salesHtml = await sp.content();
+  check(salesHtml.split("2 Refresco").length - 1 === 1, "la venta de 2 aparece una sola vez");
+  check(salesHtml.split("3 Refresco").length - 1 === 1, "la venta de 3 aparece una sola vez");
+  check(salesHtml.includes("RD$375.00"), "el total del mes cuadra (5 × RD$75)");
+
   check(errors.length === 0, "sin errores de JavaScript: " + errors.join("; "));
   console.log("\nPRUEBA E2E SUPERADA");
 } catch (error) {

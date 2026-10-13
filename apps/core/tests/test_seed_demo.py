@@ -91,3 +91,6 @@ def test_preparar_e2e():
     call_command("preparar_e2e", stdout=out)
     data = json.loads(out.getvalue())
     assert Workspace.objects.get(pk=data["ws"]).owner.email == data["email"]
+    negocio = Workspace.objects.get(pk=data["business"])
+    assert negocio.memberships.get(user__email=data["seller"]).role == "vendedor"
+    call_command("preparar_e2e", stdout=StringIO())  # se puede repetir

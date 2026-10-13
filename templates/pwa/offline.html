@@ -15,14 +15,14 @@
   <main class="mx-auto max-w-xl px-4 py-10 text-center">
     {% if saved %}
       {% icon "circle-check" "mx-auto h-14 w-14 text-marca-700" %}
-      <h1 class="mt-4">Guardamos tu movimiento en el teléfono</h1>
+      <h1 class="mt-4">Lo guardamos en tu teléfono</h1>
       <p class="mt-2 text-slate-600">No hay conexión. Lo enviaremos automáticamente en cuanto vuelvas a tener internet, sin duplicarlo.</p>
     {% else %}
       {% icon "wifi-off" "mx-auto h-14 w-14 text-slate-500" %}
       <h1 class="mt-4">Estás sin conexión</h1>
-      <p class="mt-2 text-slate-600">Puedes seguir registrando gastos desde "Registrar" en las páginas que ya abriste: se guardan en el teléfono y se envían al reconectar.</p>
+      <p class="mt-2 text-slate-600">Puedes seguir registrando gastos y ventas en las páginas que ya abriste: se guardan en el teléfono y se envían al reconectar.</p>
     {% endif %}
-    <p class="card mt-6 text-sm" data-pending-label>Movimientos por enviar: <strong data-pending-count>0</strong></p>
+    <p class="card mt-6 text-sm" data-pending-label>Registros por enviar: <strong data-pending-count>0</strong></p>
     <a class="btn-primary mt-6 w-full" href="/" data-back>Volver</a>
   </main>
 </body>

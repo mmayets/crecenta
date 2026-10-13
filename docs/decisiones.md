@@ -317,3 +317,10 @@ Decisiones confirmadas en `docs/fase3.md` §8 (la persona pidió hacer la fase c
 197. **Vender un producto con receta** crea una salida por insumo al promedio del momento (`InventoryMovement.sale_line`, ahora varias por línea); anular o editar la venta las revierte. No hay inventario de producto terminado. Un producto con receta no puede llevar inventario propio ni ser insumo.
 198. **Negocio en otra moneda**: se elige al crear el espacio. En retiros y aportes entre monedas distintas la tasa (RD$ por 1 US$) es obligatoria y manual; cada pata va en la moneda de su espacio (`WorkspaceTransfer.in_amount`, redondeo ROUND_HALF_UP a centavos) y se guarda la tasa usada (también en la descripción). Entre la misma moneda la tasa se ignora. Ningún cálculo suma monedas distintas.
 199. **Exportación de datos** incluye recetas, equipo (correo y rol) e invitaciones sin el hash del código.
+
+## Fase 4, paso D7 — ventas sin conexión
+
+200. **Misma cola que los gastos**: el service worker intercepta el POST de "Registrar venta" cuando no hay red y guarda los campos del formulario (sin el token CSRF) con su `client_uuid` en IndexedDB. Al reconectar se envían a `/e/<ws>/ventas/sync/` (permiso *vender*), agrupados por espacio.
+201. **El servidor valida con el mismo `SaleForm`** de la pantalla y registra con `register_sale` (origen "Sin conexión"): un reintento responde "existente" y no duplica; un elemento inválido queda marcado con error en el teléfono sin frenar al resto. Máximo 50 ventas por envío y el mismo límite de frecuencia que la sincronización de gastos.
+202. **Sin conexión no se avisa de existencias** (no hay datos frescos): al sincronizar, la venta descuenta inventario y las alertas de existencia baja o negativa lo señalan.
+203. **E2E** (`make e2e`): además del gasto, una vendedora registra dos ventas sin red, se envían al reconectar, un reenvío no duplica y el total del mes cuadra. `preparar_e2e` crea también el negocio y la vendedora.

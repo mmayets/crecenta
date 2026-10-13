@@ -16,6 +16,7 @@ VENDEDOR_PUEDE = {
     "espacio:settings",
     "business:sales",
     "business:sale_new",
+    "business:sales_sync",
     "business:sale_detail",
     "business:receivables",
     "business:collect",

@@ -1,13 +1,14 @@
 from django.urls import path
 
 from . import inventory_views as inv
-from . import views
+from . import sync_views, views
 
 app_name = "business"
 
 urlpatterns = [
     path("ventas/", views.sales, name="sales"),
     path("ventas/nueva/", views.sale_new, name="sale_new"),
+    path("ventas/sync/", sync_views.sales_sync, name="sales_sync"),
     path("ventas/<uuid:sale_id>/", views.sale_detail, name="sale_detail"),
     path("ventas/<uuid:sale_id>/anular/", views.sale_delete, name="sale_delete"),
     path("productos/", views.products, name="products"),
