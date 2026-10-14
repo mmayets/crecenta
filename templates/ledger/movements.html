@@ -18,6 +18,17 @@
     <div class="card"><p class="stat-label">{% icon "arrow-down-left" "h-4 w-4" %}Ingresos</p><p class="stat-value text-lg text-emerald-700 sm:text-2xl">{{ totals.entradas|default:0|money:cur }}</p></div>
     <div class="card"><p class="stat-label">{% icon "arrow-up-right" "h-4 w-4" %}Gastos</p><p class="stat-value text-lg text-red-700 sm:text-2xl">{{ totals.salidas|default:0|money:cur }}</p></div>
   </section>
+  {% if by_rubro %}
+    <section class="card mt-4 md:p-5" aria-labelledby="t-rubros">
+      <div class="mb-3 flex items-center justify-between gap-2"><h2 id="t-rubros" class="text-base">Gastos por rubro</h2><a class="text-sm" href="{% url 'ledger:rubros' ws=workspace.pk %}?anio={{ start|date:'Y' }}">Resumen del año</a></div>
+      <ul class="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+        {% for r in by_rubro %}
+          <li data-rubro="{{ r.rubro }}"><div class="mb-1 flex justify-between gap-2"><span>{{ r.label }}</span><span class="amount">{{ r.total|money:cur }}</span></div>
+            <div class="bar"><span style="width: {% if rubros_max %}{% widthratio r.total rubros_max 100 %}{% else %}0{% endif %}%"></span></div></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
   <div class="card mt-4 md:p-5">
   <form method="get" class="flex gap-2">
     <input type="hidden" name="mes" value="{{ start|date:'Y-m' }}">
@@ -36,7 +47,7 @@
         {% else %}{% icon "arrow-up-right" "h-5 w-5 shrink-0 text-red-600" %}{% endif %}
         <div class="min-w-0 flex-1">
           <p class="truncate font-medium">{% if t.description %}{{ t.description }}{% elif t.category %}{{ t.category.name }}{% else %}{{ t.get_kind_display }}{% endif %}</p>
-          <p class="muted truncate">{{ t.category.name|default:t.get_kind_display }} · {{ t.account.name }}{% if t.status == "pendiente_revision" %} · <span class="text-amber-700">por revisar</span>{% endif %}{% if t.receipt_id %} · {% icon "receipt" "inline h-3 w-3" "con comprobante" %}{% endif %}</p>
+          <p class="muted truncate">{{ t.category.name|default:t.get_kind_display }} · {{ t.account.name }}{% if t.rubro %} · {{ t.get_rubro_display }}{% endif %}{% if t.invoice_number %} · Factura {{ t.invoice_number }}{% endif %}{% if t.status == "pendiente_revision" %} · <span class="text-amber-700">por revisar</span>{% endif %}{% if t.receipt_id %} · {% icon "receipt" "inline h-3 w-3" "con comprobante" %}{% endif %}</p>
         </div>
         <span class="amount {% if t.direction == 'in' %}text-emerald-700{% endif %}">{% if t.direction == "out" %}−{% else %}+{% endif %}{{ t.amount|money:cur }}</span>
         <form method="post" action="{% url 'ledger:delete' ws=workspace.pk tx_id=t.pk %}" hx-post="{% url 'ledger:delete' ws=workspace.pk tx_id=t.pk %}" hx-confirm="¿Eliminar este movimiento?" hx-target="body" hx-select="#contenido" hx-swap="innerHTML">{% csrf_token %}<button class="rounded-full p-1 text-slate-400 hover:text-red-700">{% icon "trash-2" "h-4 w-4" "Eliminar" %}</button></form>

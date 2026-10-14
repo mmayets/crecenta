@@ -1,0 +1,19 @@
+{% extends "backoffice/_layout.html" %}
+{% load icons %}
+{% block title %}Parámetro · Administración · Crecenta{% endblock %}
+{% block panel_title %}{% if instance %}Editar {{ instance.key }}{% else %}Nuevo parámetro{% endif %}{% endblock %}
+{% block panel %}
+  <a class="mb-4 inline-flex items-center gap-1 text-sm font-medium" href="{% url 'panel:parameters' %}">{% icon "arrow-left" "h-4 w-4" %}Parámetros</a>
+  <form method="post" class="card max-w-2xl space-y-4 md:p-6">
+    {% csrf_token %}
+    {% include "partials/form.html" %}
+    {% if form.secret %}<p class="flex items-center gap-1 text-xs text-slate-500">{% icon "lock" "h-3.5 w-3.5" %}Valor secreto: no se muestra ni queda en la auditoría.</p>{% endif %}
+    <button class="btn-primary w-full">Guardar</button>
+  </form>
+  {% if instance %}
+    <form method="post" action="{% url 'panel:parameter_delete' parameter_id=instance.pk %}" class="mt-4 max-w-2xl">
+      {% csrf_token %}
+      <button class="btn-danger btn-sm">{% icon "trash-2" "h-4 w-4" %}Eliminar parámetro</button>
+    </form>
+  {% endif %}
+{% endblock %}

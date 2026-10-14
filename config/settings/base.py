@@ -77,6 +77,7 @@ LOCAL_APPS = [
     "apps.reports",
     "apps.pwa",
     "apps.business",
+    "apps.backoffice",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -91,6 +92,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "apps.backoffice.middleware.AuditMiddleware",
     "apps.core.middleware.SecurityHeadersMiddleware",
 ]
 
@@ -110,6 +112,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.workspaces.context_processors.workspaces",
+                "apps.accounts.context_processors.push",
             ],
         },
     },
@@ -176,6 +179,11 @@ ADMIN_URL = env("DJANGO_ADMIN_URL", default="admin/")
 # Límites de uso por persona: (cantidad, ventana en segundos).
 UPLOAD_RATE_LIMITS = [(60, 3600)]
 SYNC_RATE_LIMITS = [(120, 60)]
+
+# Notificaciones push (Web Push con VAPID). Las claves se generan con `manage.py generar_vapid`.
+VAPID_PUBLIC_KEY = env("VAPID_PUBLIC_KEY", default="")
+VAPID_PRIVATE_KEY = env("VAPID_PRIVATE_KEY", default="")
+VAPID_SUBJECT = env("VAPID_SUBJECT", default="mailto:soporte@crecenta.app")
 
 # Versión de la app (también invalida la caché del service worker).
 APP_VERSION = env("APP_VERSION", default="1")

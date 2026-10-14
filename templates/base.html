@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#10224a">
   <meta name="csrf-token" content="{{ csrf_token }}">
+  {% if vapid_public_key %}<meta name="vapid-key" content="{{ vapid_public_key }}">{% endif %}
   <title>{% block title %}{% block head_title %}Crecenta{% endblock %}{% endblock %}</title>
   <link rel="preload" href="{% static 'fonts/manrope-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">

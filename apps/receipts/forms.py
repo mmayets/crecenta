@@ -2,7 +2,7 @@ from datetime import date
 
 from django import forms
 
-from apps.ledger.choices import CategoryGroup
+from apps.ledger.choices import CategoryGroup, Rubro
 from apps.ledger.models import Account, Category
 from apps.receipts.models import Receipt
 from apps.receipts.services.ocr import doubtful_fields
@@ -13,9 +13,11 @@ class UploadForm(forms.Form):
     file = forms.FileField(
         label="Foto o PDF del comprobante",
         widget=forms.ClearableFileInput(
-            attrs={"accept": "image/*,application/pdf", "capture": "environment"}
+            # x-ref/@change: al elegir una foto, el navegador busca su código QR (fotoConQR).
+            attrs={"accept": "image/*,application/pdf", "capture": "environment",
+                   "x-ref": "archivo", "@change": "revisar"}
         ),
-    )
+    )  # fmt: skip
 
 
 # Campo del formulario ← campo leído por la IA
@@ -38,6 +40,12 @@ class ReviewForm(forms.Form):
         label="Categoría", queryset=Category.objects.none(), required=False
     )
     account = forms.ModelChoiceField(label="Pagado desde", queryset=Account.objects.none())
+    rubro = forms.ChoiceField(
+        label="Rubro del gasto",
+        choices=[("", "Según la categoría"), *Rubro.choices],
+        required=False,
+    )
+    invoice_number = forms.CharField(label="Número de factura", max_length=40, required=False)
 
     def __init__(self, receipt: Receipt, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -50,14 +58,19 @@ class ReviewForm(forms.Form):
         self.fields["account"].queryset = Account.objects.for_workspace(ws).filter(
             is_archived=False
         )
+        if ws.is_business:
+            del self.fields["rubro"]
         data = receipt.extracted
+        # El QR de una factura electrónica de la DGII es más confiable que la foto.
+        qr = receipt.qr_data or {}
         self.initial.update(
             {
                 "description": data.get("comercio") or "",
-                "date": data.get("fecha") or date.today().isoformat(),
-                "amount": data.get("total"),
+                "date": qr.get("fecha") or data.get("fecha") or date.today().isoformat(),
+                "amount": qr.get("total") or data.get("total"),
                 "category": suggested_category(receipt),
                 "account": suggested_account(receipt),
+                "invoice_number": qr.get("numero") or data.get("numero_factura") or "",
             }
         )
         doubtful = doubtful_fields(data, receipt.field_confidence)

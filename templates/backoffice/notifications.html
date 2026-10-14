@@ -1,0 +1,19 @@
+{% extends "backoffice/_layout.html" %}
+{% load icons %}
+{% block title %}Notificaciones · Administración · Crecenta{% endblock %}
+{% block panel_title %}Notificaciones push{% endblock %}
+{% block panel %}
+  <section class="grid gap-4 sm:grid-cols-2">
+    <div class="card"><p class="stat-label">{% icon "users" "h-4 w-4" %}Personas suscritas</p><p class="stat-value" data-testid="suscritas">{{ people }}</p></div>
+    <div class="card"><p class="stat-label">{% icon "bell" "h-4 w-4" %}Dispositivos</p><p class="stat-value">{{ devices }}</p></div>
+  </section>
+  {% if not enabled %}
+    <p class="card-tip mt-4 flex items-start gap-2 text-sm">{% icon "info" "h-4 w-4 shrink-0" %}Faltan las claves VAPID. Ejecuta <code>python manage.py generar_vapid</code> y reinicia el servidor.</p>
+  {% endif %}
+  <form method="post" class="card mt-4 max-w-2xl space-y-4 md:p-6">
+    {% csrf_token %}
+    {% include "partials/form.html" %}
+    <button class="btn-primary w-full" {% if not enabled %}disabled{% endif %}>{% icon "bell" "h-4 w-4" %}Enviar notificación</button>
+  </form>
+  <p class="mt-3 text-xs text-slate-500">Las alertas urgentes y de atención se envían solas al propietario y a los administradores de cada espacio. Cada envío desde aquí queda en la auditoría.</p>
+{% endblock %}

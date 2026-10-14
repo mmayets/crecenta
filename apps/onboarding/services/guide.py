@@ -122,6 +122,22 @@ def _ai_consent(user: User) -> list[Suggestion]:
     ]
 
 
+def _push(user: User) -> list[Suggestion]:
+    from apps.accounts.services import push
+
+    if not push.enabled() or user.push_subscriptions.exists():
+        return []
+    return [
+        Suggestion(
+            "push",
+            "Activa las notificaciones",
+            "Te avisamos de pagos cercanos y alertas aunque no tengas la app abierta.",
+            reverse("accounts:settings") + "#notificaciones",
+            "Activarlas",
+        )
+    ]
+
+
 def _personal(workspace: Workspace, user: User, today: date) -> list[Suggestion]:
     d = build_personal_dashboard(workspace, today)
     found: list[Suggestion] = []
@@ -191,6 +207,7 @@ def _personal(workspace: Workspace, user: User, today: date) -> list[Suggestion]
         )
     found += _record_reminder(workspace, today, "ledger:new", "gastos")
     found += _ai_consent(user)
+    found += _push(user)
     if not Workspace.objects.filter(owner=user, kind=Workspace.Kind.BUSINESS).exists():
         found.append(
             Suggestion(
@@ -354,6 +371,7 @@ def _business(workspace: Workspace, user: User, role: str | None, today: date) -
     found += _sales_today(workspace, user, today)
     if can(role, PROPIETARIO):
         found += _ai_consent(user)
+    found += _push(user)
     return found
 
 

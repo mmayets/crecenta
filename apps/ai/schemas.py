@@ -215,6 +215,8 @@ class ReceiptExtraction(_Base):
     moneda: Literal["DOP", "USD"] | None = None
     categoria_propuesta: str | None = Field(default=None, max_length=60)
     medio_pago: Literal["efectivo", "tarjeta", "transferencia", "otro"] | None = None
+    # NCF (B0100000045), e-NCF (E310000000123) o el número de factura impreso.
+    numero_factura: str | None = Field(default=None, max_length=40)
     lineas: list[LineaComprobante] = Field(default_factory=list, max_length=60)
     # Confianza por campo entre 0 y 1 (comercio, fecha, total, categoria_propuesta, medio_pago).
     confianza: dict[str, float] = Field(default_factory=dict)

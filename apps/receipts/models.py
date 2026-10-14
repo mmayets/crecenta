@@ -39,6 +39,8 @@ class Receipt(WorkspaceScopedModel):
         "estado", max_length=22, choices=Status.choices, default=Status.PROCESANDO
     )
     extracted = models.JSONField("datos leídos", default=dict, blank=True)
+    # Lo leído del código QR de la factura (número, total, fecha, RNC del emisor).
+    qr_data = models.JSONField("código QR", default=dict, blank=True)
     field_confidence = models.JSONField("confianza por campo", default=dict, blank=True)
     error_message = models.CharField("motivo", max_length=200, blank=True)
     duplicate_of = models.ForeignKey(

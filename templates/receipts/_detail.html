@@ -30,6 +30,8 @@
     </section>
   {% endif %}
 
+  {% if receipt.qr_data %}<p class="card-tip mt-3 text-sm" data-testid="qr-leido">Leímos el código QR de la factura{% if receipt.qr_data.numero %}: {{ receipt.qr_data.numero }}{% endif %}{% if receipt.qr_data.es_dgii %} (factura electrónica DGII){% endif %}.</p>{% endif %}
+
   {% for w in warnings %}<p class="mt-3 rounded-lg bg-amber-50 p-3" role="note"><strong>{{ w.title }}.</strong> {{ w.message }}</p>{% endfor %}
 
   {% if form %}

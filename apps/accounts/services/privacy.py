@@ -16,6 +16,7 @@ from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.alerts.models import Alert, AlertRule
+from apps.backoffice.services.audit import anonymize as anonymize_audit
 from apps.business.models import (
     BusinessGoal,
     BusinessProfile,
@@ -192,6 +193,7 @@ def delete_account(user: User) -> int:
         if r.file and r.file.name
     ]
     owned_workspaces(user).delete()
+    anonymize_audit(user)
     user.delete()
 
     def remove_files() -> None:

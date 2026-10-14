@@ -1,12 +1,15 @@
+import csv
 import json
 import uuid
 from datetime import date, timedelta
+from decimal import Decimal
 
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q, Sum
+from django.db.models.functions import TruncMonth
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -22,7 +25,7 @@ from apps.workspaces.mixins import workspace_required
 from apps.workspaces.models import Workspace
 from apps.workspaces.services.transfers import delete_transfer, transfer_for
 
-from .choices import Direction, TxStatus
+from .choices import Direction, Rubro, TxStatus
 from .forms import CategoryForm, FreeTextForm, QuickEntryForm, TransferForm
 from .models import Account, Category, Transaction
 from .services.balances import balances_by_account
@@ -103,6 +106,7 @@ def movements(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     )
     previous = (start - timedelta(days=1)).strftime("%Y-%m")
     following = (end + timedelta(days=1)).strftime("%Y-%m")
+    by_rubro = rubro_totals(workspace, start, end) if workspace.is_personal else []
     return render(
         request,
         "ledger/movements.html",
@@ -115,8 +119,72 @@ def movements(request: HttpRequest, workspace: Workspace) -> HttpResponse:
             "totals": totals,
             "categories": Category.objects.for_workspace(workspace).filter(is_archived=False),
             "selected_category": category or "",
+            "by_rubro": by_rubro,
+            "rubros_max": max((r["total"] for r in by_rubro), default=0),
         },
     )
+
+
+def rubro_totals(workspace: Workspace, start: date, end: date) -> list[dict]:
+    """Gastos personales confirmados del periodo por rubro, en el orden de los rubros."""
+    sums = dict(
+        Transaction.objects.for_workspace(workspace)
+        .filter(date__range=(start, end), kind="gasto", status=TxStatus.CONFIRMADO)
+        .values_list("rubro")
+        .annotate(total=Sum("amount"))
+    )
+    return [
+        {"rubro": value, "label": label, "total": sums.get(value) or Decimal("0")}
+        for value, label in Rubro.choices
+    ]
+
+
+@workspace_required
+@require_GET
+def rubros(request: HttpRequest, workspace: Workspace) -> HttpResponse:
+    """Gastos del año por rubro y por mes (personal); con ?formato=csv se descarga."""
+    if not workspace.is_personal:
+        raise Http404("Los rubros clasifican los gastos personales")
+    today = timezone.localdate()
+    try:
+        year = int(request.GET.get("anio", today.year))
+    except ValueError:
+        year = today.year
+    months = [date(year, m, 1) for m in range(1, 13)]
+    rows = []
+    for value, label in Rubro.choices:
+        rows.append({"rubro": value, "label": label, "months": [], "total": Decimal("0")})
+    by_key = {r["rubro"]: r for r in rows}
+    sums = {
+        (r["rubro"], r["month"]): r["total"]
+        for r in Transaction.objects.for_workspace(workspace)
+        .filter(date__year=year, kind="gasto", status=TxStatus.CONFIRMADO)
+        .annotate(month=TruncMonth("date"))
+        .values("rubro", "month")
+        .annotate(total=Sum("amount"))
+    }
+    for value, row in by_key.items():
+        for month in months:
+            amount = sums.get((value, month)) or Decimal("0")
+            row["months"].append(amount)
+            row["total"] += amount
+    totals = [sum((r["months"][i] for r in rows), Decimal("0")) for i in range(12)]
+    if request.GET.get("formato") == "csv":
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = f'attachment; filename="gastos-por-rubro-{year}.csv"'
+        response.write("﻿")
+        writer = csv.writer(response)
+        writer.writerow(["Rubro", *[m.strftime("%m/%Y") for m in months], "Total"])
+        for row in rows:
+            writer.writerow([row["label"], *row["months"], row["total"]])
+        writer.writerow(["Total", *totals, sum(totals, Decimal("0"))])
+        return response
+    return render(
+        request,
+        "ledger/rubros.html",
+        {"workspace": workspace, "year": year, "months": months, "rows": rows, "totals": totals,
+         "grand_total": sum(totals, Decimal("0"))},
+    )  # fmt: skip
 
 
 def _is_uuid(value: str) -> bool:
@@ -152,6 +220,23 @@ def new(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     from_sophia = request.method == "GET" and "sophia" in request.GET
     if from_sophia:  # «Editar» en el chat: el formulario abre con lo que Sophia entendió
         initial.update(form_initial(get_state(request, workspace)))
+    invoice = (
+        request.session.pop(f"factura_qr:{workspace.pk}", None)
+        if request.method == "GET" and "factura" in request.GET
+        else None
+    )
+    if invoice:  # QR de una factura escaneado en Comprobantes
+        issuer = f"(RNC {invoice['rnc_emisor']})" if invoice.get("rnc_emisor") else ""
+        initial.update(
+            {
+                "kind": "gasto",
+                "amount": invoice.get("total"),
+                "date": invoice.get("fecha") or timezone.localdate(),
+                "invoice_number": invoice.get("numero", ""),
+                "description": " ".join(filter(None, ["Factura", invoice.get("numero"), issuer])),
+            }
+        )
+        from_sophia = True
     form = QuickEntryForm(request.POST or None, workspace=workspace, initial=initial)
     if request.method == "POST" and form.is_valid() and _save_quick(request, workspace, form):
         return redirect("ledger:movements", ws=workspace.pk)

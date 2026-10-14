@@ -7,6 +7,106 @@ document.addEventListener("alpine:init", () => {
     close() { this.open = false; },
   }));
 
+  // Precios de la página de inicio: mensual o anual.
+  Alpine.data("precios", () => ({
+    periodo: "mensual",
+    get esMensual() { return this.periodo === "mensual"; },
+    get esAnual() { return this.periodo === "anual"; },
+    get mensualClase() { return this.esMensual ? "bg-marca-700 text-white" : "text-slate-600"; },
+    get anualClase() { return this.esAnual ? "bg-marca-700 text-white" : "text-slate-600"; },
+    mensual() { this.periodo = "mensual"; },
+    anual() { this.periodo = "anual"; },
+  }));
+
+  // Activar o desactivar las notificaciones push (Configuración).
+  Alpine.data("notificacionesPush", () => ({
+    estado: "cargando",
+    mensaje: "",
+    async init() { this.estado = await window.crecenta.push.estado(); },
+    get activo() { return this.estado === "activo"; },
+    get inactivo() { return this.estado === "inactivo"; },
+    get bloqueado() { return this.estado === "bloqueado"; },
+    get noSoportado() { return this.estado === "no_soportado"; },
+    async activar() {
+      this.mensaje = "";
+      try {
+        await window.crecenta.push.activar(this.$root.dataset);
+        this.mensaje = "Listo: te avisaremos en este dispositivo.";
+      } catch (e) {
+        this.mensaje = e.message || "No se pudieron activar.";
+      }
+      this.estado = await window.crecenta.push.estado();
+    },
+    async desactivar() {
+      await window.crecenta.push.desactivar(this.$root.dataset);
+      this.mensaje = "Desactivadas en este dispositivo.";
+      this.estado = await window.crecenta.push.estado();
+    },
+    async probar() {
+      const ok = await window.crecenta.push.probar(this.$root.dataset);
+      this.mensaje = ok ? "Te enviamos una notificación de prueba." : "No se pudo enviar la prueba.";
+    },
+  }));
+
+  // Escanear el QR de una factura con la cámara (BarcodeDetector o, si no existe, jsQR).
+  Alpine.data("lectorQR", () => ({
+    abierto: false,
+    error: "",
+    stream: null,
+    detector: null,
+    buscando: false,
+    get soportado() { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); },
+    async abrir() {
+      this.error = "";
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      } catch (e) {
+        this.error = "No pudimos usar la cámara. Revisa el permiso o sube una foto de la factura.";
+        return;
+      }
+      this.abierto = true;
+      this.detector = window.crecenta.qrDetector();
+      const video = this.$refs.video;
+      video.srcObject = this.stream;
+      try { await video.play(); } catch (e) { /* algunos navegadores ya reproducen */ }
+      this.buscando = true;
+      this.buscar();
+    },
+    cerrar() {
+      this.buscando = false;
+      this.abierto = false;
+      if (this.stream) this.stream.getTracks().forEach((t) => t.stop());
+      this.stream = null;
+    },
+    async buscar() {
+      if (!this.buscando) return;
+      const texto = await window.crecenta.leerQR(this.$refs.video, this.detector);
+      if (texto) {
+        this.cerrar();
+        this.$refs.texto.value = texto;
+        this.$refs.formulario.submit();
+        return;
+      }
+      setTimeout(() => this.buscar(), 250);
+    },
+  }));
+
+  // Al elegir la foto de una factura, busca su QR para leer número y total sin errores.
+  Alpine.data("fotoConQR", () => ({
+    aviso: "",
+    async revisar() {
+      const archivo = this.$refs.archivo.files && this.$refs.archivo.files[0];
+      this.aviso = "";
+      this.$refs.qr.value = "";
+      if (!archivo || !archivo.type.startsWith("image/")) return;
+      const texto = await window.crecenta.leerQRDeArchivo(archivo);
+      if (texto) {
+        this.$refs.qr.value = texto;
+        this.aviso = "Encontramos el código QR de la factura: lo usaremos para el número y el total.";
+      }
+    },
+  }));
+
   // Tira del asistente bajo la cabecera: se puede ocultar hasta que cambie la recomendación.
   Alpine.data("tira", () => ({
     hidden: false,
@@ -84,6 +184,90 @@ window.crecenta = {
     const meta = document.querySelector('meta[name="csrf-token"]');
     return meta ? meta.content : "";
   },
+  qrDetector() {
+    if (!("BarcodeDetector" in window)) return null;
+    try { return new window.BarcodeDetector({ formats: ["qr_code"] }); } catch (e) { return null; }
+  },
+  // Devuelve el texto del primer QR que encuentre en un video, imagen o ImageBitmap ("" si no hay).
+  async leerQR(fuente, detector) {
+    try {
+      if (detector) {
+        const codigos = await detector.detect(fuente);
+        return codigos.length ? codigos[0].rawValue : "";
+      }
+      if (!window.jsQR) return "";
+      const ancho = fuente.videoWidth || fuente.width;
+      const alto = fuente.videoHeight || fuente.height;
+      if (!ancho || !alto) return "";
+      const escala = Math.min(1, 1000 / Math.max(ancho, alto));
+      const lienzo = document.createElement("canvas");
+      lienzo.width = Math.round(ancho * escala);
+      lienzo.height = Math.round(alto * escala);
+      const ctx = lienzo.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(fuente, 0, 0, lienzo.width, lienzo.height);
+      const imagen = ctx.getImageData(0, 0, lienzo.width, lienzo.height);
+      const codigo = window.jsQR(imagen.data, imagen.width, imagen.height);
+      return codigo ? codigo.data : "";
+    } catch (e) {
+      return "";
+    }
+  },
+  push: {
+    clave() {
+      const meta = document.querySelector('meta[name="vapid-key"]');
+      return meta ? meta.content : "";
+    },
+    soportado() {
+      return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window
+        && !!this.clave();
+    },
+    async enviar(url, datos) {
+      return fetch(url, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": window.crecenta.csrf() },
+        body: JSON.stringify(datos || {}),
+      });
+    },
+    bytes(base64) {
+      const relleno = "=".repeat((4 - (base64.length % 4)) % 4);
+      const crudo = atob((base64 + relleno).replace(/-/g, "+").replace(/_/g, "/"));
+      return Uint8Array.from(crudo, (c) => c.charCodeAt(0));
+    },
+    async estado() {
+      if (!this.soportado()) return "no_soportado";
+      if (Notification.permission === "denied") return "bloqueado";
+      const registro = await navigator.serviceWorker.ready;
+      return (await registro.pushManager.getSubscription()) ? "activo" : "inactivo";
+    },
+    async activar(urls) {
+      if ((await Notification.requestPermission()) !== "granted") {
+        throw new Error("No diste permiso para mostrar notificaciones.");
+      }
+      const registro = await navigator.serviceWorker.ready;
+      const suscripcion = await registro.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: this.bytes(this.clave()),
+      });
+      const respuesta = await this.enviar(urls.suscribir, suscripcion.toJSON());
+      if (!respuesta.ok) throw new Error("No pudimos guardar la suscripción.");
+    },
+    async desactivar(urls) {
+      const registro = await navigator.serviceWorker.ready;
+      const suscripcion = await registro.pushManager.getSubscription();
+      if (!suscripcion) return;
+      await this.enviar(urls.cancelar, { endpoint: suscripcion.endpoint });
+      await suscripcion.unsubscribe();
+    },
+    async probar(urls) {
+      return (await this.enviar(urls.prueba)).ok;
+    },
+  },
+  async leerQRDeArchivo(archivo) {
+    let imagen = null;
+    try { imagen = await createImageBitmap(archivo); } catch (e) { return ""; }
+    return this.leerQR(imagen, this.qrDetector());
+  },
 };
 
 // htmx envía el token CSRF en cada petición.
@@ -117,6 +301,14 @@ document.addEventListener("DOMContentLoaded", scrollChats);
 document.addEventListener("htmx:afterSettle", scrollChats);
 
 /* ---------------------------------------------------------------- PWA y modo sin conexión */
+// La app instalada no muestra la página de inicio pública: va directo a iniciar sesión.
+(function () {
+  const landing = document.querySelector("[data-landing]");
+  if (landing && window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) {
+    window.location.replace(landing.dataset.loginUrl);
+  }
+})();
+
 (function () {
   const sw = "serviceWorker" in navigator ? navigator.serviceWorker : null;
 

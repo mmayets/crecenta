@@ -1,0 +1,62 @@
+{% extends "backoffice/_layout.html" %}
+{% load icons %}
+{% block title %}Administración · Crecenta{% endblock %}
+{% block panel_title %}Resumen{% endblock %}
+{% block panel %}
+  {% include "backoffice/_period.html" %}
+  <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Indicadores">
+    <div class="card-hero">
+      <p class="stat-label">{% icon "users" "h-4 w-4" %}Personas registradas</p>
+      <p class="hero-value" data-testid="usuarios">{{ u.users_total }}</p>
+      <p class="stat-note">{{ u.users_new }} nuevas en {{ days }} días</p>
+    </div>
+    <div class="card">
+      <p class="stat-label">{% icon "user" "h-4 w-4" %}Activas</p>
+      <p class="stat-value">{{ u.active_7 }} <span class="text-sm font-normal text-slate-500">/ 7 días</span></p>
+      <p class="stat-note">{{ u.active_30 }} en los últimos 30 días</p>
+    </div>
+    <div class="card">
+      <p class="stat-label">{% icon "layout-dashboard" "h-4 w-4" %}Espacios</p>
+      <p class="stat-value">{{ u.workspaces.personal|default:0 }} <span class="text-sm font-normal text-slate-500">personales</span></p>
+      <p class="stat-note">{{ u.workspaces.business|default:0 }} de negocio</p>
+    </div>
+    <div class="card">
+      <p class="stat-label">{% icon "sparkles" "h-4 w-4" %}Usos de IA</p>
+      <p class="stat-value">{{ u.ai_total }}</p>
+      <p class="stat-note">{{ u.ai_consent }} personas con la IA activada</p>
+    </div>
+  </section>
+
+  <div class="mt-4 grid gap-4 lg:grid-cols-3">
+    <section class="card md:p-5 lg:col-span-2">
+      <h2 class="mb-4 text-base">Actividad por día</h2>
+      <div data-chart="datos-actividad" data-type="bar" data-format="numero"></div>
+      {{ chart|json_script:"datos-actividad" }}
+    </section>
+    <section class="card md:p-5">
+      <h2 class="mb-4 text-base">IA por resultado</h2>
+      <ul class="space-y-2 text-sm">
+        {% for r in u.ai_by_outcome %}<li class="flex justify-between"><span>{{ r.outcome }}</span><span class="amount">{{ r.n }}</span></li>{% empty %}<li class="muted">Sin usos de IA en el periodo.</li>{% endfor %}
+      </ul>
+      <p class="mt-4 text-xs text-slate-500">Tokens: {{ u.ai_tokens.entrada }} de entrada · {{ u.ai_tokens.salida }} de salida.</p>
+      {% if u.failed_logins %}<p class="mt-2 flex items-center gap-1 text-xs text-amber-700">{% icon "triangle-alert" "h-3.5 w-3.5" %}{{ u.failed_logins }} intentos de inicio de sesión fallidos.</p>{% endif %}
+    </section>
+  </div>
+
+  <section class="card mt-4 md:p-5">
+    <div class="mb-4 flex items-center justify-between gap-2"><h2 class="text-base">IA por función</h2></div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="text-left text-xs uppercase tracking-wide text-slate-500"><tr><th class="py-2">Función</th><th class="py-2 text-right">Usos</th><th class="py-2 text-right">Válidas</th><th class="py-2 text-right">Tokens</th></tr></thead>
+        <tbody class="divide-y divide-slate-200">
+          {% for r in u.ai_by_purpose %}<tr><td class="py-2">{{ r.purpose }}</td><td class="py-2 text-right tabular-nums">{{ r.n }}</td><td class="py-2 text-right tabular-nums">{{ r.ok }}</td><td class="py-2 text-right tabular-nums">{{ r.tokens|default:0 }}</td></tr>{% empty %}<tr><td class="py-3 text-slate-500" colspan="4">Sin usos de IA en el periodo.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card mt-4 md:p-5">
+    <div class="mb-4 flex items-center justify-between gap-2"><h2 class="text-base">Últimas acciones</h2><a class="text-sm" href="{% url 'panel:audit' %}">Ver auditoría</a></div>
+    {% include "backoffice/_events.html" with events=recent %}
+  </section>
+{% endblock %}

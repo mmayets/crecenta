@@ -18,6 +18,25 @@
     <button type="submit" class="btn-primary w-full">Guardar</button>
   </form>
 
+  <section id="notificaciones" class="card mt-6 space-y-3" x-data="notificacionesPush"
+           data-suscribir="{% url 'accounts:push_subscribe' %}" data-cancelar="{% url 'accounts:push_unsubscribe' %}" data-prueba="{% url 'accounts:push_test' %}">
+    <h2 class="flex items-center gap-2">{% icon "bell" "h-5 w-5" %}Notificaciones push</h2>
+    <p class="text-sm text-slate-600">Recibe en este teléfono o computadora los avisos de pagos cercanos, alertas de tu presupuesto y mensajes importantes, aunque no tengas la app abierta.</p>
+    {% if vapid_public_key %}
+      <p class="text-sm" x-show="activo" x-cloak><span class="badge-viable">{% icon "circle-check" "h-3.5 w-3.5" %}Activadas en este dispositivo</span></p>
+      <p class="text-sm text-amber-700" x-show="bloqueado" x-cloak>Las bloqueaste en el navegador. Para activarlas, permite las notificaciones de este sitio en la configuración del navegador.</p>
+      <p class="text-sm text-slate-500" x-show="noSoportado" x-cloak>Este navegador no admite notificaciones push. En iPhone, instala la app en la pantalla de inicio primero.</p>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" class="btn-primary" x-show="inactivo" x-cloak @click="activar" data-testid="activar-push">{% icon "bell" "h-4 w-4" %}Activar notificaciones</button>
+        <button type="button" class="btn-secondary" x-show="activo" x-cloak @click="probar">Enviar una prueba</button>
+        <button type="button" class="btn-secondary" x-show="activo" x-cloak @click="desactivar">Desactivar</button>
+      </div>
+      <p class="text-sm text-turquesa-800" x-show="mensaje" x-cloak x-text="mensaje" role="status"></p>
+    {% else %}
+      <p class="text-sm text-slate-500">Las notificaciones aún no están configuradas en el servidor.</p>
+    {% endif %}
+  </section>
+
   <section class="card mt-6 space-y-3">
     <h2 class="flex items-center gap-2">{% icon "download" "h-5 w-5" %}Exportar mis datos</h2>
     <p class="text-sm text-slate-600">Descarga un archivo ZIP con todos tus datos (JSON), tus movimientos (CSV) y tus comprobantes.</p>

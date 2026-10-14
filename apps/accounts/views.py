@@ -1,12 +1,16 @@
+import json
+
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
-from django.http import FileResponse, HttpRequest, HttpResponse
+from django.http import FileResponse, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .forms import DeleteAccountForm, SettingsForm
+from .services import push
 from .services.privacy import build_export, delete_account
 
 
@@ -50,3 +54,45 @@ def delete_view(request: HttpRequest) -> HttpResponse:
         messages.info(request, "Tu cuenta y todos tus datos fueron eliminados.")
         return redirect("account_login")
     return render(request, "accounts/delete.html", {"form": form})
+
+
+# ---------------------------------------------------------------- notificaciones push
+
+
+def _json(request: HttpRequest) -> dict:
+    try:
+        return json.loads(request.body or b"{}")
+    except ValueError:
+        return {}
+
+
+@login_required
+@require_POST
+def push_subscribe(request: HttpRequest) -> JsonResponse:
+    try:
+        push.subscribe(request.user, _json(request), request.META.get("HTTP_USER_AGENT", ""))
+    except ValueError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    return JsonResponse({"ok": True})
+
+
+@login_required
+@require_POST
+def push_unsubscribe(request: HttpRequest) -> JsonResponse:
+    push.unsubscribe(request.user, str(_json(request).get("endpoint", "")))
+    return JsonResponse({"ok": True})
+
+
+@login_required
+@require_POST
+def push_test(request: HttpRequest) -> JsonResponse:
+    sent = push.send_to_user(
+        request.user,
+        push.PushMessage(
+            title="Crecenta",
+            body="¡Listo! Así te avisaremos de pagos cercanos, alertas y mensajes importantes.",
+            url=reverse("home"),
+            tag="prueba",
+        ),
+    )
+    return JsonResponse({"ok": bool(sent), "enviadas": sent}, status=200 if sent else 409)

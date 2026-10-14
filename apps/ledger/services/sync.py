@@ -18,7 +18,7 @@ from django.db import IntegrityError, transaction
 
 from apps.accounts.models import User
 from apps.core.money import MoneyError, q, to_money
-from apps.ledger.choices import TxKind, TxSource
+from apps.ledger.choices import Rubro, TxKind, TxSource
 from apps.ledger.models import Account, Category, Transaction
 from apps.ledger.services.classification import (
     LINKED_KINDS,
@@ -45,6 +45,8 @@ class SyncItem:
     description: str = ""
     source: str = TxSource.OFFLINE
     tax_amount: Decimal = Decimal("0")
+    rubro: str = ""
+    invoice_number: str = ""
 
 
 @dataclass(frozen=True)
@@ -127,6 +129,10 @@ def parse_item(workspace: Workspace, raw: dict[str, Any]) -> SyncItem:
     if source not in ALLOWED_SOURCES:
         errors["source"] = "Origen inválido."
 
+    rubro = str(raw.get("rubro") or "")
+    if rubro and rubro not in Rubro.values:
+        errors["rubro"] = "Rubro inválido."
+
     if errors:
         raise ValidationError(errors)
     return SyncItem(
@@ -141,6 +147,8 @@ def parse_item(workspace: Workspace, raw: dict[str, Any]) -> SyncItem:
         description=str(raw.get("description", ""))[:140],
         source=source,
         tax_amount=tax_amount,
+        rubro=rubro,
+        invoice_number=" ".join(str(raw.get("invoice_number") or "").split())[:40],
     )
 
 
@@ -185,6 +193,8 @@ def upsert_from_client(workspace: Workspace, user: User | None, item: SyncItem) 
                         source=item.source,
                         client_uuid=item.client_uuid,
                         tax_amount=item.tax_amount,
+                        rubro=item.rubro,
+                        invoice_number=item.invoice_number,
                     ),
                 )
     except IntegrityError:

@@ -157,6 +157,30 @@ async function doFlush(freshToken) {
   return sent;
 }
 
+// Notificaciones push: el servidor envía {title, body, url, tag, icon, badge}.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) { data = { body: event.data ? event.data.text() : "" }; }
+  event.waitUntil(self.registration.showNotification(data.title || "Crecenta", {
+    body: data.body || "",
+    icon: data.icon,
+    badge: data.badge,
+    tag: data.tag || undefined,
+    data: { url: data.url || "/" },
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL((event.notification.data && event.notification.data.url) || "/", self.location.origin).href;
+  event.waitUntil((async () => {
+    for (const client of await self.clients.matchAll({ type: "window", includeUncontrolled: true })) {
+      if (client.url === url && "focus" in client) return client.focus();
+    }
+    return self.clients.openWindow(url);
+  })());
+});
+
 self.addEventListener("sync", (event) => {
   if (event.tag === SYNC_TAG) event.waitUntil(flush());
 });

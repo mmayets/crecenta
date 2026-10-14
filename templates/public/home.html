@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% load static icons %}
+{% block title %}Crecenta · Tus finanzas y las de tu negocio, con Sophia{% endblock %}
+{% block head %}<meta name="description" content="Crecenta te dice cuánto puedes gastar hoy, arma tu plan del mes y te ayuda a saber cuánto gana tu negocio, con Sophia, tu asistente de IA.">{% endblock %}
+{% block body %}
+<div data-landing data-login-url="{% url 'account_login' %}">
+  {# Navegación #}
+  <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
+    <div class="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
+      <a href="{% url 'home' %}" class="flex items-center gap-2 text-tinta no-underline">{% include "partials/logo.html" %}</a>
+      <nav class="ml-6 hidden items-center gap-5 text-sm md:flex" aria-label="Secciones">
+        <a class="text-slate-600 no-underline hover:text-tinta" href="#funciones">Funciones</a>
+        <a class="text-slate-600 no-underline hover:text-tinta" href="#sophia">Sophia</a>
+        <a class="text-slate-600 no-underline hover:text-tinta" href="#precios">Precios</a>
+        <a class="text-slate-600 no-underline hover:text-tinta" href="#preguntas">Preguntas</a>
+      </nav>
+      <div class="ml-auto flex items-center gap-2">
+        <a class="btn-secondary btn-sm" href="{% url 'account_login' %}" data-testid="entrar">Iniciar sesión</a>
+        <a class="btn-primary btn-sm hidden sm:inline-flex" href="{% url 'account_signup' %}">Crear cuenta gratis</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido">
+    {# Portada #}
+    <section class="bg-lateral text-lateral-texto">
+      <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-24">
+        <div>
+          <p class="pill bg-white/10 text-turquesa-400">{% include "partials/sophia_avatar.html" with clase="h-5 w-5" %}Con Sophia, tu asistente de IA</p>
+          <h1 class="mt-5 text-4xl leading-tight text-white md:text-5xl">Sabe cuánto puedes gastar hoy y cuánto gana de verdad tu negocio.</h1>
+          <p class="mt-5 max-w-xl text-lg text-lateral-texto/80">Crecenta ordena tu dinero personal y el de tu emprendimiento por separado, arma tu plan del mes y te avisa antes de que el presupuesto se salga de control.</p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a class="btn bg-turquesa-400 px-6 py-3 text-base text-marca-900 hover:opacity-90" href="{% url 'account_signup' %}">Empezar gratis{% icon "arrow-right" "h-5 w-5" %}</a>
+            <a class="btn border border-white/30 px-6 py-3 text-base text-white hover:bg-white/10" href="{% url 'account_login' %}">Ya tengo cuenta</a>
+          </div>
+          <p class="mt-4 text-sm text-lateral-texto/60">Sin tarjeta de crédito · RD$ y US$ · Funciona en el teléfono, incluso sin conexión</p>
+        </div>
+        {# Vista previa ilustrativa (cifras de ejemplo) #}
+        <div class="relative" aria-hidden="true">
+          <div class="rounded-2xl bg-white p-5 text-tinta shadow-2xl">
+            <p class="text-xs text-slate-500">Ejemplo · Mis finanzas</p>
+            <div class="mt-3 grid grid-cols-2 gap-3">
+              <div class="card-hero"><p class="stat-label">{% icon "shopping-bag" "h-4 w-4" %}Disponible para gastar</p><p class="hero-value">RD$13,850</p><p class="stat-note">≈ RD$690 por día</p></div>
+              <div class="card"><p class="stat-label">{% icon "wallet" "h-4 w-4" %}En tus cuentas</p><p class="stat-value">RD$24,700</p><p class="stat-note">Efectivo y bancos</p></div>
+            </div>
+            <div class="mt-3 rounded-lg border border-slate-200 p-3 text-sm"><span class="badge-media">{% icon "triangle-alert" "h-3.5 w-3.5" %}Atención</span> <span class="font-semibold">Restaurantes va al 93 %</span><p class="mt-1 text-slate-500">Limítalo hasta tu próximo cobro.</p></div>
+            <div class="mt-3 flex items-center gap-2 rounded-lg bg-turquesa-100 p-3 text-sm font-medium text-turquesa-800">{% include "partials/sophia_avatar.html" with clase="h-6 w-6" %}«Gasté 350 en el colmado» y Sophia lo registra</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {# Funciones #}
+    <section id="funciones" class="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6">
+      <p class="section-title">Funciones</p>
+      <h2 class="mt-2 font-display text-3xl font-semibold">Todo lo que necesitas para decidir mejor con tu dinero</h2>
+      <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-turquesa-100 text-turquesa-800">{% icon "shopping-bag" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">Cuánto puedes gastar hoy</h3><p class="mt-1 text-sm text-slate-500">Descuenta pagos pendientes, ahorro y reserva para decirte lo que de verdad está libre.</p></div>
+        <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-turquesa-100 text-turquesa-800">{% icon "piggy-bank" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">Plan del mes</h3><p class="mt-1 text-sm text-slate-500">Reparte tu ingreso entre pagos fijos, esenciales, ahorro y ocio, con alternativas si no alcanza.</p></div>
+        <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-turquesa-100 text-turquesa-800">{% icon "camera" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">Foto, voz o texto</h3><p class="mt-1 text-sm text-slate-500">Registra un gasto con la foto del comprobante, dictándolo o escribiéndolo como lo dirías.</p></div>
+        <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-turquesa-100 text-turquesa-800">{% icon "bell" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">Alertas a tiempo</h3><p class="mt-1 text-sm text-slate-500">Te avisa de pagos cercanos, categorías que se pasan y riesgos de caja antes de que pasen.</p></div>
+        <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-turquesa-100 text-turquesa-800">{% icon "calculator" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">Precios y margen</h3><p class="mt-1 text-sm text-slate-500">Calcula a cuánto vender cada producto para ganar lo que buscas, con recetas e insumos.</p></div>
+        <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-turquesa-100 text-turquesa-800">{% icon "chart-column" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">Ventas, costos y ganancia</h3><p class="mt-1 text-sm text-slate-500">Cuánto vendiste, cuánto te costó y cuánto ganaste, con por cobrar, por pagar e inventario.</p></div>
+        <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-turquesa-100 text-turquesa-800">{% icon "file-text" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">ITBIS y DGII</h3><p class="mt-1 text-sm text-slate-500">NCF en ventas y compras, resumen de ITBIS y archivos de apoyo para el 606 y el 607.</p></div>
+        <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-turquesa-100 text-turquesa-800">{% icon "wifi-off" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">Funciona sin conexión</h3><p class="mt-1 text-sm text-slate-500">Instálala en el teléfono: registra gastos y ventas sin internet y se envían al reconectar.</p></div>
+      </div>
+    </section>
+
+    {# Cómo funciona #}
+    <section class="bg-white">
+      <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+        <p class="section-title">Cómo funciona</p>
+        <h2 class="mt-2 font-display text-3xl font-semibold">Empiezas en minutos</h2>
+        <ol class="mt-10 grid gap-6 md:grid-cols-3">
+          <li><span class="grid h-10 w-10 place-items-center rounded-full bg-marca-700 font-display font-semibold text-white">1</span><h3 class="mt-4 font-semibold">Crea tu espacio con Sophia</h3><p class="mt-1 text-sm text-slate-500">Eliges con tarjetas o conversando: tu sueldo, tus pagos fijos y tus gastos principales.</p></li>
+          <li><span class="grid h-10 w-10 place-items-center rounded-full bg-marca-700 font-display font-semibold text-white">2</span><h3 class="mt-4 font-semibold">Registra tus movimientos</h3><p class="mt-1 text-sm text-slate-500">Con el formulario, una foto, la voz o pidiéndoselo a Sophia. Tú siempre confirmas.</p></li>
+          <li><span class="grid h-10 w-10 place-items-center rounded-full bg-marca-700 font-display font-semibold text-white">3</span><h3 class="mt-4 font-semibold">Decide con claridad</h3><p class="mt-1 text-sm text-slate-500">Tu plan, tus alertas y recomendaciones para saber qué ajustar en cada momento.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    {# Sophia #}
+    <section id="sophia" class="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6">
+      <div class="grid items-center gap-10 lg:grid-cols-2">
+        <div>
+          <p class="section-title">Tu asistente</p>
+          <h2 class="mt-2 font-display text-3xl font-semibold">Sophia te acompaña en cada paso</h2>
+          <p class="mt-4 text-slate-600">Te guía para crear tus espacios, prepara tus movimientos a partir de lo que le cuentas, te recomienda qué hacer en cada pantalla y responde cómo hacer las cosas en la app.</p>
+          <ul class="mt-6 space-y-3 text-sm">
+            <li class="flex gap-2">{% icon "circle-check" "h-5 w-5 shrink-0 text-turquesa-600" %}Nada se guarda sin que lo confirmes.</li>
+            <li class="flex gap-2">{% icon "circle-check" "h-5 w-5 shrink-0 text-turquesa-600" %}Las cifras las calcula la app, no la IA: Sophia explica, no inventa.</li>
+            <li class="flex gap-2">{% icon "circle-check" "h-5 w-5 shrink-0 text-turquesa-600" %}La IA solo se usa si tú la activas.</li>
+          </ul>
+        </div>
+        <div class="card md:p-6" aria-hidden="true">
+          <div class="flex items-center gap-2 border-b border-slate-200 pb-3">{% include "partials/sophia_avatar.html" with clase="h-9 w-9" %}<p class="font-semibold">Sophia</p></div>
+          <ol class="mt-4 space-y-3 text-sm">
+            <li class="flex justify-end"><p class="max-w-[85%] rounded-2xl rounded-br-sm bg-marca-700 px-3 py-2 text-white">Pagué 1,250 en el supermercado ayer</p></li>
+            <li><p class="max-w-[90%] rounded-2xl rounded-tl-sm bg-slate-100 px-3 py-2">Anoté: gasto de RD$1,250.00 en Alimentación. ¿Con qué cuenta fue?</p></li>
+            <li class="flex justify-end"><p class="rounded-2xl rounded-br-sm bg-marca-700 px-3 py-2 text-white">Banco Popular</p></li>
+            <li><p class="max-w-[90%] rounded-2xl rounded-tl-sm bg-slate-100 px-3 py-2">Listo. Revísalo y pulsa «Guardar».</p></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    {# Precios #}
+    <section id="precios" class="scroll-mt-20 bg-white">
+      <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6" x-data="precios">
+        <div class="text-center">
+          <p class="section-title">Precios</p>
+          <h2 class="mt-2 font-display text-3xl font-semibold">Elige el plan que se ajusta a ti</h2>
+          <div class="mt-6 inline-flex rounded-full border border-slate-200 bg-fondo p-1 text-sm" role="group" aria-label="Forma de pago">
+            <button type="button" class="rounded-full px-4 py-1.5 font-semibold" :class="mensualClase" @click="mensual">Mensual</button>
+            <button type="button" class="rounded-full px-4 py-1.5 font-semibold" :class="anualClase" @click="anual">Anual <span class="text-xs font-normal text-turquesa-700">2 meses gratis</span></button>
+          </div>
+        </div>
+        <div class="mt-10 grid gap-4 lg:grid-cols-3">
+          {% for plan in plans %}
+            <article class="flex flex-col rounded-2xl border p-6 shadow-soft {% if plan.highlighted %}border-marca-700 bg-lateral text-white{% else %}border-slate-200 bg-white{% endif %}" data-plan="{{ plan.key }}">
+              <div class="flex items-center justify-between gap-2"><h3 class="font-display text-xl font-semibold">{{ plan.name }}</h3>{% if plan.highlighted %}<span class="pill bg-turquesa-400 text-marca-900">Recomendado</span>{% endif %}</div>
+              <p class="mt-1 text-sm {% if plan.highlighted %}text-lateral-texto/80{% else %}text-slate-500{% endif %}">{{ plan.summary }}</p>
+              {% if plan.free %}
+                <p class="mt-6 font-display text-4xl font-semibold">RD$0</p>
+                <p class="text-sm {% if plan.highlighted %}text-lateral-texto/70{% else %}text-slate-500{% endif %}">para siempre</p>
+              {% else %}
+                <div x-show="esMensual"><p class="mt-6 font-display text-4xl font-semibold">{{ plan.monthly_label }}<span class="text-base font-normal">/mes</span></p><p class="text-sm {% if plan.highlighted %}text-lateral-texto/70{% else %}text-slate-500{% endif %}">o {{ plan.yearly_label }} al año</p></div>
+                <div x-show="esAnual" x-cloak><p class="mt-6 font-display text-4xl font-semibold">{{ plan.yearly_label }}<span class="text-base font-normal">/año</span></p><p class="text-sm {% if plan.highlighted %}text-turquesa-400{% else %}text-turquesa-700{% endif %}">Ahorras {{ plan.yearly_saving_label }}</p></div>
+              {% endif %}
+              <ul class="mt-6 flex-1 space-y-2 text-sm">
+                {% for feature in plan.features %}<li class="flex gap-2">{% icon "check" "mt-0.5 h-4 w-4 shrink-0" %}{{ feature }}</li>{% endfor %}
+              </ul>
+              <a class="mt-8 {% if plan.highlighted %}btn bg-turquesa-400 text-marca-900 hover:opacity-90{% else %}btn-secondary{% endif %} w-full" href="{% url 'account_signup' %}?plan={{ plan.key }}">{% if plan.free %}Empezar gratis{% else %}Elegir {{ plan.name }}{% endif %}</a>
+            </article>
+          {% endfor %}
+        </div>
+        <p class="mt-6 text-center text-sm text-slate-500">Precios en pesos dominicanos. Los planes de pago se activarán próximamente; hoy puedes crear tu cuenta y empezar gratis.</p>
+      </div>
+    </section>
+
+    {# Seguridad #}
+    <section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+      <div class="grid gap-4 md:grid-cols-3">
+        <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-marca-50 text-marca-700">{% icon "shield-check" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">Tus datos son tuyos</h3><p class="mt-1 text-sm text-slate-500">Descárgalos cuando quieras o elimina tu cuenta y todo lo que contiene.</p></div>
+        <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-marca-50 text-marca-700">{% icon "lock" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">Espacios separados</h3><p class="mt-1 text-sm text-slate-500">Tu dinero personal y el de tu negocio no se mezclan; tu equipo solo ve lo que su rol permite.</p></div>
+        <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-marca-50 text-marca-700">{% icon "sparkles" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">IA con tu permiso</h3><p class="mt-1 text-sm text-slate-500">Sin números de cuenta ni documentos: solo lo necesario, y solo si activas la IA.</p></div>
+      </div>
+    </section>
+
+    {# Preguntas #}
+    <section id="preguntas" class="scroll-mt-20 bg-white">
+      <div class="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        <p class="section-title text-center">Preguntas frecuentes</p>
+        <h2 class="mt-2 text-center font-display text-3xl font-semibold">Lo que suelen preguntarnos</h2>
+        <div class="mt-8 space-y-3">
+          <details class="card group"><summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold [&::-webkit-details-marker]:hidden">¿Necesito saber de finanzas?{% icon "chevron-down" "h-4 w-4 shrink-0 transition group-open:rotate-180" %}</summary><p class="mt-3 text-sm text-slate-600">No. Sophia te pregunta lo básico con opciones sencillas y la app hace los cálculos por ti.</p></details>
+          <details class="card group"><summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold [&::-webkit-details-marker]:hidden">¿Puedo usarla en el teléfono?{% icon "chevron-down" "h-4 w-4 shrink-0 transition group-open:rotate-180" %}</summary><p class="mt-3 text-sm text-slate-600">Sí. Ábrela en el navegador y elige «Agregar a la pantalla de inicio»: funciona como una app, incluso sin conexión.</p></details>
+          <details class="card group"><summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold [&::-webkit-details-marker]:hidden">¿Sirve para mi negocio?{% icon "chevron-down" "h-4 w-4 shrink-0 transition group-open:rotate-180" %}</summary><p class="mt-3 text-sm text-slate-600">Sí: ventas, costos, precios, inventario, por cobrar y por pagar, equipo con roles, NCF e ITBIS, separado de tus finanzas personales.</p></details>
+          <details class="card group"><summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold [&::-webkit-details-marker]:hidden">¿Qué pasa con mis datos si me voy?{% icon "chevron-down" "h-4 w-4 shrink-0 transition group-open:rotate-180" %}</summary><p class="mt-3 text-sm text-slate-600">Puedes descargar todo en un archivo y eliminar tu cuenta cuando quieras desde la configuración.</p></details>
+        </div>
+      </div>
+    </section>
+
+    {# Llamado final #}
+    <section class="bg-lateral">
+      <div class="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 py-14 text-center sm:px-6">
+        <h2 class="font-display text-3xl font-semibold text-white">Empieza hoy a ordenar tu dinero</h2>
+        <div class="flex flex-wrap justify-center gap-3">
+          <a class="btn bg-turquesa-400 px-6 py-3 text-base text-marca-900 hover:opacity-90" href="{% url 'account_signup' %}">Crear cuenta gratis</a>
+          <a class="btn border border-white/30 px-6 py-3 text-base text-white hover:bg-white/10" href="{% url 'account_login' %}">Iniciar sesión</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-6 text-sm text-slate-500 sm:px-6">
+      <div class="flex items-center gap-2 text-tinta">{% include "partials/logo.html" %}</div>
+      <p>Finanzas personales y de pequeños negocios · República Dominicana</p>
+    </div>
+  </footer>
+</div>
+{% endblock body %}

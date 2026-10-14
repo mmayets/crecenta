@@ -13,9 +13,17 @@ def test_inicio_sin_espacios_abre_el_asistente(client, user):
     assert response["Location"] == reverse("asistente:first_space")
 
 
-def test_inicio_anonimo_va_a_login(client):
+def test_inicio_anonimo_ve_la_pagina_publica_con_precios(client):
     response = client.get(reverse("home"))
-    assert reverse("account_login") in response["Location"]
+    html = response.content.decode()
+    assert response.status_code == 200
+    assert "RD$199" in html and "RD$449" in html and "RD$1,990" in html
+    assert reverse("account_login") in html and reverse("account_signup") in html
+
+
+def test_la_pwa_instalada_abre_el_login(client):
+    response = client.get(reverse("home"), {"origen": "pwa"})
+    assert response["Location"] == reverse("account_login")
 
 
 def test_elegir_uso_crea_espacios(client, user):

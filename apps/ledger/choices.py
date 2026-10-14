@@ -40,6 +40,18 @@ BUSINESS_GROUPS = {
 }
 
 
+class Rubro(models.TextChoices):
+    """Rubro de cada gasto personal (clasificación tipo DGII de los gastos de consumo)."""
+
+    ALIMENTACION = "alimentacion", "Alimentación"
+    EDUCACION = "educacion", "Educación, Arte y Cultura"
+    SALUD = "salud", "Salud"
+    VIVIENDA = "vivienda", "Vivienda"
+    VESTIMENTA = "vestimenta", "Vestimenta"
+    TURISMO = "turismo_nacional", "Turismo Nacional"
+    OTRO = "otro", "Otro"
+
+
 class Direction(models.TextChoices):
     IN = "in", "Entrada"
     OUT = "out", "Salida"

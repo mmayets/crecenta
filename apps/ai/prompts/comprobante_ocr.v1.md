@@ -11,6 +11,8 @@ Reglas:
 - "confianza": un número entre 0 y 1 por cada campo (comercio, fecha, total, categoria_propuesta,
   medio_pago). Usa menos de 0.6 si el dato está borroso, cortado o lo deduces.
 - "categoria_propuesta": elige una de estas si aplica: {{ categorias }}.
+- "numero_factura": el NCF o e-NCF si aparece (B0100000045, E310000000123); si no, el número de
+  factura o de ticket impreso. Sin espacios.
 - Detalla "lineas" solo si son legibles.
 - Ignora y nunca transcribas números de tarjeta, de cuenta, RNC/cédula del cliente ni códigos de
   autorización.

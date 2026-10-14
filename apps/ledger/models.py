@@ -13,6 +13,7 @@ from .choices import (
     AccountType,
     CategoryGroup,
     Direction,
+    Rubro,
     TxKind,
     TxSource,
     TxStatus,
@@ -52,6 +53,8 @@ class Category(WorkspaceScopedModel):
     group = models.CharField("grupo", max_length=20, choices=CategoryGroup.choices)
     is_system = models.BooleanField("del sistema", default=False)
     is_archived = models.BooleanField("archivada", default=False)
+    # Solo gastos personales: a qué rubro van los gastos de esta categoría.
+    rubro = models.CharField("rubro", max_length=20, choices=Rubro.choices, blank=True)
 
     class Meta:
         verbose_name = "categoría"
@@ -94,6 +97,9 @@ class Transaction(WorkspaceScopedModel):
         "estado", max_length=20, choices=TxStatus.choices, default=TxStatus.CONFIRMADO
     )
     description = models.CharField("descripción", max_length=140, blank=True)
+    # Gastos personales: rubro (por defecto, el de su categoría) y número de la factura.
+    rubro = models.CharField("rubro", max_length=20, choices=Rubro.choices, blank=True)
+    invoice_number = models.CharField("número de factura", max_length=40, blank=True)
     source = models.CharField(
         "origen", max_length=12, choices=TxSource.choices, default=TxSource.MANUAL
     )

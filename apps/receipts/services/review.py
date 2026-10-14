@@ -31,6 +31,8 @@ class ReceiptConfirmation:
     amount: Decimal
     description: str
     category: Category | None = None
+    rubro: str = ""
+    invoice_number: str = ""
 
 
 def _lock_reviewable(receipt: Receipt) -> Receipt:
@@ -81,6 +83,8 @@ def confirm_receipt(receipt: Receipt, user: User | None, data: ReceiptConfirmati
             description=data.description,
             source=TxSource.COMPROBANTE,
             receipt=receipt,
+            rubro=data.rubro,
+            invoice_number=data.invoice_number,
         ),
     )
     receipt.status = Receipt.Status.CONFIRMADO

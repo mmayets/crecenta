@@ -67,3 +67,23 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.ai_consent = value
         self.ai_consent_at = timezone.now() if value else None
         self.save(update_fields=["ai_consent", "ai_consent_at"])
+
+
+class PushSubscription(models.Model):
+    """Navegador o teléfono donde la persona aceptó recibir notificaciones push."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="push_subscriptions")
+    endpoint = models.URLField("dirección del servicio push", max_length=600, unique=True)
+    p256dh = models.CharField(max_length=200)
+    auth = models.CharField(max_length=100)
+    user_agent = models.CharField("navegador", max_length=200, blank=True)
+    created_at = models.DateTimeField("creada", auto_now_add=True)
+    last_sent_at = models.DateTimeField("último envío", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "suscripción push"
+        verbose_name_plural = "suscripciones push"
+
+    def __str__(self) -> str:
+        return f"{self.user} · {self.user_agent[:40]}"

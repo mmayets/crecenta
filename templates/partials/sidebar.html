@@ -55,6 +55,7 @@
     </nav>
   {% endif %}
 
+  {% if user.is_staff %}<a class="side-link text-lateral-texto/80" href="{% url 'panel:overview' %}" {% if "panel:" in name %}aria-current="page"{% endif %} data-testid="administracion">{% icon "shield-check" "h-4 w-4" %}<span class="flex-1">Administración</span></a>{% endif %}
   <form method="post" action="{% url 'account_logout' %}" data-logout>
     {% csrf_token %}
     <button class="side-link text-xs text-lateral-texto/60">{% icon "log-out" "h-4 w-4" %}<span class="flex-1 truncate">Cerrar sesión ({{ user.get_short_name }})</span></button>

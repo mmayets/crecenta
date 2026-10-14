@@ -9,7 +9,14 @@
       const data = JSON.parse(source.textContent);
       if (!data.series || !data.series.length) return;
       const currency = el.dataset.currency === "USD" ? "US$" : "RD$";
-      const money = (v) => currency + v.toLocaleString("es-DO", { minimumFractionDigits: 2 });
+      // data-format="numero": conteos (panel de administración), sin símbolo de moneda.
+      const counts = el.dataset.format === "numero";
+      const money = counts
+        ? (v) => Math.round(v).toLocaleString("es-DO")
+        : (v) => currency + v.toLocaleString("es-DO", { minimumFractionDigits: 2 });
+      const axis = counts
+        ? (v) => Math.round(v).toLocaleString("es-DO")
+        : (v) => currency + Math.round(v).toLocaleString("es-DO");
       // data-type="bar": series = [{name, data: [...]}, ...] por mes (reportes del negocio).
       const options = el.dataset.type === "bar"
         ? {
@@ -18,7 +25,7 @@
             xaxis: { categories: data.labels },
             colors: ["#1f3a73", "#1a9c8f", "#d9a441"],
             plotOptions: { bar: { columnWidth: "60%" } },
-            yaxis: { labels: { formatter: (v) => currency + Math.round(v).toLocaleString("es-DO") } },
+            yaxis: { labels: { formatter: axis } },
             legend: { position: "bottom" },
             dataLabels: { enabled: false },
             tooltip: { y: { formatter: money } },

@@ -1,0 +1,7 @@
+{% load icons %}{% if page.has_other_pages %}
+  <nav class="mt-4 flex items-center justify-between text-sm" aria-label="Páginas">
+    {% if page.has_previous %}<a class="btn-secondary btn-sm" href="?{% if extra %}{{ extra }}&{% endif %}pagina={{ page.previous_page_number }}">{% icon "chevron-left" "h-4 w-4" %}Anterior</a>{% else %}<span></span>{% endif %}
+    <span class="text-slate-500">Página {{ page.number }} de {{ page.paginator.num_pages }} · {{ page.paginator.count }} registros</span>
+    {% if page.has_next %}<a class="btn-secondary btn-sm" href="?{% if extra %}{{ extra }}&{% endif %}pagina={{ page.next_page_number }}">Siguiente{% icon "chevron-right" "h-4 w-4" %}</a>{% else %}<span></span>{% endif %}
+  </nav>
+{% endif %}

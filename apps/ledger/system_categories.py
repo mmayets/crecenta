@@ -21,6 +21,7 @@ PERSONAL = [
     ("Ropa", G.ESENCIAL_VARIABLE),
     ("Ahorro", G.AHORRO),
     ("Ocio y salidas", G.DISCRECIONAL),
+    ("Turismo nacional", G.DISCRECIONAL),
     ("Restaurantes y delivery", G.DISCRECIONAL),
     ("Suscripciones", G.DISCRECIONAL),
     ("Regalos", G.DISCRECIONAL),
@@ -44,5 +45,21 @@ BUSINESS = [
     ("Aportes del propietario", G.PROPIETARIO),
     ("Retiros del propietario", G.PROPIETARIO),
 ]
+
+# Rubro de cada categoría personal de gasto (lo que no aparece aquí va a «Otro»).
+PERSONAL_RUBROS = {
+    "Alimentación": "alimentacion",
+    "Restaurantes y delivery": "alimentacion",
+    "Educación": "educacion",
+    "Salud y farmacia": "salud",
+    "Seguros": "salud",
+    "Alquiler o hipoteca": "vivienda",
+    "Electricidad": "vivienda",
+    "Agua": "vivienda",
+    "Internet y teléfono": "vivienda",
+    "Aseo y hogar": "vivienda",
+    "Ropa": "vestimenta",
+    "Turismo nacional": "turismo_nacional",
+}
 
 DEFAULT_ACCOUNT_NAME = "Efectivo"

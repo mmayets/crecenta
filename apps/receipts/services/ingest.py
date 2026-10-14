@@ -61,7 +61,13 @@ def validate_upload(upload: UploadedFile) -> str:
 
 
 @transaction.atomic
-def ingest_receipt(workspace: Workspace, user: User | None, upload: UploadedFile) -> Receipt:
+def ingest_receipt(
+    workspace: Workspace, user: User | None, upload: UploadedFile, qr_text: str = ""
+) -> Receipt:
+    """Guarda el comprobante y programa su lectura. `qr_text`: el código QR que el teléfono
+    leyó de la misma foto (si lo tenía)."""
+    from .qr import parse as parse_qr
+
     mime = validate_upload(upload)
     sha = file_sha256(upload)
     receipt = Receipt(
@@ -72,6 +78,9 @@ def ingest_receipt(workspace: Workspace, user: User | None, upload: UploadedFile
         size=upload.size or 0,
         sha256=sha,
     )
+    invoice = parse_qr(qr_text)
+    if invoice.found:
+        receipt.qr_data = invoice.as_json()
     receipt.file.save("comprobante", upload, save=False)
     original = (
         Receipt.objects.for_workspace(workspace).filter(sha256=sha).order_by("created_at").first()

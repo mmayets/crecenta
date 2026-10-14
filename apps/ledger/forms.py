@@ -4,7 +4,7 @@ from datetime import date
 from django import forms
 from django.utils import timezone
 
-from apps.ledger.choices import BUSINESS_GROUPS, PERSONAL_GROUPS, CategoryGroup, TxKind
+from apps.ledger.choices import BUSINESS_GROUPS, PERSONAL_GROUPS, CategoryGroup, Rubro, TxKind
 from apps.ledger.models import Account, Category
 from apps.workspaces.models import Workspace
 
@@ -69,6 +69,18 @@ class QuickEntryForm(_WorkspaceForm):
         widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
     )
     description = forms.CharField(label="Nota (opcional)", max_length=140, required=False)
+    rubro = forms.ChoiceField(
+        label="Rubro del gasto",
+        choices=[("", "Según la categoría"), *Rubro.choices],
+        required=False,
+        help_text="Alimentación, Educación, Salud, Vivienda, Vestimenta, Turismo Nacional u Otro.",
+    )
+    invoice_number = forms.CharField(
+        label="Número de factura (opcional)",
+        max_length=40,
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "Ej.: E310000000123 o B0100000045"}),
+    )
     tax_amount = forms.DecimalField(
         label="ITBIS incluido en la factura (opcional)",
         min_value=0,
@@ -88,6 +100,7 @@ class QuickEntryForm(_WorkspaceForm):
         super().__init__(*args, **kwargs)
         if self.workspace.is_business:
             self.fields["kind"].choices = BUSINESS_QUICK_KINDS
+            del self.fields["rubro"]  # los rubros clasifican los gastos personales
         else:
             del self.fields["tax_amount"]
         self.fields["category"].queryset = (
@@ -112,6 +125,8 @@ class QuickEntryForm(_WorkspaceForm):
             "description": data["description"],
             "source": data["source"],
             "tax_amount": str(data.get("tax_amount") or ""),
+            "rubro": data.get("rubro") or "",
+            "invoice_number": data.get("invoice_number") or "",
         }
 
 
@@ -177,11 +192,16 @@ class FreeTextForm(forms.Form):
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
-        fields = ["name", "group"]
-        labels = {"name": "Nombre", "group": "Grupo"}
+        fields = ["name", "group", "rubro"]
+        labels = {"name": "Nombre", "group": "Grupo", "rubro": "Rubro de sus gastos"}
+        help_texts = {"rubro": "Los gastos de esta categoría se clasifican en este rubro."}
 
     def __init__(self, *args, workspace: Workspace, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.instance.workspace = workspace
         allowed = PERSONAL_GROUPS if workspace.is_personal else BUSINESS_GROUPS
         self.fields["group"].choices = [c for c in CategoryGroup.choices if c[0] in allowed]
+        if workspace.is_business:
+            del self.fields["rubro"]
+        else:
+            self.fields["rubro"].choices = [("", "Sin rubro (ingresos y ahorro)"), *Rubro.choices]

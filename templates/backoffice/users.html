@@ -1,0 +1,35 @@
+{% extends "backoffice/_layout.html" %}
+{% load icons %}
+{% block title %}Usuarios · Administración · Crecenta{% endblock %}
+{% block panel_title %}Usuarios{% endblock %}
+{% block panel %}
+  <form method="get" class="mb-4 flex gap-2">
+    <label for="id_q" class="sr-only">Buscar</label>
+    <input id="id_q" type="text" name="q" value="{{ q }}" placeholder="Buscar por correo o nombre" class="text-sm">
+    <button class="btn-secondary btn-sm shrink-0">Buscar</button>
+  </form>
+  <section class="card p-0">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr><th class="px-4 py-3">Persona</th><th class="px-4 py-3">Registro</th><th class="px-4 py-3">Último acceso</th><th class="px-4 py-3 text-right">Espacios</th><th class="px-4 py-3">IA</th><th class="px-4 py-3">Rol</th></tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {% for p in page %}
+            <tr>
+              <td class="px-4 py-3"><a class="font-medium" href="{% url 'panel:user_detail' user_id=p.pk %}">{{ p.email }}</a>{% if p.first_name %}<span class="block text-xs text-slate-500">{{ p.first_name }}</span>{% endif %}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-slate-500">{{ p.date_joined|date:"d/m/Y" }}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-slate-500">{{ p.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</td>
+              <td class="px-4 py-3 text-right tabular-nums">{{ p.spaces }}</td>
+              <td class="px-4 py-3">{% if p.ai_consent %}<span class="badge-viable">Activada</span>{% else %}<span class="badge bg-slate-100 text-slate-600">No</span>{% endif %}</td>
+              <td class="px-4 py-3">{% if p.is_superuser %}<span class="badge-alta">Superusuario</span>{% elif p.is_staff %}<span class="badge-info">Equipo</span>{% elif not p.is_active %}<span class="badge bg-slate-100 text-slate-600">Inactivo</span>{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="px-4 py-4 text-slate-500" colspan="6">No hay personas que coincidan.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% include "backoffice/_pager.html" %}
+{% endblock %}

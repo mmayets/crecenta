@@ -1,0 +1,24 @@
+{% extends "backoffice/_layout.html" %}
+{% load icons %}
+{% block title %}Auditoría · Administración · Crecenta{% endblock %}
+{% block panel_title %}Auditoría{% endblock %}
+{% block panel %}
+  <form method="get" class="card mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6 md:p-5">
+    <div class="lg:col-span-2"><label for="f_usuario">Persona</label><input id="f_usuario" type="text" name="usuario" value="{{ f.usuario }}" placeholder="correo" class="text-sm"></div>
+    <div class="lg:col-span-2"><label for="f_q">Acción o ruta</label><input id="f_q" type="text" name="q" value="{{ f.q }}" placeholder="ej.: ledger:new, venta" class="text-sm"></div>
+    <div><label for="f_tipo">Tipo</label><select id="f_tipo" name="tipo" class="text-sm"><option value="">Todos</option>{% for value, label in kinds %}<option value="{{ value }}" {% if f.tipo == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    <div><label for="f_resultado">Resultado</label><select id="f_resultado" name="resultado" class="text-sm"><option value="">Todos</option><option value="errores" {% if f.resultado == "errores" %}selected{% endif %}>Solo errores</option></select></div>
+    <div><label for="f_desde">Desde</label><input id="f_desde" type="date" name="desde" value="{{ f.desde }}" class="text-sm"></div>
+    <div><label for="f_hasta">Hasta</label><input id="f_hasta" type="date" name="hasta" value="{{ f.hasta }}" class="text-sm"></div>
+    <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
+      <button class="btn-primary btn-sm">{% icon "chevron-right" "h-4 w-4" %}Filtrar</button>
+      <a class="btn-secondary btn-sm" href="{% url 'panel:audit' %}">Limpiar</a>
+      <a class="btn-secondary btn-sm ml-auto" href="?{% if filters %}{{ filters }}&{% endif %}formato=csv">{% icon "download" "h-4 w-4" %}Descargar CSV</a>
+    </div>
+  </form>
+  <section class="card md:p-5">
+    {% include "backoffice/_events.html" with events=page %}
+  </section>
+  {% include "backoffice/_pager.html" with extra=filters %}
+  <p class="mt-3 text-xs text-slate-500">Se registran todas las acciones (guardar, eliminar, enviar), las páginas visitadas, los accesos y los cambios de administración. Nunca se guarda el contenido de los formularios. Para borrar registros antiguos: <code>python manage.py purgar_auditoria --dias 365</code>.</p>
+{% endblock %}

@@ -6,6 +6,7 @@ app_name = "ledger"
 
 urlpatterns = [
     path("movimientos/", views.movements, name="movements"),
+    path("movimientos/rubros/", views.rubros, name="rubros"),
     path("movimientos/nuevo/", views.new, name="new"),
     path("movimientos/texto/", views.from_text, name="from_text"),
     path("movimientos/transferir/", views.transfer, name="transfer"),

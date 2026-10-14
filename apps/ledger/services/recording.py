@@ -13,10 +13,23 @@ from django.db import transaction
 
 from apps.accounts.models import User
 from apps.core.money import q, to_money
-from apps.ledger.choices import AccountType, Direction, TxKind, TxSource, TxStatus
+from apps.ledger.choices import (
+    AccountType,
+    CategoryGroup,
+    Direction,
+    Rubro,
+    TxKind,
+    TxSource,
+    TxStatus,
+)
 from apps.ledger.models import Account, Category, Transaction
 from apps.ledger.services.classification import TRANSFER_KINDS
-from apps.ledger.system_categories import BUSINESS, DEFAULT_ACCOUNT_NAME, PERSONAL
+from apps.ledger.system_categories import (
+    BUSINESS,
+    DEFAULT_ACCOUNT_NAME,
+    PERSONAL,
+    PERSONAL_RUBROS,
+)
 from apps.workspaces.models import Workspace
 
 # Espacio de nombres para derivar el id de la pata de entrada de una transferencia offline.
@@ -27,11 +40,19 @@ def ensure_system_categories(workspace: Workspace) -> int:
     """Crea las categorías del sistema y la cuenta 'Efectivo' si faltan. Devuelve cuántas creó."""
     catalog = PERSONAL if workspace.is_personal else BUSINESS
     existing = set(Category.objects.for_workspace(workspace).values_list("name", flat=True))
+    rubros = PERSONAL_RUBROS if workspace.is_personal else {}
     missing = [
-        Category(workspace=workspace, name=name, group=group, is_system=True)
+        Category(
+            workspace=workspace,
+            name=name,
+            group=group,
+            is_system=True,
+            rubro=rubros.get(name, Rubro.OTRO if workspace.is_personal and group not in (
+                CategoryGroup.INGRESO, CategoryGroup.AHORRO) else ""),
+        )
         for name, group in catalog
         if name not in existing
-    ]
+    ]  # fmt: skip
     Category.objects.bulk_create(missing)
     if not Account.objects.for_workspace(workspace).exists():
         Account.objects.create(
@@ -77,6 +98,15 @@ class TxData:
     client_uuid: uuid.UUID | None = None
     receipt: Any = None  # receipts.Receipt (comprobante que respalda el movimiento)
     tax_amount: Decimal = Decimal("0")  # ITBIS incluido (gastos del negocio con comprobante)
+    rubro: str = ""  # vacío: el de la categoría (solo gastos personales)
+    invoice_number: str = ""
+
+
+def rubro_for(workspace: Workspace, kind: str, category: Category | None, chosen: str = "") -> str:
+    """Rubro de un gasto personal: el elegido, si no el de la categoría, si no «Otro»."""
+    if not workspace.is_personal or kind != TxKind.GASTO:
+        return ""
+    return chosen or (category.rubro if category else "") or Rubro.OTRO
 
 
 def record_transaction(workspace: Workspace, user: User | None, data: TxData) -> Transaction:
@@ -97,6 +127,8 @@ def record_transaction(workspace: Workspace, user: User | None, data: TxData) ->
         client_uuid=data.client_uuid,
         receipt=data.receipt,
         tax_amount=q(to_money(data.tax_amount)),
+        rubro=rubro_for(workspace, data.kind, data.category, data.rubro),
+        invoice_number=" ".join(data.invoice_number.split())[:40],
         created_by=user,
     )
     tx.full_clean(validate_constraints=False)

@@ -17,9 +17,19 @@ from .permissions import FINANZAS, VENDER, can
 from .services.workspaces import create_workspaces_for_usage, default_workspace
 
 
-@login_required
 def home(request: HttpRequest) -> HttpResponse:
-    """Entrada: abre el último espacio usado o el paso a paso de Sophia para crear el primero."""
+    """Entrada de la app.
+
+    - Sin sesión en la web: la página de inicio pública (qué es Crecenta y sus planes).
+    - Sin sesión en la PWA instalada (``?origen=pwa``, inicio del manifest): el login.
+    - Con sesión: el último espacio usado, o el paso a paso de Sophia para crear el primero.
+    """
+    if not request.user.is_authenticated:
+        if request.GET.get("origen") == "pwa":
+            return redirect("account_login")
+        from apps.core.plans import PLANS
+
+        return render(request, "public/home.html", {"plans": PLANS})
     workspace = default_workspace(request.user, request.session.get(SESSION_KEY))
     if workspace is None:
         return redirect("asistente:first_space")

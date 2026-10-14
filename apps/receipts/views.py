@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.alerts.services.evaluate import purchase_warnings
@@ -15,6 +16,7 @@ from apps.workspaces.models import Workspace
 from .forms import ReviewForm, UploadForm
 from .models import Receipt
 from .services.ingest import ingest_receipt
+from .services.qr import parse as parse_qr
 from .services.review import (
     ReceiptConfirmation,
     ReceiptError,
@@ -42,7 +44,9 @@ def index(request: HttpRequest, workspace: Workspace) -> HttpResponse:
         form.add_error(None, "Subiste muchos comprobantes en poco tiempo. Intenta más tarde.")
     elif request.method == "POST" and form.is_valid():
         try:
-            receipt = ingest_receipt(workspace, request.user, form.cleaned_data["file"])
+            receipt = ingest_receipt(
+                workspace, request.user, form.cleaned_data["file"], request.POST.get("qr_texto", "")
+            )
         except ValidationError as exc:
             form.add_error("file", exc.messages)
         else:
@@ -78,6 +82,8 @@ def detail(request: HttpRequest, workspace: Workspace, receipt_id) -> HttpRespon
                         amount=data["amount"],
                         description=data["description"],
                         category=data["category"],
+                        rubro=data.get("rubro") or "",
+                        invoice_number=data.get("invoice_number") or "",
                     ),
                 )
             except (ValidationError, ReceiptError) as exc:
@@ -149,3 +155,23 @@ def file(request: HttpRequest, workspace: Workspace, receipt_id) -> FileResponse
     response["X-Content-Type-Options"] = "nosniff"
     response["Content-Security-Policy"] = "default-src 'none'; sandbox"
     return response
+
+
+# Clave de sesión del borrador que deja un QR escaneado para el formulario de registro.
+QR_DRAFT = "factura_qr:{}"
+
+
+@workspace_required
+@require_POST
+def scan_qr(request: HttpRequest, workspace: Workspace) -> HttpResponse:
+    """El teléfono leyó el QR de una factura: se abre el registro con sus datos para confirmar."""
+    invoice = parse_qr(request.POST.get("texto", ""))
+    if not invoice.found:
+        messages.error(
+            request,
+            "No reconocí una factura en ese código QR. Sube la foto o registra el gasto a mano.",
+        )
+        return redirect("receipts:index", ws=workspace.pk)
+    request.session[QR_DRAFT.format(workspace.pk)] = invoice.as_json()
+    messages.success(request, f"Leí la factura {invoice.numero or ''}. Revisa y guarda el gasto.")
+    return redirect(reverse("ledger:new", kwargs={"ws": workspace.pk}) + "?factura=1")

@@ -27,3 +27,12 @@ def pct(value) -> str:
         return f"{Decimal(str(value)).quantize(Decimal('0.01'))} %"
     except (InvalidOperation, ValueError):
         return str(value)
+
+
+@register.filter
+def miles(value) -> str:
+    """Monto entero con coma de miles, sin símbolo («3,550»): para tablas con muchas columnas."""
+    try:
+        return f"{Decimal(str(value)):,.0f}"
+    except (InvalidOperation, ValueError, TypeError):
+        return ""

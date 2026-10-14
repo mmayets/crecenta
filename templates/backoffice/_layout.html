@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load static icons %}
+{% block main_width %}max-w-6xl{% endblock %}
+{% block content %}
+  <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <p class="section-title">Administración</p>
+      <h1>{% block panel_title %}{% endblock %}</h1>
+    </div>
+    <a class="btn-secondary btn-sm" href="{% url 'admin:index' %}">{% icon "settings" "h-4 w-4" %}Admin avanzado de Django</a>
+  </div>
+  <nav class="-mx-1 mb-6 flex gap-1 overflow-x-auto px-1 text-sm" aria-label="Secciones de administración">
+    <a class="btn-sm btn {% if tab == 'resumen' %}bg-marca-700 text-white{% else %}border border-slate-200 bg-white text-tinta{% endif %}" href="{% url 'panel:overview' %}">{% icon "layout-dashboard" "h-4 w-4" %}Resumen</a>
+    <a class="btn-sm btn {% if tab == 'comportamiento' %}bg-marca-700 text-white{% else %}border border-slate-200 bg-white text-tinta{% endif %}" href="{% url 'panel:behavior' %}">{% icon "users" "h-4 w-4" %}Uso y comportamiento</a>
+    <a class="btn-sm btn {% if tab == 'finanzas' %}bg-marca-700 text-white{% else %}border border-slate-200 bg-white text-tinta{% endif %}" href="{% url 'panel:finances' %}">{% icon "chart-column" "h-4 w-4" %}Finanzas</a>
+    <a class="btn-sm btn {% if tab == 'usuarios' %}bg-marca-700 text-white{% else %}border border-slate-200 bg-white text-tinta{% endif %}" href="{% url 'panel:users' %}">{% icon "user" "h-4 w-4" %}Usuarios</a>
+    <a class="btn-sm btn {% if tab == 'auditoria' %}bg-marca-700 text-white{% else %}border border-slate-200 bg-white text-tinta{% endif %}" href="{% url 'panel:audit' %}">{% icon "shield-check" "h-4 w-4" %}Auditoría</a>
+    <a class="btn-sm btn {% if tab == 'notificaciones' %}bg-marca-700 text-white{% else %}border border-slate-200 bg-white text-tinta{% endif %}" href="{% url 'panel:notifications' %}">{% icon "bell" "h-4 w-4" %}Notificaciones</a>
+    <a class="btn-sm btn {% if tab == 'parametros' %}bg-marca-700 text-white{% else %}border border-slate-200 bg-white text-tinta{% endif %}" href="{% url 'panel:parameters' %}">{% icon "settings" "h-4 w-4" %}Parámetros</a>
+  </nav>
+  {% block panel %}{% endblock %}
+{% endblock %}
+{% block scripts %}
+  <script src="{% static 'vendor/apexcharts-3.54.1.min.js' %}" defer></script>
+  <script src="{% static 'js/charts.js' %}" defer></script>
+{% endblock %}
