@@ -38,6 +38,23 @@ uv run python manage.py runserver
 En PyCharm las configuraciones de ejecución ya vienen en `.run/` ("1 · Preparar base de datos
 local" y "2 · Servidor Django"). Redis es opcional en local.
 
+### Sin uv (pip)
+
+`requirements.txt` trae las dependencias de producción y `requirements-dev.txt` también las de
+pruebas y calidad (pytest, ruff, mypy), con las mismas versiones que `uv.lock`:
+
+```bash
+python -m venv .venv && .venv\Scripts\activate      # en Linux/macOS: source .venv/bin/activate
+pip install -r requirements-dev.txt                  # o requirements.txt en un servidor
+```
+
+Si cambias dependencias en `pyproject.toml`, regenéralos:
+
+```bash
+uv export --format requirements-txt --no-hashes --no-dev --no-emit-project -o requirements.txt
+uv export --format requirements-txt --no-hashes --no-emit-project -o requirements-dev.txt
+```
+
 ## Desarrollo local (manual)
 
 Requiere Python 3.12, PostgreSQL 16, Redis y [uv](https://docs.astral.sh/uv/).
