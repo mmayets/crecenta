@@ -110,7 +110,7 @@
     <section class="text-xs text-slate-500">
       {% if ai_off and stage != "llenado" %}<p class="mb-2">Sin el uso de IA activado entiendo respuestas sencillas; con los botones siempre funciona.</p>{% endif %}
       <div class="flex flex-wrap gap-x-4 gap-y-1">
-        {% if stage == "chat" or stage == "resumen" %}<a class="underline" href="{% url 'workspaces:usage' %}">Prefiero el formulario</a>{% endif %}
+        {% if stage == "chat" or stage == "resumen" %}<a class="underline" href="{% url 'asistente:first_space' %}" data-testid="a-tarjetas">Prefiero las tarjetas guiadas</a><a class="underline" href="{% url 'workspaces:usage' %}">Prefiero el formulario</a>{% endif %}
         <form method="post" action="{% url 'asistente:restart' %}" hx-post="{% url 'asistente:restart' %}" hx-target="#asistente" hx-swap="outerHTML">
           {% csrf_token %}
           <button class="underline">Empezar de nuevo</button>

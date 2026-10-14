@@ -10,7 +10,7 @@ pytestmark = pytest.mark.django_db
 def test_inicio_sin_espacios_abre_el_asistente(client, user):
     client.force_login(user)
     response = client.get(reverse("home"))
-    assert response["Location"] == reverse("asistente:chat")
+    assert response["Location"] == reverse("asistente:first_space")
 
 
 def test_inicio_anonimo_va_a_login(client):

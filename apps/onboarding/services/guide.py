@@ -197,7 +197,7 @@ def _personal(workspace: Workspace, user: User, today: date) -> list[Suggestion]
                 "negocio",
                 "¿Tienes un negocio?",
                 "Crea su espacio aparte para saber cuánto vendes y cuánto ganas de verdad.",
-                reverse("asistente:chat"),
+                reverse("asistente:new_space"),
                 "Crear el espacio",
             )
         )

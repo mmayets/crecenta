@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load icons %}
+{% block title %}Tu primer espacio · Crecenta{% endblock %}
+{% block body %}
+{# Pantalla enfocada: sin menús, solo Sophia, el paso actual y el avance. #}
+<div class="flex min-h-screen flex-col">
+  <header class="flex items-center justify-between gap-3 px-4 py-4 sm:px-6">
+    <a href="{% url 'home' %}" class="flex items-center gap-2 text-tinta no-underline">{% include "partials/logo.html" %}</a>
+    <form method="post" action="{% url 'asistente:first_space_restart' %}">
+      {% csrf_token %}
+      <button class="text-xs text-slate-500 underline">Empezar de nuevo</button>
+    </form>
+  </header>
+  <div id="estado-red" class="hidden bg-amber-100 px-4 py-2 text-center text-sm text-amber-900" role="status" aria-live="polite"></div>
+
+  <main id="contenido" class="mx-auto w-full max-w-2xl flex-1 px-4 pb-12 pt-2 sm:px-6">
+    {# Indicador de avance #}
+    <section class="mb-8" aria-label="Avance">
+      <div class="flex items-baseline justify-between gap-3 text-sm">
+        <p class="font-semibold" data-testid="paso">Paso {{ progress.number }} de {{ progress.total }}</p>
+        <p class="text-slate-500" data-testid="faltan">{% if progress.left %}Te falta{{ progress.left|pluralize:"n" }} {{ progress.left }} paso{{ progress.left|pluralize }}{% else %}Último paso{% endif %}</p>
+      </div>
+      <div class="bar mt-2 h-2.5" role="progressbar" aria-valuenow="{{ progress.number }}" aria-valuemin="1" aria-valuemax="{{ progress.total }}" aria-label="Paso {{ progress.number }} de {{ progress.total }}"><span class="h-2.5" style="width: {{ progress.percent }}%"></span></div>
+      <ol class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+        {% for g in progress.groups %}
+          <li class="flex items-center gap-1 {% if g.current %}font-semibold text-marca-700{% elif g.done %}text-turquesa-700{% else %}text-slate-400{% endif %}">
+            {% if g.done %}{% icon "circle-check" "h-3.5 w-3.5" %}{% elif g.current %}{% icon "chevron-right" "h-3.5 w-3.5" %}{% else %}<span class="inline-block h-3.5 w-3.5 rounded-full border border-slate-300"></span>{% endif %}{{ g.name }}
+          </li>
+        {% endfor %}
+      </ol>
+    </section>
+
+    {% include "partials/messages.html" %}
+
+    {# Sophia pregunta #}
+    <div class="mb-6 flex items-start gap-3">
+      {% include "partials/sophia_avatar.html" with clase="h-12 w-12" alt="Sophia" %}
+      <div class="rounded-2xl rounded-tl-sm bg-white px-4 py-3 shadow-soft">
+        {% if summary %}
+          <h1 class="text-xl md:text-2xl">¡Listo! Revisa lo que me contaste</h1>
+          <p class="mt-1 text-sm text-slate-500">Puedes cambiar cualquier respuesta antes de crear tu espacio.</p>
+        {% else %}
+          <h1 class="text-xl md:text-2xl">{{ question }}</h1>
+          {% if step.hint %}<p class="mt-1 text-sm text-slate-500">{{ step.hint }}</p>{% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+    {% if summary %}
+      <section class="card p-0" aria-label="Resumen">
+        <ul class="divide-y divide-slate-200">
+          {% for row in summary %}
+            {% ifchanged row.group %}<li class="section-title bg-slate-50 px-4 py-2 md:px-5">{{ row.group }}</li>{% endifchanged %}
+            <li class="flex items-center gap-3 px-4 py-3 text-sm md:px-5">
+              <div class="min-w-0 flex-1"><p class="text-slate-500">{{ row.question }}</p><p class="font-semibold">{{ row.answer }}</p></div>
+              <a class="btn-secondary btn-sm shrink-0" href="{% url 'asistente:first_space_step' row.key %}?volver=resumen">{% icon "pencil" "h-4 w-4" %}Cambiar</a>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+      <form method="post" action="{% url 'asistente:first_space_create' %}" class="mt-6">
+        {% csrf_token %}
+        <button class="btn-primary w-full py-3.5 text-base" data-testid="crear-espacio">{% icon "circle-check" "h-5 w-5" %}Crear mi espacio</button>
+      </form>
+
+    {% elif step.kind == "tarjetas" %}
+      <form method="post" class="grid gap-3 {% if columns == 7 %}grid-cols-7 gap-2{% elif columns == 3 %}sm:grid-cols-3{% elif columns == 2 %}sm:grid-cols-2{% endif %}">
+        {% csrf_token %}
+        {% if back_to_summary %}<input type="hidden" name="volver" value="resumen">{% endif %}
+        {% for o in options %}
+          {% if columns == 7 %}
+            <button name="valor" value="{{ o.value }}" class="aspect-square rounded-xl border bg-white text-sm font-semibold shadow-soft transition hover:border-turquesa-400 hover:bg-turquesa-50 {% if value == o.value %}border-turquesa-400 bg-turquesa-50 text-turquesa-800{% else %}border-slate-200{% endif %}" data-opcion="{{ o.value }}">{{ o.label }}</button>
+          {% else %}
+            <button name="valor" value="{{ o.value }}" class="card flex w-full items-center gap-3 text-left transition hover:border-turquesa-400 hover:bg-turquesa-50 {% if columns > 1 %}sm:flex-col sm:items-start sm:py-5{% endif %} {% if value == o.value %}border-turquesa-400 bg-turquesa-50{% endif %}" data-opcion="{{ o.value }}">
+              {% if o.icon %}<span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-turquesa-100 text-turquesa-800">{% icon o.icon "h-5 w-5" %}</span>{% endif %}
+              <span class="min-w-0 flex-1"><span class="block font-semibold">{{ o.label }}</span>{% if o.hint %}<span class="block text-xs text-slate-500">{{ o.hint }}</span>{% endif %}</span>
+              {% if value == o.value %}{% icon "circle-check" "h-5 w-5 shrink-0 text-turquesa-600" %}{% endif %}
+            </button>
+          {% endif %}
+        {% endfor %}
+      </form>
+
+    {% else %}
+      <form method="post" class="card space-y-4 md:p-6">
+        {% csrf_token %}
+        {% if back_to_summary %}<input type="hidden" name="volver" value="resumen">{% endif %}
+        <label for="id_valor" class="sr-only">{{ question }}</label>
+        <div class="relative">
+          {% if step.kind == "monto" %}<span class="pointer-events-none absolute inset-y-0 left-4 flex items-center font-display text-xl font-semibold text-slate-400">{{ symbol }}</span>{% endif %}
+          <input id="id_valor" name="valor" type="text" autofocus required autocomplete="off" {% if step.kind == "monto" %}inputmode="decimal"{% endif %} value="{{ value|default:'' }}" placeholder="{{ step.placeholder }}" class="py-4 font-display text-2xl font-semibold {% if step.kind == 'monto' %}pl-16{% endif %} {% if error %}border-red-400{% endif %}">
+        </div>
+        {% if error %}<p class="text-sm text-red-700" role="alert">{{ error }}</p>{% endif %}
+        <button class="btn-primary w-full py-3.5 text-base">Continuar{% icon "arrow-right" "h-5 w-5" %}</button>
+        {% if step.skip_label %}<button name="saltar" value="1" formnovalidate class="btn-secondary w-full">{{ step.skip_label }}</button>{% endif %}
+      </form>
+    {% endif %}
+    {% if error and step.kind == "tarjetas" %}<p class="mt-3 text-sm text-red-700" role="alert">{{ error }}</p>{% endif %}
+
+    <div class="mt-8 flex flex-wrap items-center justify-between gap-3 text-sm">
+      {% if previous %}<a class="inline-flex items-center gap-1 font-medium" href="{{ previous }}">{% icon "arrow-left" "h-4 w-4" %}Atrás</a>{% else %}<span></span>{% endif %}
+      <span class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+        <a class="underline" href="{% url 'asistente:chat' %}">Prefiero conversar con Sophia</a>
+        <a class="underline" href="{% url 'workspaces:usage' %}">Prefiero el formulario</a>
+      </span>
+    </div>
+  </main>
+</div>
+{% endblock body %}

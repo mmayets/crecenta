@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load icons %}
+{% block title %}Nuevo espacio · Crecenta{% endblock %}
+{% block content %}
+  <div class="mb-6 flex items-start gap-3">
+    {% include "partials/sophia_avatar.html" with clase="h-12 w-12" alt="Sophia" %}
+    <div class="rounded-2xl rounded-tl-sm bg-white px-4 py-3 shadow-soft">
+      {% if can_create %}
+        <h1 class="text-xl md:text-2xl">¿Cómo prefieres crear tu nuevo espacio?</h1>
+        <p class="mt-1 text-sm text-slate-500">Las dos formas terminan igual: nada se crea hasta que tú lo confirmes.</p>
+      {% else %}
+        <h1 class="text-xl md:text-2xl">Ya tienes tus espacios</h1>
+        <p class="mt-1 text-sm text-slate-500">Tienes tu espacio personal y el de tu negocio. Puedes entrar a cualquiera desde «Mis espacios».</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if can_create %}
+    <div class="grid gap-3 sm:grid-cols-2">
+      <a class="card flex items-start gap-3 text-tinta no-underline transition hover:border-turquesa-400 hover:bg-turquesa-50 sm:flex-col sm:py-6" href="{% url 'asistente:first_space' %}" data-testid="modo-tarjetas">
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-turquesa-100 text-turquesa-800">{% icon "layout-dashboard" "h-5 w-5" %}</span>
+        <span>
+          <span class="block font-semibold">Paso a paso con tarjetas</span>
+          <span class="mt-1 block text-sm text-slate-500">Eliges opciones y escribes solo los montos. Siempre ves cuántos pasos te faltan.</span>
+          {% if in_progress %}<span class="badge-info mt-2">{% icon "clock" "h-3.5 w-3.5" %}Sigues donde lo dejaste</span>{% endif %}
+        </span>
+      </a>
+      <a class="card flex items-start gap-3 text-tinta no-underline transition hover:border-turquesa-400 hover:bg-turquesa-50 sm:flex-col sm:py-6" href="{% url 'asistente:chat' %}" data-testid="modo-chat">
+        {% include "partials/sophia_avatar.html" with clase="h-11 w-11" %}
+        <span>
+          <span class="block font-semibold">Conversando con Sophia</span>
+          <span class="mt-1 block text-sm text-slate-500">Cuéntale con tus palabras y ella arma el espacio contigo.</span>
+        </span>
+      </a>
+    </div>
+    <p class="mt-6 text-sm"><a class="underline" href="{% url 'workspaces:usage' %}">Prefiero el formulario clásico</a></p>
+  {% else %}
+    <a class="btn-primary" href="{% url 'workspaces:selector' %}">{% icon "layout-dashboard" "h-4 w-4" %}Ir a Mis espacios</a>
+  {% endif %}
+{% endblock %}

@@ -3,7 +3,7 @@
 {% block title %}¿Para qué usarás la app? · Crecenta{% endblock %}
 {% block content %}
   <h1>¿Para qué usarás la app?</h1>
-  <a class="card-tip mt-4 flex items-center gap-3 text-tinta no-underline" href="{% url 'asistente:chat' %}">{% include "partials/sophia_avatar.html" with clase="h-7 w-7" %}<span class="text-sm">¿Prefieres que te guíe Sophia? <span class="text-marca-700 underline">Abrir el chat</span></span></a>
+  <a class="card-tip mt-4 flex items-center gap-3 text-tinta no-underline" href="{% url 'asistente:new_space' %}">{% include "partials/sophia_avatar.html" with clase="h-7 w-7" %}<span class="text-sm">¿Prefieres que te guíe Sophia? <span class="text-marca-700 underline">Con tarjetas o conversando</span></span></a>
   <form method="post" class="mt-6 space-y-4">
     {% csrf_token %}
     {{ form.non_field_errors }}

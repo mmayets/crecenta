@@ -30,7 +30,7 @@
   <input type="text" id="id_pregunta" name="pregunta" maxlength="300" required placeholder="Ej.: ¿cómo registro un pago?" class="text-sm">
   <button class="btn-primary btn-sm shrink-0" aria-label="Preguntar">{% icon "chevron-right" "h-4 w-4" %}</button>
 </form>
-<a class="mt-3 inline-block text-xs underline" href="{% url 'asistente:chat' %}">Crear otro espacio con Sophia</a>
+<a class="mt-3 inline-block text-xs underline" href="{% url 'asistente:new_space' %}">Crear otro espacio con Sophia</a>
 
 <div id="asistente-tira" hx-swap-oob="innerHTML">{% if top %}
   <div x-data="tira" data-key="{{ top.key }}" x-show="shown" class="flex items-center gap-3 border-b border-turquesa-200 bg-turquesa-100 px-4 py-2 text-sm text-turquesa-800 sm:px-6 lg:px-10" data-testid="tira">
