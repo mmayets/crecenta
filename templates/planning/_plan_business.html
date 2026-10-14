@@ -67,7 +67,7 @@
           <li class="card">
             <div class="flex items-start justify-between gap-2"><p class="font-semibold">{{ a.nombre }}</p><span class="badge-{{ a.estado }}">{% if a.estado == "viable" %}Queda viable{% elif a.estado == "ajustado" %}Queda ajustado{% else %}Aún no alcanza{% endif %}</span></div>
             <p class="text-sm text-slate-600">{{ a.descripcion }}</p>
-            <ul class="mt-2 text-sm">{% for ch in a.cambios %}<li>{{ ch.concepto }}: {{ ch.de|money:cur }} → <strong>{{ ch.a|money:cur }}</strong></li>{% endfor %}</ul>
+            <ul class="mt-2 text-sm">{% for ch in a.cambios %}<li>{{ ch.concepto }}: {{ ch.de|money:cur }} {% icon "arrow-right" "inline h-3.5 w-3.5 text-slate-400" "pasa a" %} <strong>{{ ch.a|money:cur }}</strong></li>{% endfor %}</ul>
             <p class="muted mt-1">Resultado del mes: {{ a.resultado|money:cur }} · mejora {{ a.libera|money:cur }}</p>
             {% if plan.is_open %}<form method="post" action="{% url 'planning:apply' ws=workspace.pk plan_id=plan.pk %}" class="mt-3">{% csrf_token %}<input type="hidden" name="alternativa" value="{{ a.codigo }}"><button class="btn-secondary btn-sm">Aplicar esta alternativa</button></form>{% endif %}
           </li>

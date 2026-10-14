@@ -21,6 +21,8 @@ VENDEDOR_PUEDE = {
     "business:receivables",
     "business:collect",
     "business:inventory",
+    "onboarding:guide",
+    "onboarding:ask",
 }
 SOLO_PROPIETARIO = {
     "espacio:team",
@@ -32,7 +34,7 @@ SOLO_PROPIETARIO = {
 }
 # Rutas sin objeto en la URL: si el rol puede, la página abre.
 SIN_OBJETO = {"espacio:dashboard", "espacio:settings", "business:sales", "business:sale_new",
-              "business:receivables", "business:inventory"}  # fmt: skip
+              "business:receivables", "business:inventory", "onboarding:guide"}  # fmt: skip
 
 
 def miembro(business_ws, role):

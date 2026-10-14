@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load icons %}
+{# Pantallas de acceso (entrar, registrarse, recuperar contraseña): panel de marca + formulario. #}
+{% block body %}
+<div class="min-h-screen lg:grid lg:grid-cols-2">
+  <section class="hidden flex-col justify-between bg-lateral p-10 text-lateral-texto lg:flex" aria-label="Crecenta">
+    <div class="flex items-center gap-2 text-white">{% include "partials/logo.html" %}</div>
+    <div>
+      <p class="max-w-xl font-display text-4xl font-semibold leading-tight text-white">Organiza tu dinero y descubre cuánto gana de verdad tu negocio.</p>
+      <ul class="mt-6 space-y-3 text-sm">
+        <li class="flex items-center gap-2">{% icon "wallet" "h-4 w-4 shrink-0 text-turquesa-400" %}Cuánto puedes gastar hoy sin descuadrar el mes.</li>
+        <li class="flex items-center gap-2">{% icon "sparkles" "h-4 w-4 shrink-0 text-turquesa-400" %}Un plan hecho con tus números, explicado paso a paso.</li>
+        <li class="flex items-center gap-2">{% icon "shield-check" "h-4 w-4 shrink-0 text-turquesa-400" %}Tus finanzas y las de tu negocio, cada una en su espacio.</li>
+      </ul>
+    </div>
+    <p class="text-xs text-lateral-texto/60">Finanzas personales y de pequeños negocios · RD$ y US$</p>
+  </section>
+
+  <div class="flex min-h-screen flex-col">
+    <div id="estado-red" class="hidden bg-amber-100 px-4 py-2 text-center text-sm text-amber-900" role="status" aria-live="polite"></div>
+    <div class="flex items-center gap-2 px-4 pt-6 lg:hidden">{% include "partials/logo.html" with tono="oscuro" %}</div>
+    <main id="contenido" class="entrada mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-10">
+      {% include "partials/messages.html" %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock body %}

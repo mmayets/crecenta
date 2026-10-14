@@ -30,6 +30,7 @@ from .business_forms import (
     ProfileForm,
 )
 from .forms import WorkspaceFormSet, formset_class
+from .services.assistant import after_confirm_url
 from .services.business_conversational import (
     extract_business_from_text,
     to_business_initial,
@@ -246,7 +247,8 @@ def confirm(request: HttpRequest, workspace: Workspace) -> HttpResponse:
                 state.pending_extraction = None
                 state.save()
             messages.success(request, "¡Listo! Guardamos los datos de tu negocio.")
-            return redirect("onboarding:index", ws=workspace.pk)
+            back = after_confirm_url(request.user, workspace)
+            return redirect(back) if back else redirect("onboarding:index", ws=workspace.pk)
     return render(
         request,
         "onboarding/confirm_business.html",

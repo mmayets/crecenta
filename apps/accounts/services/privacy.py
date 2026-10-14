@@ -34,6 +34,7 @@ from apps.business.models import (
     Supplier,
 )
 from apps.ledger.models import Account, Category, Transaction
+from apps.onboarding.models import AssistantSession
 from apps.personal.models import (
     Commitment,
     Debt,
@@ -107,6 +108,7 @@ def build_export(user: User) -> IO[bytes]:
                 "acepta_ia": user.ai_consent,
             },
             "espacios": [],
+            "conversacion_con_el_asistente": _rows(AssistantSession.objects.filter(user=user)),
             "transferencias_entre_espacios": _rows(
                 WorkspaceTransfer.objects.filter(from_workspace__owner=user)
             ),

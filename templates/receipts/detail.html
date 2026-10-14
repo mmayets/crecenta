@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block title %}Revisar comprobante · Crecenta{% endblock %}
 {% block content %}
-  <a class="underline" href="{% url 'receipts:index' ws=workspace.pk %}">← Comprobantes</a>
+  <a class="inline-flex items-center gap-1 text-sm font-medium" href="{% url 'receipts:index' ws=workspace.pk %}">{% icon "arrow-left" "h-4 w-4" %}Comprobantes</a>
   {% include "receipts/_detail.html" %}
 {% endblock %}

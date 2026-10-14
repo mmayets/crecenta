@@ -2,7 +2,7 @@
 {% load icons money %}
 {% block title %}Producto · Crecenta{% endblock %}
 {% block content %}
-  <a class="underline" href="{% url 'business:products' ws=workspace.pk %}">← Productos</a>
+  <a class="inline-flex items-center gap-1 text-sm font-medium" href="{% url 'business:products' ws=workspace.pk %}">{% icon "arrow-left" "h-4 w-4" %}Productos</a>
   <h1 class="mt-2">{% if product.pk %}{{ product.name }}{% else %}Nuevo producto o servicio{% endif %}</h1>
   <form method="post" class="mt-4 space-y-4">
     {% csrf_token %}

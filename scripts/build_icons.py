@@ -56,6 +56,16 @@ ICONS = [
     "users",
     "tag",
     "clock",
+    "layout-dashboard",
+    "building-2",
+    "lock",
+    "shopping-bag",
+    "calendar-clock",
+    "arrow-right",
+    "arrow-left",
+    "chart-column",
+    "check",
+    "chevron-down",
 ]
 OUTPUT = Path(__file__).resolve().parent.parent / "templates" / "icons" / "sprite.svg"
 

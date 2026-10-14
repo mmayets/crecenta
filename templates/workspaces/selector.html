@@ -1,13 +1,22 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block title %}Mis espacios · Crecenta{% endblock %}
 {% block content %}
   <h1>Mis espacios</h1>
-  <ul class="mt-6 space-y-2">
+  <p class="mt-1 text-sm text-slate-500">Tus finanzas personales y las de cada negocio van por separado.</p>
+  <ul class="mt-6 grid gap-3 sm:grid-cols-2">
     {% for ws in workspaces %}
-      <li><a class="block card" href="{% url 'espacio:dashboard' ws=ws.pk %}">{{ ws.name }} <span class="text-slate-500">· {{ ws.get_kind_display }} · {{ ws.currency }}</span></a></li>
+      <li><a class="card flex items-center gap-3 text-tinta no-underline hover:border-marca-200" href="{% url 'espacio:dashboard' ws=ws.pk %}">
+        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-turquesa-100 text-turquesa-800">{% if ws.is_business %}{% icon "briefcase" "h-5 w-5" %}{% else %}{% icon "wallet" "h-5 w-5" %}{% endif %}</span>
+        <span class="min-w-0 flex-1"><span class="block truncate font-semibold">{{ ws.name }}</span><span class="block text-xs text-slate-500">{{ ws.get_kind_display }} · {{ ws.currency }}</span></span>
+        {% icon "chevron-right" "h-4 w-4 shrink-0 text-slate-400" %}
+      </a></li>
     {% empty %}
       <li>Todavía no tienes espacios.</li>
     {% endfor %}
   </ul>
-  <a class="mt-6 inline-block underline" href="{% url 'workspaces:usage' %}">Agregar espacio</a>
+  <div class="mt-6 flex flex-wrap gap-2">
+    <a class="btn-primary" href="{% url 'asistente:chat' %}">{% icon "sparkles" "h-4 w-4" %}Crear con CentIA</a>
+    <a class="btn-secondary" href="{% url 'workspaces:usage' %}">{% icon "plus" "h-4 w-4" %}Agregar con el formulario</a>
+  </div>
 {% endblock %}

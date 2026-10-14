@@ -25,6 +25,7 @@ from .forms import (
     WorkspaceFormSet,
     formset_class,
 )
+from .services.assistant import after_confirm_url
 from .services.conversational import extract_from_text, to_initial
 from .services.steps import (
     STEP_KEYS,
@@ -232,7 +233,8 @@ def confirm(request: HttpRequest, workspace: Workspace) -> HttpResponse:
                 state.pending_extraction = None
                 state.save()
             messages.success(request, "¡Listo! Guardamos tus datos.")
-            return redirect("onboarding:index", ws=workspace.pk)
+            back = after_confirm_url(request.user, workspace)
+            return redirect(back) if back else redirect("onboarding:index", ws=workspace.pk)
 
     return render(
         request,
@@ -250,10 +252,8 @@ def confirm(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     )
 
 
-@workspace_required
-@require_POST
-def voice(request: HttpRequest, workspace: Workspace) -> JsonResponse:
-    """Nota de voz → texto (para dictar en el modo conversacional o en el registro rápido)."""
+def transcribe_upload(request: HttpRequest, workspace: Workspace | None) -> JsonResponse:
+    """Transcribe el audio subido en `request`. `workspace` es None en el asistente de espacios."""
     audio = request.FILES.get("audio")
     if audio is None or not (audio.content_type or "").startswith("audio/"):
         return JsonResponse({"error": "Envía un archivo de audio."}, status=400)
@@ -268,3 +268,10 @@ def voice(request: HttpRequest, workspace: Workspace) -> JsonResponse:
     except AIUnavailable as exc:
         return JsonResponse({"error": str(exc)}, status=503)
     return JsonResponse({"texto": text})
+
+
+@workspace_required
+@require_POST
+def voice(request: HttpRequest, workspace: Workspace) -> JsonResponse:
+    """Nota de voz → texto (para dictar en el modo conversacional o en el registro rápido)."""
+    return transcribe_upload(request, workspace)

@@ -41,8 +41,8 @@ def manifest(request: HttpRequest) -> JsonResponse:
         "scope": "/",
         "display": "standalone",
         "orientation": "portrait",
-        "background_color": "#f8fafc",
-        "theme_color": "#0f766e",
+        "background_color": "#f8fafb",
+        "theme_color": "#10224a",
         "categories": ["finance", "productivity"],
         "icons": [
             {"src": static("icons/icon-192.png"), "sizes": "192x192", "type": "image/png"},

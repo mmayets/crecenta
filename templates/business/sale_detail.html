@@ -3,7 +3,7 @@
 {% block title %}Venta · Crecenta{% endblock %}
 {% block content %}
 {% with cur=workspace.currency %}
-  <a class="underline" href="{% url 'business:sales' ws=workspace.pk %}">← Ventas</a>
+  <a class="inline-flex items-center gap-1 text-sm font-medium" href="{% url 'business:sales' ws=workspace.pk %}">{% icon "arrow-left" "h-4 w-4" %}Ventas</a>
   <h1 class="mt-2">Venta del {{ sale.date|date:"j \d\e F" }}</h1>
   <p class="muted">{{ sale.get_payment_display }}{% if sale.customer %} · {{ sale.customer }}{% endif %}{% if sale.account %} · {{ sale.account }}{% endif %}{% if sale.ncf %} · NCF {{ sale.ncf }}{% endif %}</p>
   <ul class="card mt-4 divide-y p-0">

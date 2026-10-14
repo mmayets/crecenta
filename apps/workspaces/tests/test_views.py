@@ -7,10 +7,10 @@ from apps.workspaces.models import Workspace
 pytestmark = pytest.mark.django_db
 
 
-def test_inicio_sin_espacios_pide_uso(client, user):
+def test_inicio_sin_espacios_abre_el_asistente(client, user):
     client.force_login(user)
     response = client.get(reverse("home"))
-    assert response["Location"] == reverse("workspaces:usage")
+    assert response["Location"] == reverse("asistente:chat")
 
 
 def test_inicio_anonimo_va_a_login(client):

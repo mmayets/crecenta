@@ -17,7 +17,8 @@ CONTENT_SECURITY_POLICY = "; ".join(
         "manifest-src 'self'",
         "frame-ancestors 'none'",
         "base-uri 'self'",
-        "form-action 'self'",
+        # El acceso con Google sale de un formulario propio y redirige a su pantalla de permiso.
+        "form-action 'self' https://accounts.google.com",
     ]
 )
 PERMISSIONS_POLICY = "camera=(self), microphone=(self), geolocation=(), payment=()"

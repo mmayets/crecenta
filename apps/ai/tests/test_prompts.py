@@ -22,6 +22,31 @@ CONTEXTS = {
     "onboarding_negocio": {"hoy": "2026-10-12", "texto": "vendo bizcochos"},
     "comprobante_ocr": {"hoy": "2026-10-12", "categorias": ["Alimentación"]},
     "registro_rapido": {"hoy": "2026-10-12", "texto": "x", "categorias": [], "cuentas": []},
+    "centia_movimiento": {
+        "hoy": "2026-10-12",
+        "tipos": {"gasto": "Gasto"},
+        "categorias": ["Alimentación"],
+        "cuentas": ["Efectivo"],
+        "borrador": {"tipo": "gasto"},
+        "faltantes": ["monto"],
+        "historial": "(sin mensajes previos)",
+        "mensaje": "gasté 350",
+    },
+    "asistente_ayuda": {
+        "tipo": "personal",
+        "rol": "owner",
+        "pantalla": "Panel",
+        "recomendaciones": ["Haz tu plan del mes"],
+        "catalogo": [{"clave": "plan", "nombre": "Plan", "sirve_para": "crear el plan"}],
+        "pregunta": "¿cómo hago mi plan?",
+    },
+    "asistente_espacios": {
+        "existentes": [],
+        "borrador": {"uso": "negocio"},
+        "faltantes": ["nombre_negocio", "moneda"],
+        "historial": "Asistente: ¿Qué quieres organizar?",
+        "mensaje": "mi negocio",
+    },
 }
 
 

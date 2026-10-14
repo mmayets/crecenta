@@ -1,0 +1,43 @@
+{% load icons %}{# Contenido del asistente permanente. htmx lo carga en cada página; la tira y la insignia van «fuera de banda». #}
+<div class="flex items-center gap-2">
+  <span class="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-turquesa-100 text-turquesa-800">{% icon "sparkles" "h-4 w-4" %}</span>
+  <h2 class="text-base">CentIA <span class="text-sm font-normal text-slate-500">· tu asistente</span></h2>
+</div>
+{% if tip %}<p class="mt-2 text-sm text-slate-600" data-testid="consejo">{{ tip }}</p>{% endif %}
+
+<h3 class="section-title mt-4">Te recomiendo ahora</h3>
+<ul class="mt-2 space-y-2">
+  {% for s in suggestions %}
+    <li class="rounded-lg border border-slate-200 p-3" data-recomendacion="{{ s.key }}">
+      <p class="flex items-start gap-2 text-sm font-semibold">
+        {% if s.tone == "urgente" %}<span class="badge-alta shrink-0">{% icon "triangle-alert" "h-3.5 w-3.5" %}Urgente</span>{% elif s.tone == "aviso" %}<span class="badge-media shrink-0">{% icon "clock" "h-3.5 w-3.5" %}Pendiente</span>{% endif %}
+        <span>{{ s.title }}</span>
+      </p>
+      <p class="mt-1 text-sm text-slate-600">{{ s.text }}</p>
+      <a class="btn-secondary btn-sm mt-2" href="{{ s.url }}">{{ s.action }}</a>
+    </li>
+  {% empty %}
+    <li class="card-tip text-sm">Vas al día: no tengo nada pendiente que recomendarte aquí.</li>
+  {% endfor %}
+</ul>
+
+<h3 class="section-title mt-4">Pregúntame cómo hacer algo</h3>
+<div id="asistente-respuestas" class="mt-2 space-y-3" aria-live="polite"></div>
+<form method="post" action="{% url 'onboarding:ask' ws=workspace.pk %}" hx-post="{% url 'onboarding:ask' ws=workspace.pk %}" hx-target="#asistente-respuestas" hx-swap="beforeend" hx-disabled-elt="find button" data-reset class="mt-2 flex gap-2">
+  {% csrf_token %}
+  <input type="hidden" name="vista" value="{{ view_name }}">
+  <label for="id_pregunta" class="sr-only">Tu pregunta</label>
+  <input type="text" id="id_pregunta" name="pregunta" maxlength="300" required placeholder="Ej.: ¿cómo registro un pago?" class="text-sm">
+  <button class="btn-primary btn-sm shrink-0" aria-label="Preguntar">{% icon "chevron-right" "h-4 w-4" %}</button>
+</form>
+<a class="mt-3 inline-block text-xs underline" href="{% url 'asistente:chat' %}">Crear otro espacio con CentIA</a>
+
+<div id="asistente-tira" hx-swap-oob="innerHTML">{% if top %}
+  <div x-data="tira" data-key="{{ top.key }}" x-show="shown" class="flex items-center gap-3 border-b border-turquesa-200 bg-turquesa-100 px-4 py-2 text-sm text-turquesa-800 sm:px-6 lg:px-10" data-testid="tira">
+    {% icon "sparkles" "h-4 w-4 shrink-0 text-turquesa-600" %}
+    <p class="min-w-0 flex-1 truncate"><span class="font-semibold">{{ top.title }}</span><span class="hidden text-slate-600 lg:inline"> · {{ top.text }}</span></p>
+    <a class="btn-primary btn-sm shrink-0" href="{{ top.url }}">{{ top.action }}</a>
+    <button type="button" class="shrink-0 rounded-full p-1 text-slate-500 hover:bg-turquesa-100" @click="dismiss">{% icon "x" "h-4 w-4" "Ocultar" %}</button>
+  </div>
+{% endif %}</div>
+<span id="asistente-insignia" hx-swap-oob="innerHTML">{% if urgent %}{{ urgent }}{% endif %}</span>

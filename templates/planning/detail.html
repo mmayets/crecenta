@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block title %}Plan · Crecenta{% endblock %}
 {% block content %}
-  <a class="underline" href="{% url 'planning:index' ws=workspace.pk %}">← Mi plan</a>
+  <a class="inline-flex items-center gap-1 text-sm font-medium" href="{% url 'planning:index' ws=workspace.pk %}">{% icon "arrow-left" "h-4 w-4" %}Mi plan</a>
   {% include "planning/_plan.html" %}
 {% endblock %}

@@ -12,6 +12,7 @@ urlpatterns = [
     path("", include("apps.core.urls")),
     path("", include("apps.pwa.urls")),
     path("", include("apps.workspaces.urls")),
+    path("", include("apps.onboarding.urls")),
     path("e/<uuid:ws>/", include("config.workspace_urls")),
 ]
 # Los archivos subidos (comprobantes) nunca se sirven como estáticos públicos: solo a través de la

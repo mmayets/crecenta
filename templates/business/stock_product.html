@@ -3,7 +3,7 @@
 {% block title %}{{ product.name }} · Inventario · Crecenta{% endblock %}
 {% block content %}
 {% with cur=workspace.currency %}
-  <a class="underline" href="{% url 'business:inventory' ws=workspace.pk %}">← Inventario</a>
+  <a class="inline-flex items-center gap-1 text-sm font-medium" href="{% url 'business:inventory' ws=workspace.pk %}">{% icon "arrow-left" "h-4 w-4" %}Inventario</a>
   <h1 class="mt-2">{{ product.name }}</h1>
   <p class="muted">Existencia {{ product.stock|floatformat:"-3u" }} · costo promedio {{ product.average_cost|money:cur }}</p>
   <form method="post" class="card mt-4 space-y-4">{% csrf_token %}{% include "partials/form.html" %}<button class="btn-primary w-full">Guardar</button></form>

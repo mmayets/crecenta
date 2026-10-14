@@ -19,10 +19,10 @@ from .services.workspaces import create_workspaces_for_usage, default_workspace
 
 @login_required
 def home(request: HttpRequest) -> HttpResponse:
-    """Entrada de la app: abre el último espacio usado o pide elegir el uso."""
+    """Entrada de la app: abre el último espacio usado o el asistente que guía a crear uno."""
     workspace = default_workspace(request.user, request.session.get(SESSION_KEY))
     if workspace is None:
-        return redirect("workspaces:usage")
+        return redirect("asistente:chat")
     return redirect("espacio:dashboard", ws=workspace.pk)
 
 

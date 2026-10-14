@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block title %}{{ info.title }} · Bienvenida · Crecenta{% endblock %}
 {% block content %}
   <div id="wizard">
@@ -20,6 +21,6 @@
         {% if not info.required %}<button type="submit" name="accion" value="omitir" formnovalidate class="btn-secondary">Omitir por ahora</button>{% endif %}
       </div>
     </form>
-    {% if previous %}<a class="mt-4 inline-block underline" href="{% url 'onboarding:step' ws=workspace.pk step=previous %}">← Atrás</a>{% endif %}
+    {% if previous %}<a class="mt-4 inline-flex items-center gap-1 text-sm font-medium" href="{% url 'onboarding:step' ws=workspace.pk step=previous %}">{% icon "arrow-left" "h-4 w-4" %}Atrás</a>{% endif %}
   </div>
 {% endblock %}

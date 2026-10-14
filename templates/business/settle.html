@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+{% load icons %}
 {% load money %}
 {% block title %}{% if payable %}Pagar{% else %}Cobrar{% endif %} · Crecenta{% endblock %}
 {% block content %}
-  <a class="underline" href="{% if payable %}{% url 'business:payables' ws=workspace.pk %}{% else %}{% url 'business:receivables' ws=workspace.pk %}{% endif %}">← Volver</a>
+  <a class="inline-flex items-center gap-1 text-sm font-medium" href="{% if payable %}{% url 'business:payables' ws=workspace.pk %}{% else %}{% url 'business:receivables' ws=workspace.pk %}{% endif %}">{% icon "arrow-left" "h-4 w-4" %}Volver</a>
   <h1 class="mt-2">{% if payable %}Pagar{% else %}Cobrar{% endif %}: {{ debt.concept }}</h1>
   <p class="muted">Saldo pendiente: <span class="amount">{{ debt.balance|money:workspace.currency }}</span>. Puedes registrar un pago parcial.</p>
   <form method="post" class="card mt-4 space-y-4">{% csrf_token %}{% include "partials/form.html" %}<button type="submit" class="btn-primary w-full">Registrar {% if payable %}pago{% else %}cobro{% endif %}</button></form>

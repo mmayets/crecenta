@@ -1,0 +1,63 @@
+{% load icons %}{# Barra lateral de escritorio: marca, espacios, "Registrar" y navegación del espacio activo. #}
+{% with ws=current_workspace.pk name=request.resolver_match.view_name %}
+<div class="flex h-full flex-col gap-6 bg-lateral p-4 text-lateral-texto">
+  <a href="{% url 'home' %}" class="flex items-center gap-2 px-2 text-white no-underline">{% include "partials/logo.html" %}</a>
+
+  <div>
+    <p class="side-title">Espacio</p>
+    <ul class="space-y-1">
+      {% for w in user_workspaces %}
+        <li><a class="side-link gap-2" href="{% url 'espacio:dashboard' ws=w.pk %}" {% if w.pk == ws %}aria-current="true"{% endif %}>{% if w.is_business %}{% icon "building-2" "h-4 w-4 shrink-0" %}{% else %}{% icon "user" "h-4 w-4 shrink-0" %}{% endif %}<span class="truncate">{{ w.name }}</span></a></li>
+      {% endfor %}
+      <li><a class="side-link gap-2 text-lateral-texto/70" href="{% url 'asistente:chat' %}" {% if "asistente:" in name %}aria-current="page"{% endif %}>{% icon "plus" "h-4 w-4 shrink-0" %}<span class="truncate">Agregar espacio</span></a></li>
+    </ul>
+  </div>
+
+  {% if current_workspace %}
+    <div class="relative" x-data="menu" @keydown.escape="close">
+      <button type="button" class="flex w-full items-center justify-center gap-2 rounded-lg bg-turquesa-400 px-3 py-2.5 text-sm font-semibold text-marca-900 transition hover:opacity-90" @click="toggle" aria-haspopup="true">
+        {% icon "plus" "h-4 w-4" %}{% if current_workspace.is_business %}Registrar venta o gasto{% else %}Registrar movimiento{% endif %}
+      </button>
+      <div x-show="open" x-cloak @click.outside="close" class="absolute inset-x-0 top-full z-40 mt-2 rounded-xl border border-slate-200 bg-white p-2 shadow-xl" role="menu">
+        {% include "partials/register_menu.html" %}
+      </div>
+    </div>
+
+    <nav class="-mx-1 flex-1 space-y-0.5 overflow-y-auto px-1" aria-label="Secciones">
+      <a class="side-link" href="{% url 'espacio:dashboard' ws=ws %}" {% if name == "espacio:dashboard" %}aria-current="page"{% endif %}>{% icon "layout-dashboard" "h-4 w-4" %}<span class="flex-1">{% if current_workspace.is_business %}Panel del negocio{% else %}Panel personal{% endif %}</span></a>
+      {% if current_workspace.is_business %}
+        <a class="side-link" href="{% url 'business:sales' ws=ws %}" {% if "business:sale" in name %}aria-current="page"{% endif %}>{% icon "shopping-cart" "h-4 w-4" %}<span class="flex-1">Ventas</span></a>
+        <a class="side-link" href="{% url 'business:inventory' ws=ws %}" {% if name == "business:inventory" or name == "business:stock_product" %}aria-current="page"{% endif %}>{% icon "package" "h-4 w-4" %}<span class="flex-1">Inventario</span></a>
+        <a class="side-link" href="{% url 'business:receivables' ws=ws %}" {% if name == "business:receivables" or name == "business:collect" %}aria-current="page"{% endif %}>{% icon "hand-coins" "h-4 w-4" %}<span class="flex-1">Por cobrar</span></a>
+        {% if can_finanzas %}
+          <a class="side-link" href="{% url 'business:payables' ws=ws %}" {% if name == "business:payables" or name == "business:pay" %}aria-current="page"{% endif %}>{% icon "landmark" "h-4 w-4" %}<span class="flex-1">Por pagar</span></a>
+          <a class="side-link" href="{% url 'business:purchases' ws=ws %}" {% if "business:purchase" in name %}aria-current="page"{% endif %}>{% icon "shopping-bag" "h-4 w-4" %}<span class="flex-1">Compras</span></a>
+          <a class="side-link" href="{% url 'business:pricing' ws=ws %}" {% if name == "business:pricing" or "business:product" in name %}aria-current="page"{% endif %}>{% icon "calculator" "h-4 w-4" %}<span class="flex-1">Precios y productos</span></a>
+          <a class="side-link" href="{% url 'ledger:movements' ws=ws %}" {% if "ledger:" in name %}aria-current="page"{% endif %}>{% icon "arrow-left-right" "h-4 w-4" %}<span class="flex-1">Movimientos</span></a>
+          <a class="side-link" href="{% url 'planning:index' ws=ws %}" {% if "planning:" in name %}aria-current="page"{% endif %}>{% icon "piggy-bank" "h-4 w-4" %}<span class="flex-1">Plan del negocio</span></a>
+          <a class="side-link" href="{% url 'business:reports' ws=ws %}" {% if name == "business:reports" %}aria-current="page"{% endif %}>{% icon "chart-column" "h-4 w-4" %}<span class="flex-1">Informes</span></a>
+        {% endif %}
+      {% else %}
+        <a class="side-link" href="{% url 'ledger:movements' ws=ws %}" {% if "ledger:" in name %}aria-current="page"{% endif %}>{% icon "arrow-left-right" "h-4 w-4" %}<span class="flex-1">Movimientos</span></a>
+        <a class="side-link" href="{% url 'planning:index' ws=ws %}" {% if "planning:" in name %}aria-current="page"{% endif %}>{% icon "piggy-bank" "h-4 w-4" %}<span class="flex-1">Presupuesto y metas</span></a>
+        <a class="side-link" href="{% url 'receipts:index' ws=ws %}" {% if "receipts:" in name %}aria-current="page"{% endif %}>{% icon "camera" "h-4 w-4" %}<span class="flex-1">Comprobantes</span></a>
+      {% endif %}
+      {% if can_finanzas %}
+        <a class="side-link" href="{% url 'alerts:index' ws=ws %}" {% if "alerts:" in name %}aria-current="page"{% endif %}>{% icon "bell" "h-4 w-4" %}<span class="flex-1">Alertas</span>{% if new_alerts %}<span class="rounded-full bg-turquesa-400 px-1.5 text-[11px] font-bold text-marca-900" aria-label="{{ new_alerts }} nuevas">{{ new_alerts }}</span>{% endif %}</a>
+      {% endif %}
+      <button type="button" class="side-link" data-open-assistant>{% icon "sparkles" "h-4 w-4" %}<span class="flex-1">CentIA</span></button>
+      <a class="side-link" href="{% url 'espacio:settings' ws=ws %}" {% if name == "espacio:settings" or name == "espacio:team" %}aria-current="page"{% endif %}>{% icon "settings" "h-4 w-4" %}<span class="flex-1">Configuración</span></a>
+    </nav>
+  {% else %}
+    <nav class="flex-1 space-y-0.5" aria-label="Secciones">
+      <a class="side-link" href="{% url 'workspaces:selector' %}" {% if name == "workspaces:selector" %}aria-current="page"{% endif %}>{% icon "layout-dashboard" "h-4 w-4" %}<span class="flex-1">Mis espacios</span></a>
+      <a class="side-link" href="{% url 'accounts:settings' %}" {% if "accounts:" in name %}aria-current="page"{% endif %}>{% icon "shield-check" "h-4 w-4" %}<span class="flex-1">Mi cuenta y privacidad</span></a>
+    </nav>
+  {% endif %}
+
+  <form method="post" action="{% url 'account_logout' %}" data-logout>
+    {% csrf_token %}
+    <button class="side-link text-xs text-lateral-texto/60">{% icon "log-out" "h-4 w-4" %}<span class="flex-1 truncate">Cerrar sesión ({{ user.get_short_name }})</span></button>
+  </form>
+</div>
+{% endwith %}

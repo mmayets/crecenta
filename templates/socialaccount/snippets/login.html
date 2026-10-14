@@ -1,0 +1,11 @@
+{% load socialaccount %}
+{% get_providers as socialaccount_providers %}
+{% if socialaccount_providers %}
+    {% if not SOCIALACCOUNT_ONLY %}
+        <div class="mt-6 flex items-center gap-3 text-xs uppercase tracking-wide text-slate-400" role="separator">
+            <span class="h-px flex-1 bg-slate-200"></span>o<span class="h-px flex-1 bg-slate-200"></span>
+        </div>
+    {% endif %}
+    {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+    {% include "socialaccount/snippets/login_extra.html" %}
+{% endif %}

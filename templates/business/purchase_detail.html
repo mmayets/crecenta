@@ -3,7 +3,7 @@
 {% block title %}Compra · Crecenta{% endblock %}
 {% block content %}
 {% with cur=workspace.currency %}
-  <a class="underline" href="{% url 'business:purchases' ws=workspace.pk %}">← Compras</a>
+  <a class="inline-flex items-center gap-1 text-sm font-medium" href="{% url 'business:purchases' ws=workspace.pk %}">{% icon "arrow-left" "h-4 w-4" %}Compras</a>
   <h1 class="mt-2">Compra del {{ purchase.date|date:"j \d\e F" }}</h1>
   <p class="muted">{{ purchase.get_payment_display }}{% if purchase.supplier %} · {{ purchase.supplier }}{% endif %}{% if purchase.account %} · {{ purchase.account }}{% endif %}{% if purchase.ncf %} · NCF {{ purchase.ncf }}{% endif %}</p>
   <ul class="card mt-4 divide-y p-0">{% for l in lines %}<li class="flex justify-between px-4 py-3"><span>{{ l.qty|floatformat:"-3u" }} × {{ l.product.name }}</span><span class="amount">{{ l.unit_cost|money:cur }} c/u</span></li>{% endfor %}</ul>

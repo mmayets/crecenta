@@ -1,0 +1,10 @@
+{% load icons %}{% if messages %}
+  <ul class="mb-4 space-y-2" role="status">
+    {% for message in messages %}
+      <li class="card flex items-start gap-2 {% if message.level_tag == 'error' %}border-red-200 bg-red-50{% elif message.level_tag == 'success' %}border-emerald-200 bg-emerald-50{% endif %}">
+        {% if message.level_tag == "error" %}{% icon "triangle-alert" "h-5 w-5 shrink-0 text-red-700" %}{% elif message.level_tag == "success" %}{% icon "circle-check" "h-5 w-5 shrink-0 text-emerald-700" %}{% else %}{% icon "info" "h-5 w-5 shrink-0 text-marca-700" %}{% endif %}
+        <span>{{ message }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}

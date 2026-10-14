@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0f766e">
+  <meta name="theme-color" content="#10224a">
   <title>{% if saved %}Guardado en tu teléfono{% else %}Sin conexión{% endif %} · Crecenta</title>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <link rel="icon" href="{% static 'icons/favicon-32.png' %}">
@@ -12,7 +12,7 @@
 </head>
 <body class="min-h-screen">
   {% include "icons/sprite.svg" %}
-  <main class="mx-auto max-w-xl px-4 py-10 text-center">
+  <main class="mx-auto max-w-md px-4 py-16 text-center">
     {% if saved %}
       {% icon "circle-check" "mx-auto h-14 w-14 text-marca-700" %}
       <h1 class="mt-4">Lo guardamos en tu teléfono</h1>

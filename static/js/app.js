@@ -7,6 +7,19 @@ document.addEventListener("alpine:init", () => {
     close() { this.open = false; },
   }));
 
+  // Tira del asistente bajo la cabecera: se puede ocultar hasta que cambie la recomendación.
+  Alpine.data("tira", () => ({
+    hidden: false,
+    init() {
+      try { this.hidden = sessionStorage.getItem("asistente-tira") === this.$el.dataset.key; } catch (e) { /* sin almacenamiento */ }
+    },
+    get shown() { return !this.hidden; },
+    dismiss() {
+      this.hidden = true;
+      try { sessionStorage.setItem("asistente-tira", this.$el.dataset.key); } catch (e) { /* sin almacenamiento */ }
+    },
+  }));
+
   // Dictado por voz: graba, envía al servidor para transcribir y escribe el texto en un campo.
   Alpine.data("voiceRecorder", () => ({
     recording: false,
@@ -77,6 +90,31 @@ window.crecenta = {
 document.addEventListener("htmx:configRequest", (event) => {
   event.detail.headers["X-CSRFToken"] = window.crecenta.csrf();
 });
+
+// Chat del asistente: muestra siempre el último mensaje y deja el cursor listo para escribir.
+function scrollChats(event) {
+  document.querySelectorAll("[data-scroll-bottom]").forEach((el) => { el.scrollTop = el.scrollHeight; });
+  // Solo tras un turno del propio chat (otros intercambios de htmx no deben mover el cursor).
+  const chat = event && event.type === "htmx:afterSettle" && event.target.closest
+    ? event.target.closest("#asistente, #centia")
+    : null;
+  const input = chat ? chat.querySelector("textarea") : null;
+  if (input) input.focus();
+}
+// Cualquier control con data-open-assistant abre el panel flotante del asistente.
+document.addEventListener("click", (event) => {
+  if (event.target.closest("[data-open-assistant]")) {
+    window.dispatchEvent(new CustomEvent("abrir-asistente"));
+  }
+});
+
+// Formularios que se vacían al enviarse bien (la pregunta al asistente).
+document.addEventListener("htmx:afterRequest", (event) => {
+  const form = event.target;
+  if (form.matches && form.matches("form[data-reset]") && event.detail.successful) form.reset();
+});
+document.addEventListener("DOMContentLoaded", scrollChats);
+document.addEventListener("htmx:afterSettle", scrollChats);
 
 /* ---------------------------------------------------------------- PWA y modo sin conexión */
 (function () {

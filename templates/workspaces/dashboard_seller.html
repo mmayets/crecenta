@@ -1,23 +1,30 @@
 {% extends "base.html" %}
 {% load icons money %}
 {% block title %}Inicio · {{ workspace.name }} · Crecenta{% endblock %}
+{% block main_width %}max-w-4xl{% endblock %}
 {% block content %}
 {% with cur=workspace.currency %}
-  <p class="muted">Hola, {{ user.get_short_name|default:user.email }}</p>
-  <h1>{{ workspace.name }}</h1>
-  <section class="mt-4 grid grid-cols-2 gap-3" aria-label="Ventas de hoy">
-    <div class="card"><p class="text-sm text-slate-600">Ventas de hoy</p><p class="amount mt-2 text-xl" data-testid="ventas-hoy">{{ d.sales_today_total|money:cur }}</p><p class="muted">{{ d.sales_today_count }} venta{{ d.sales_today_count|pluralize }}</p></div>
-    <div class="card"><p class="text-sm text-slate-600">Vendido por ti</p><p class="amount mt-2 text-xl">{{ d.my_sales_today_total|money:cur }}</p></div>
-  </section>
-  <div class="mt-4 grid grid-cols-2 gap-2">
-    <a class="btn-primary" href="{% url 'business:sale_new' ws=workspace.pk %}">{% icon "shopping-cart" "h-5 w-5" %}Vender</a>
-    <a class="btn-secondary" href="{% url 'business:receivables' ws=workspace.pk %}">{% icon "hand-coins" "h-5 w-5" %}Cobrar</a>
+  <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1>{{ workspace.name }}</h1>
+      <p class="mt-1 text-sm text-slate-500">Hola, {{ user.get_short_name|default:user.email }}</p>
+    </div>
+    <div class="grid w-full grid-cols-2 gap-2 sm:w-auto">
+      <a class="btn-primary" href="{% url 'business:sale_new' ws=workspace.pk %}">{% icon "shopping-cart" "h-5 w-5" %}Vender</a>
+      <a class="btn-secondary" href="{% url 'business:receivables' ws=workspace.pk %}">{% icon "hand-coins" "h-5 w-5" %}Cobrar</a>
+    </div>
   </div>
-  {% if d.low_stock %}
-    <section class="card mt-4 text-sm"><h2 class="text-base">Por agotarse</h2><ul class="mt-2 space-y-1">{% for name, stock in d.low_stock %}<li class="flex justify-between"><span>{{ name }}</span><span>{{ stock|floatformat:"-3u" }}</span></li>{% endfor %}</ul></section>
-  {% endif %}
-  <section class="mt-4"><h2>Por cobrar</h2>
-    <ul class="card mt-2 divide-y p-0 text-sm">{% for r in d.receivables %}<li class="flex items-center justify-between gap-2 px-4 py-2"><span class="truncate">{{ r.customer|default:r.concept }}{% if r.due_date %} · {{ r.due_date|date:"j/n" }}{% endif %}</span><a class="amount" href="{% url 'business:collect' ws=workspace.pk debt_id=r.pk %}">{{ r.balance|money:cur }}</a></li>{% empty %}<li class="px-4 py-3 muted">Nada pendiente.</li>{% endfor %}</ul>
+  <section class="grid gap-4 sm:grid-cols-2" aria-label="Ventas de hoy">
+    <div class="card-hero"><p class="stat-label">{% icon "shopping-cart" "h-4 w-4" %}Ventas de hoy</p><p class="hero-value" data-testid="ventas-hoy">{{ d.sales_today_total|money:cur }}</p><p class="stat-note">{{ d.sales_today_count }} venta{{ d.sales_today_count|pluralize }}</p></div>
+    <div class="card"><p class="stat-label">{% icon "user" "h-4 w-4" %}Vendido por ti</p><p class="stat-value">{{ d.my_sales_today_total|money:cur }}</p></div>
   </section>
+  <div class="mt-6 grid gap-6 lg:grid-cols-2">
+    {% if d.low_stock %}
+      <section class="card text-sm md:p-5"><h2 class="text-base">Por agotarse</h2><ul class="mt-3 space-y-2">{% for name, stock in d.low_stock %}<li class="flex justify-between"><span>{{ name }}</span><span class="amount">{{ stock|floatformat:"-3u" }}</span></li>{% endfor %}</ul></section>
+    {% endif %}
+    <section class="card p-0 text-sm"><h2 class="px-4 pt-4 text-base md:px-5">Por cobrar</h2>
+      <ul class="mt-2 divide-y divide-slate-200">{% for r in d.receivables %}<li class="flex items-center justify-between gap-2 px-4 py-2 md:px-5"><span class="truncate">{{ r.customer|default:r.concept }}{% if r.due_date %} · {{ r.due_date|date:"j/n" }}{% endif %}</span><a class="amount" href="{% url 'business:collect' ws=workspace.pk debt_id=r.pk %}">{{ r.balance|money:cur }}</a></li>{% empty %}<li class="muted px-4 py-3 md:px-5">Nada pendiente.</li>{% endfor %}</ul>
+    </section>
+  </div>
 {% endwith %}
 {% endblock %}

@@ -1,116 +1,127 @@
 {% extends "base.html" %}
 {% load icons money %}
 {% block title %}Inicio · {{ workspace.name }} · Crecenta{% endblock %}
+{% block main_width %}max-w-6xl{% endblock %}
 {% block content %}
 {% with cur=workspace.currency ind=d.snapshot.indicators cash=d.snapshot.cash %}
-  <p class="muted">Hola, {{ user.get_short_name }}</p>
-  <h1>¿Cómo va {{ workspace.name }}?</h1>
+  <div class="mb-6">
+    <h1>¿Cómo va {{ workspace.name }}?</h1>
+    <p class="mt-1 max-w-2xl text-sm text-slate-500">Hola, {{ user.get_short_name }}.{% if d.ready %} Del {{ ind.start|date:"j \d\e F" }} al {{ d.today|date:"j \d\e F" }}.{% endif %}</p>
+  </div>
 
   {% if not d.ready %}
-    <section class="card mt-5">
-      <div class="flex items-center gap-3">{% icon "sparkles" "h-6 w-6 text-marca-700" %}<h2>Conoce lo que ganas de verdad</h2></div>
+    <section class="card mb-6 max-w-2xl md:p-6">
+      <div class="flex items-center gap-3">{% icon "sparkles" "h-6 w-6 text-turquesa-500" %}<h2>Conoce lo que ganas de verdad</h2></div>
       <p class="mt-2 text-slate-600">Conoce tus costos, fija precios rentables y descubre cuánto estás ganando realmente.</p>
       <div class="bar mt-3"><span style="width: {{ d.profile.percent }}%"></span></div>
       <p class="muted mt-1">Tu negocio está al {{ d.profile.percent }}%</p>
-      <a class="btn-primary mt-4 w-full" href="{% url 'onboarding:index' ws=workspace.pk %}">Completar los datos del negocio</a>
+      <a class="btn-primary mt-4 w-full sm:w-auto" href="{% url 'onboarding:index' ws=workspace.pk %}">Completar los datos del negocio</a>
     </section>
-  {% else %}
-    <p class="muted mt-1">Del {{ ind.start|date:"j \d\e F" }} al {{ d.today|date:"j \d\e F" }}</p>
   {% endif %}
 
-  <section class="mt-4 grid grid-cols-2 gap-3" aria-label="Las cuatro preguntas">
-    <a class="card text-slate-800 no-underline" href="{% url 'business:sales' ws=workspace.pk %}">
-      <p class="flex items-center gap-1 text-sm text-slate-600">{% icon "trending-up" "h-4 w-4" %}¿Cuánto vendí?</p>
-      <p class="amount mt-2 text-xl" data-testid="ventas">{{ ind.sales|money:cur }}</p>
-      <p class="muted">sin ITBIS{% if ind.tax_collected %} · ITBIS cobrado {{ ind.tax_collected|money:cur }}{% endif %}</p>
+  <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Las cuatro preguntas">
+    <a class="card-hero {% if cash.reserve.available < 0 %}alerta{% endif %} block no-underline" href="{% url 'business:owner' ws=workspace.pk %}">
+      <p class="stat-label">{% icon "banknote" "h-4 w-4" %}¿Cuánto dinero puedo utilizar?</p>
+      <p class="hero-value" data-testid="utilizable">{{ d.usable|money:cur }}</p>
+      <p class="stat-note">de {{ cash.cash_now|money:cur }} en caja</p>
+    </a>
+    <a class="card block text-tinta no-underline" href="{% url 'business:sales' ws=workspace.pk %}">
+      <p class="stat-label">{% icon "trending-up" "h-4 w-4" %}¿Cuánto vendí?</p>
+      <p class="stat-value" data-testid="ventas">{{ ind.sales|money:cur }}</p>
+      <p class="stat-note">sin ITBIS{% if ind.tax_collected %} · ITBIS cobrado {{ ind.tax_collected|money:cur }}{% endif %}</p>
     </a>
     <div class="card">
-      <p class="flex items-center gap-1 text-sm text-slate-600">{% icon "package" "h-4 w-4" %}¿Cuánto me costó vender?</p>
-      <p class="amount mt-2 text-xl" data-testid="costo">{{ ind.cogs|money:cur }}</p>
-      <p class="muted">costo de lo vendido</p>
+      <p class="stat-label">{% icon "package" "h-4 w-4" %}¿Cuánto me costó vender?</p>
+      <p class="stat-value" data-testid="costo">{{ ind.cogs|money:cur }}</p>
+      <p class="stat-note">costo de lo vendido</p>
     </div>
     <div class="card">
-      <p class="flex items-center gap-1 text-sm text-slate-600">{% icon "hand-coins" "h-4 w-4" %}¿Cuánto gané?</p>
-      <p class="amount mt-2 text-xl {% if ind.operating_result < 0 %}text-red-700{% endif %}" data-testid="ganancia">{{ ind.operating_result|money:cur }}</p>
-      <p class="muted">bruta {{ ind.gross_profit|money:cur }} ({{ ind.gross_margin_pct|pct }}) − gastos {{ ind.operating_expenses|money:cur }}</p>
+      <p class="stat-label">{% icon "hand-coins" "h-4 w-4" %}¿Cuánto gané?</p>
+      <p class="stat-value {% if ind.operating_result < 0 %}text-red-700{% endif %}" data-testid="ganancia">{{ ind.operating_result|money:cur }}</p>
+      <p class="stat-note">bruta {{ ind.gross_profit|money:cur }} ({{ ind.gross_margin_pct|pct }}) − gastos {{ ind.operating_expenses|money:cur }}</p>
     </div>
-    <a class="card text-slate-800 no-underline {% if cash.reserve.available < 0 %}border-red-200 bg-red-50{% else %}border-marca-200 bg-marca-50{% endif %}" href="{% url 'business:owner' ws=workspace.pk %}">
-      <p class="flex items-center gap-1 text-sm text-slate-700">{% icon "banknote" "h-4 w-4" %}¿Cuánto dinero puedo utilizar?</p>
-      <p class="amount mt-2 text-xl {% if cash.reserve.available < 0 %}text-red-700{% else %}text-marca-800{% endif %}" data-testid="utilizable">{{ d.usable|money:cur }}</p>
-      <p class="muted">de {{ cash.cash_now|money:cur }} en caja</p>
-    </a>
   </section>
-  <details class="card mt-3 text-sm">
-    <summary class="cursor-pointer font-medium">Ventas, ganancia y efectivo no son lo mismo</summary>
-    <dl class="mt-3 space-y-1">
-      <div class="flex justify-between"><dt>Entró a tus cuentas este mes</dt><dd class="amount">{{ ind.cash_in|money:cur }}</dd></div>
-      <div class="flex justify-between"><dt>Salió de tus cuentas</dt><dd class="amount">{{ ind.cash_out|money:cur }}</dd></div>
-      <div class="flex justify-between border-t pt-1 font-semibold"><dt>Flujo de efectivo</dt><dd class="amount">{{ ind.net_cash_flow|money:cur }}</dd></div>
-      <div class="flex justify-between pt-2"><dt>Efectivo hoy</dt><dd class="amount">{{ cash.cash_now|money:cur }}</dd></div>
-      <div class="flex justify-between"><dt>− Pagos de los próximos 30 días</dt><dd class="amount">{{ cash.reserve.committed|money:cur }}</dd></div>
-      {% if cash.reserve.reserve %}<div class="flex justify-between"><dt>− Reserva que fijaste</dt><dd class="amount">{{ cash.reserve.reserve|money:cur }}</dd></div>{% endif %}
-      <div class="flex justify-between border-t pt-1 font-semibold"><dt>Puedes utilizar</dt><dd class="amount">{{ d.usable|money:cur }}</dd></div>
-      {% if ind.inventory_value %}<div class="flex justify-between pt-2"><dt>Mercancía en inventario (al costo)</dt><dd class="amount">{{ ind.inventory_value|money:cur }}</dd></div>{% endif %}
-      {% if ind.shrinkage %}<div class="flex justify-between"><dt>Mermas y ajustes del mes</dt><dd class="amount">{{ ind.shrinkage|money:cur }}</dd></div>{% endif %}
-    </dl>
-    <p class="muted mt-2">Las ventas a crédito cuentan como venta el día que se hacen, pero el dinero entra cuando cobras.</p>
-    {% for n in ind.notes %}<p class="mt-1 flex gap-2 text-amber-800">{% icon "triangle-alert" "h-4 w-4 shrink-0" %}{{ n }}</p>{% endfor %}
+  <details class="group mt-2 text-xs text-slate-500">
+    <summary class="flex cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden">{% icon "chevron-right" "h-3.5 w-3.5 transition group-open:rotate-90" %}Ventas, ganancia y efectivo no son lo mismo</summary>
+    <div class="card mt-2 max-w-xl text-sm text-tinta">
+      <dl class="space-y-1">
+        <div class="flex justify-between"><dt>Entró a tus cuentas este mes</dt><dd class="amount">{{ ind.cash_in|money:cur }}</dd></div>
+        <div class="flex justify-between"><dt>Salió de tus cuentas</dt><dd class="amount">{{ ind.cash_out|money:cur }}</dd></div>
+        <div class="flex justify-between border-t pt-1 font-semibold"><dt>Flujo de efectivo</dt><dd class="amount">{{ ind.net_cash_flow|money:cur }}</dd></div>
+        <div class="flex justify-between pt-2"><dt>Efectivo hoy</dt><dd class="amount">{{ cash.cash_now|money:cur }}</dd></div>
+        <div class="flex justify-between"><dt>− Pagos de los próximos 30 días</dt><dd class="amount">{{ cash.reserve.committed|money:cur }}</dd></div>
+        {% if cash.reserve.reserve %}<div class="flex justify-between"><dt>− Reserva que fijaste</dt><dd class="amount">{{ cash.reserve.reserve|money:cur }}</dd></div>{% endif %}
+        <div class="flex justify-between border-t pt-1 font-semibold"><dt>Puedes utilizar</dt><dd class="amount">{{ d.usable|money:cur }}</dd></div>
+        {% if ind.inventory_value %}<div class="flex justify-between pt-2"><dt>Mercancía en inventario (al costo)</dt><dd class="amount">{{ ind.inventory_value|money:cur }}</dd></div>{% endif %}
+        {% if ind.shrinkage %}<div class="flex justify-between"><dt>Mermas y ajustes del mes</dt><dd class="amount">{{ ind.shrinkage|money:cur }}</dd></div>{% endif %}
+      </dl>
+      <p class="muted mt-2">Las ventas a crédito cuentan como venta el día que se hacen, pero el dinero entra cuando cobras.</p>
+      {% for n in ind.notes %}<p class="mt-1 flex gap-2 text-amber-800">{% icon "triangle-alert" "h-4 w-4 shrink-0" %}{{ n }}</p>{% endfor %}
+    </div>
   </details>
 
-  {% if d.pending_proposal %}
-    <a href="{% url 'planning:detail' ws=workspace.pk plan_id=d.pending_proposal.pk %}" class="card mt-3 flex items-center gap-3 text-slate-800 no-underline">{% icon "target" "h-5 w-5 shrink-0 text-marca-700" %}<span class="text-sm">Tienes una propuesta de plan por revisar.</span>{% icon "chevron-right" "ml-auto h-4 w-4" %}</a>
-  {% elif d.accepted_plan %}
-    <a href="{% url 'planning:detail' ws=workspace.pk plan_id=d.accepted_plan.pk %}" class="card mt-3 flex items-center gap-3 text-slate-800 no-underline">{% icon "target" "h-5 w-5 shrink-0 text-marca-700" %}<span class="text-sm">Meta del mes: vender {{ d.accepted_plan.computed.ventas|money:cur }} y ganar {{ d.accepted_plan.computed.resultado|money:cur }}.</span>{% icon "chevron-right" "ml-auto h-4 w-4" %}</a>
-  {% elif d.ready %}
-    <a href="{% url 'planning:index' ws=workspace.pk %}" class="card mt-3 flex items-center gap-3 text-slate-800 no-underline">{% icon "target" "h-5 w-5 shrink-0 text-marca-700" %}<span class="text-sm">Haz el plan del mes de tu negocio.</span>{% icon "chevron-right" "ml-auto h-4 w-4" %}</a>
-  {% endif %}
-
-  {% if d.alerts %}
-    <section class="mt-6" aria-labelledby="t-alertas">
-      <div class="flex items-center justify-between"><h2 id="t-alertas">Qué debo ajustar</h2><a class="text-sm" href="{% url 'alerts:index' ws=workspace.pk %}">Ver todas</a></div>
-      <ul class="mt-2 space-y-2">
+  <div class="mt-6 grid gap-4 lg:grid-cols-3">
+    <section class="card md:p-5 lg:col-span-2" aria-labelledby="t-acciones">
+      <div class="mb-4 flex items-center justify-between gap-2"><h2 id="t-acciones" class="text-base">Acciones recomendadas</h2><a class="text-sm" href="{% url 'alerts:index' ws=workspace.pk %}">Ver todas</a></div>
+      <ul class="space-y-3">
+        <li class="rounded-lg border border-slate-200 p-3">
+          <div class="flex flex-wrap items-center gap-2"><span class="badge-info">{% icon "info" "h-3.5 w-3.5" %}Plan</span>
+            {% if d.pending_proposal %}<a class="font-semibold text-tinta" href="{% url 'planning:detail' ws=workspace.pk plan_id=d.pending_proposal.pk %}">Tienes una propuesta de plan por revisar.</a>
+            {% elif d.accepted_plan %}<a class="font-semibold text-tinta" href="{% url 'planning:detail' ws=workspace.pk plan_id=d.accepted_plan.pk %}">Meta del mes: vender {{ d.accepted_plan.computed.ventas|money:cur }} y ganar {{ d.accepted_plan.computed.resultado|money:cur }}.</a>
+            {% else %}<a class="font-semibold text-tinta" href="{% url 'planning:index' ws=workspace.pk %}">Haz el plan del mes de tu negocio.</a>{% endif %}
+          </div>
+        </li>
         {% for a in d.alerts %}
-          <li class="card flex gap-3">{% if a.severity == "alta" %}{% icon "triangle-alert" "h-5 w-5 shrink-0 text-red-600" %}{% else %}{% icon "bell" "h-5 w-5 shrink-0 text-amber-600" %}{% endif %}<div><p class="font-semibold">{{ a.title }}</p><p class="text-sm text-slate-600">{{ a.message|truncatewords:28 }}</p></div></li>
+          <li class="rounded-lg border border-slate-200 p-3">
+            <div class="flex flex-wrap items-center gap-2">
+              {% if a.severity == "alta" %}<span class="badge-alta">{% icon "triangle-alert" "h-3.5 w-3.5" %}Urgente</span>{% elif a.severity == "info" %}<span class="badge-info">{% icon "info" "h-3.5 w-3.5" %}Aviso</span>{% else %}<span class="badge-media">{% icon "triangle-alert" "h-3.5 w-3.5" %}Atención</span>{% endif %}
+              <span class="font-semibold">{{ a.title }}</span>
+            </div>
+            <p class="mt-1 text-sm text-slate-500">{{ a.message|truncatewords:28 }}</p>
+          </li>
         {% endfor %}
       </ul>
+      <button type="button" class="mt-4 flex w-full items-center gap-2 rounded-lg bg-turquesa-100 p-3 text-left text-sm font-medium text-turquesa-800" data-open-assistant>
+        {% icon "sparkles" "h-4 w-4 shrink-0" %}Pregúntale a CentIA: «¿Cómo registro una venta a crédito?»{% icon "arrow-right" "ml-auto h-4 w-4 shrink-0" %}
+      </button>
     </section>
-  {% endif %}
 
-  <section class="mt-6 grid gap-3 sm:grid-cols-2" aria-label="Pendientes">
-    <div class="card">
-      <div class="flex items-center justify-between"><h2 class="text-base">Por cobrar</h2><a class="text-sm" href="{% url 'business:receivables' ws=workspace.pk %}">{{ ind.receivables|money:cur }}</a></div>
-      <ul class="mt-2 space-y-1 text-sm">
-        {% for r in d.receivables %}<li class="flex justify-between gap-2"><span class="truncate">{{ r.customer|default:r.concept }}{% if r.due_date %} · {{ r.due_date|date:"j/n" }}{% endif %}{% if r.due_date and r.due_date < d.today %} <span class="text-red-700">vencida</span>{% endif %}</span><span class="amount">{{ r.balance|money:cur }}</span></li>{% empty %}<li class="muted">Nada pendiente.</li>{% endfor %}
-      </ul>
+    <div class="space-y-4">
+      <section class="card md:p-5" aria-label="Por cobrar">
+        <div class="mb-4 flex items-center justify-between gap-2"><h2 class="text-base">Por cobrar</h2><a class="amount text-sm" href="{% url 'business:receivables' ws=workspace.pk %}">{{ ind.receivables|money:cur }}</a></div>
+        <ul class="space-y-3 text-sm">
+          {% for r in d.receivables %}<li class="flex items-center justify-between gap-2"><div class="min-w-0"><p class="truncate font-medium">{{ r.customer|default:r.concept }}</p><p class="text-xs text-slate-500">{% if r.due_date %}{{ r.due_date|date:"j M" }}{% else %}Sin fecha{% endif %}</p></div><div class="text-right"><p class="amount">{{ r.balance|money:cur }}</p>{% if r.due_date and r.due_date < d.today %}<span class="badge-alta">{% icon "triangle-alert" "h-3.5 w-3.5" %}vencida</span>{% endif %}</div></li>{% empty %}<li class="muted">Nada pendiente.</li>{% endfor %}
+        </ul>
+      </section>
+      <section class="card md:p-5" aria-label="Por pagar">
+        <div class="mb-4 flex items-center justify-between gap-2"><h2 class="text-base">Por pagar</h2><a class="amount text-sm" href="{% url 'business:payables' ws=workspace.pk %}">{{ ind.payables|money:cur }}</a></div>
+        <ul class="space-y-3 text-sm">
+          {% for p in d.payables %}<li class="flex items-center justify-between gap-2"><div class="min-w-0"><p class="truncate font-medium">{{ p.supplier|default:p.concept }}</p><p class="text-xs text-slate-500">{% if p.due_date %}{{ p.due_date|date:"j M" }}{% else %}Sin fecha{% endif %}</p></div><div class="text-right"><p class="amount">{{ p.balance|money:cur }}</p>{% if p.due_date and p.due_date < d.today %}<span class="badge-alta">{% icon "triangle-alert" "h-3.5 w-3.5" %}vencida</span>{% endif %}</div></li>{% empty %}<li class="muted">Nada pendiente.</li>{% endfor %}
+        </ul>
+      </section>
     </div>
-    <div class="card">
-      <div class="flex items-center justify-between"><h2 class="text-base">Por pagar</h2><a class="text-sm" href="{% url 'business:payables' ws=workspace.pk %}">{{ ind.payables|money:cur }}</a></div>
-      <ul class="mt-2 space-y-1 text-sm">
-        {% for p in d.payables %}<li class="flex justify-between gap-2"><span class="truncate">{{ p.supplier|default:p.concept }}{% if p.due_date %} · {{ p.due_date|date:"j/n" }}{% endif %}{% if p.due_date and p.due_date < d.today %} <span class="text-red-700">vencida</span>{% endif %}</span><span class="amount">{{ p.balance|money:cur }}</span></li>{% empty %}<li class="muted">Nada pendiente.</li>{% endfor %}
-      </ul>
-    </div>
-  </section>
+  </div>
 
   {% if d.matrix %}
-    <section class="mt-6" aria-labelledby="t-productos">
-      <div class="flex items-center justify-between"><h2 id="t-productos">Tus productos este mes</h2><a class="text-sm" href="{% url 'business:products' ws=workspace.pk %}">Precios y costos</a></div>
-      <ul class="card mt-2 divide-y p-0">
+    <section class="card mt-4 md:p-5" aria-labelledby="t-productos">
+      <div class="mb-2 flex items-center justify-between gap-2"><h2 id="t-productos" class="text-base">Tus productos este mes</h2><a class="text-sm" href="{% url 'business:products' ws=workspace.pk %}">Precios y costos</a></div>
+      <ul class="divide-y divide-slate-200">
         {% for c in d.matrix %}
-          <li class="px-4 py-3">
-            <div class="flex justify-between gap-2"><span class="font-medium">{{ c.stats.name }}</span><span class="amount">{{ c.stats.gross_profit|money:cur }}</span></div>
-            <p class="muted">{{ c.stats.units|floatformat:"-2u" }} vendidos · margen {{ c.margin_pct|pct }} · {{ c.profit_share_pct|pct }} de la ganancia</p>
-            {% if c.quadrant != "estrella" %}<p class="text-sm text-slate-600">{{ c.advice }}</p>{% endif %}
+          <li class="py-3">
+            <div class="flex justify-between gap-2 text-sm"><span class="font-medium">{{ c.stats.name }}</span><span class="amount">{{ c.stats.gross_profit|money:cur }}</span></div>
+            <p class="text-xs text-slate-500">{{ c.stats.units|floatformat:"-2u" }} vendidos · margen {{ c.margin_pct|pct }} · {{ c.profit_share_pct|pct }} de la ganancia</p>
+            {% if c.quadrant != "estrella" %}<p class="mt-1 text-sm text-slate-600">{{ c.advice }}</p>{% endif %}
           </li>
         {% endfor %}
       </ul>
     </section>
   {% endif %}
 
-  <nav class="mt-6 grid grid-cols-2 gap-2 text-sm" aria-label="Más">
-    <a class="btn-secondary" href="{% url 'business:reports' ws=workspace.pk %}">{% icon "trending-up" "h-5 w-5" %}Reportes</a>
+  <nav class="mt-4 grid grid-cols-2 gap-2 lg:hidden" aria-label="Más">
+    <a class="btn-secondary" href="{% url 'business:reports' ws=workspace.pk %}">{% icon "chart-column" "h-5 w-5" %}Informes</a>
     <a class="btn-secondary" href="{% url 'business:inventory' ws=workspace.pk %}">{% icon "package" "h-5 w-5" %}Inventario</a>
-    <a class="btn-secondary" href="{% url 'ledger:movements' ws=workspace.pk %}">{% icon "list" "h-5 w-5" %}Movimientos</a>
-    <a class="btn-secondary" href="{% url 'business:owner' ws=workspace.pk %}">{% icon "arrow-left-right" "h-5 w-5" %}Retiros y aportes</a>
+    <a class="btn-secondary" href="{% url 'ledger:movements' ws=workspace.pk %}">{% icon "arrow-left-right" "h-5 w-5" %}Movimientos</a>
+    <a class="btn-secondary" href="{% url 'business:owner' ws=workspace.pk %}">{% icon "banknote" "h-5 w-5" %}Retiros y aportes</a>
   </nav>
 {% endwith %}
 {% endblock %}

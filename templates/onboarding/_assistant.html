@@ -1,0 +1,121 @@
+{% load icons %}{# Panel del asistente: chat + borrador. htmx lo reemplaza entero en cada turno. #}
+<div id="asistente" class="grid gap-6 lg:grid-cols-3">
+  <section class="card flex flex-col p-0 lg:col-span-2" aria-label="Conversación">
+    <ol class="max-h-[60vh] min-h-[16rem] flex-1 space-y-3 overflow-y-auto p-4 md:p-5" data-scroll-bottom aria-live="polite">
+      {% for m in session.messages %}
+        {% if m.rol == "usuario" %}
+          <li class="flex justify-end"><p class="max-w-[85%] whitespace-pre-line rounded-2xl rounded-br-sm bg-marca-700 px-3 py-2 text-sm text-white">{{ m.texto }}</p></li>
+        {% else %}
+          <li class="flex items-start gap-2">
+            <span class="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-turquesa-100 text-turquesa-800">{% icon "sparkles" "h-4 w-4" %}</span>
+            <div class="max-w-[85%]">
+              <p class="whitespace-pre-line rounded-2xl rounded-tl-sm bg-slate-100 px-3 py-2 text-sm">{{ m.texto }}</p>
+              {% if m.enlaces %}
+                <div class="mt-2 flex flex-wrap gap-2">
+                  {% for link in m.enlaces %}<a class="btn-secondary btn-sm" href="{{ link.url }}">{{ link.texto }}</a>{% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ol>
+
+    {% if stage != "fin" %}
+      <div class="border-t border-slate-200 p-4 md:p-5">
+        {% if needs_ai %}
+          <form method="post" action="{% url 'asistente:enable_ai' %}" hx-post="{% url 'asistente:enable_ai' %}" hx-target="#asistente" hx-swap="outerHTML" class="card-tip mb-3 text-sm">
+            {% csrf_token %}
+            <p>Para entender lo que escribas necesito tu permiso para usar IA: se envía tu texto (sin números de cuenta ni documentos) a un proveedor externo. Puedes desactivarlo en Configuración.</p>
+            <button class="btn-primary btn-sm mt-2">Permitir el uso de IA</button>
+          </form>
+        {% endif %}
+        {% if quick_replies %}
+          <form method="post" action="{% url 'asistente:chat' %}" hx-post="{% url 'asistente:chat' %}" hx-target="#asistente" hx-swap="outerHTML" class="mb-3 flex flex-wrap gap-2">
+            {% csrf_token %}
+            {% for option in quick_replies %}<button name="texto" value="{{ option }}" class="btn-secondary btn-sm">{{ option }}</button>{% endfor %}
+          </form>
+        {% endif %}
+        <form method="post" action="{% url 'asistente:chat' %}" hx-post="{% url 'asistente:chat' %}" hx-target="#asistente" hx-swap="outerHTML" hx-disabled-elt="find button[type=submit]" class="space-y-2">
+          {% csrf_token %}
+          <label for="id_texto" class="sr-only">Tu mensaje</label>
+          <textarea id="id_texto" name="texto" rows="{% if stage == 'llenado' %}4{% else %}2{% endif %}" maxlength="{% if stage == 'llenado' %}4000{% else %}600{% endif %}" required autofocus placeholder="{% if stage == 'llenado' %}Ej.: cobro 50 mil el día 30, pago 18 mil de alquiler el 5…{% elif stage == 'resumen' %}Escribe qué cambiar, o pulsa «Crear»{% else %}Escribe tu respuesta…{% endif %}"></textarea>
+          <div class="flex gap-2">
+            <button type="submit" class="btn-primary flex-1">Enviar</button>
+            <div x-data="voiceRecorder" data-url="{% url 'asistente:voice' %}" data-target="id_texto">
+              <button type="button" class="btn-secondary" x-show="supported" @click="toggle" :disabled="busy">{% icon "mic" "h-5 w-5" %}<span x-text="label">Dictar</span></button>
+              <p class="text-xs text-red-700" x-show="error" x-text="error"></p>
+            </div>
+          </div>
+        </form>
+      </div>
+    {% endif %}
+  </section>
+
+  <aside class="space-y-4" aria-label="Tu espacio">
+    {% if stage == "chat" or stage == "resumen" %}
+      <section class="card md:p-5">
+        <h2 class="text-base">Borrador</h2>
+        <dl class="mt-3 space-y-2 text-sm">
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">Para organizar</dt><dd class="text-right font-medium" data-testid="borrador-uso">{{ usage_label|default:"Por definir" }}</dd></div>
+          {% if draft.uso == "negocio" or draft.uso == "ambos" or draft.nombre_negocio %}
+            <div class="flex justify-between gap-3"><dt class="text-slate-500">Negocio</dt><dd class="text-right font-medium" data-testid="borrador-negocio">{{ draft.nombre_negocio|default:"Por definir" }}</dd></div>
+          {% endif %}
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">Moneda</dt><dd class="text-right font-medium" data-testid="borrador-moneda">{{ currency_label|default:"Por definir" }}</dd></div>
+          {% if business_currency_label %}
+            <div class="flex justify-between gap-3"><dt class="text-slate-500">Moneda del negocio</dt><dd class="text-right font-medium">{{ business_currency_label }}</dd></div>
+          {% endif %}
+        </dl>
+      </section>
+    {% endif %}
+
+    {% if stage == "resumen" %}
+      <section class="card-hero" data-testid="resumen">
+        <p class="text-xs uppercase tracking-wide opacity-80">Voy a crear</p>
+        <ul class="mt-2 space-y-2">
+          {% for p in proposal %}
+            <li><p class="font-display text-lg font-semibold">{{ p.nombre }}</p><p class="text-xs opacity-80">{{ p.tipo }} · {{ p.moneda }}</p></li>
+          {% endfor %}
+        </ul>
+        <form method="post" action="{% url 'asistente:create' %}" class="mt-4">
+          {% csrf_token %}
+          <button class="btn w-full bg-turquesa-400 text-lateral hover:opacity-90" data-testid="crear">{% icon "circle-check" "h-5 w-5" %}Crear</button>
+        </form>
+      </section>
+    {% endif %}
+
+    {% if stage == "llenado" or stage == "fin" %}
+      <section class="card md:p-5">
+        <h2 class="text-base">Tus espacios nuevos</h2>
+        <ul class="mt-3 space-y-3 text-sm">
+          {% for w in created %}
+            <li class="flex items-center gap-3">
+              <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-turquesa-100 text-turquesa-800">{% if w.is_business %}{% icon "briefcase" "h-4 w-4" %}{% else %}{% icon "wallet" "h-4 w-4" %}{% endif %}</span>
+              <span class="min-w-0 flex-1"><a class="block truncate font-semibold" href="{% url 'espacio:dashboard' ws=w.pk %}">{{ w.name }}</a><span class="block text-xs text-slate-500">{{ w.get_kind_display }} · {{ w.currency }}{% if current and current.pk == w.pk %} · en curso{% endif %}</span></span>
+            </li>
+          {% endfor %}
+        </ul>
+        {% if current %}
+          <div class="mt-4 grid gap-2">
+            <a class="btn-secondary btn-sm" href="{% url 'onboarding:index' ws=current.pk %}">Formulario paso a paso</a>
+            <form method="post" action="{% url 'asistente:skip' %}" hx-post="{% url 'asistente:skip' %}" hx-target="#asistente" hx-swap="outerHTML">
+              {% csrf_token %}
+              <button class="btn-secondary btn-sm w-full">Dejar «{{ current.name }}» para después</button>
+            </form>
+          </div>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    <section class="text-xs text-slate-500">
+      {% if ai_off and stage != "llenado" %}<p class="mb-2">Sin el uso de IA activado entiendo respuestas sencillas; con los botones siempre funciona.</p>{% endif %}
+      <div class="flex flex-wrap gap-x-4 gap-y-1">
+        {% if stage == "chat" or stage == "resumen" %}<a class="underline" href="{% url 'workspaces:usage' %}">Prefiero el formulario</a>{% endif %}
+        <form method="post" action="{% url 'asistente:restart' %}" hx-post="{% url 'asistente:restart' %}" hx-target="#asistente" hx-swap="outerHTML">
+          {% csrf_token %}
+          <button class="underline">Empezar de nuevo</button>
+        </form>
+      </div>
+    </section>
+  </aside>
+</div>

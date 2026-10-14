@@ -2,16 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tipografías servidas localmente (sin CDN): Sora para títulos y cifras, Manrope para el texto. */
+@font-face {
+  font-family: "Sora";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("../fonts/sora-latin-wght-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("../fonts/manrope-latin-wght-normal.woff2") format("woff2");
+}
+
 @layer base {
   html { -webkit-tap-highlight-color: transparent; }
-  body { @apply bg-slate-50 text-slate-900 antialiased; }
-  h1 { @apply text-2xl font-bold tracking-tight; }
+  body { @apply bg-fondo font-sans text-tinta antialiased; }
+  h1 { @apply font-display text-2xl font-semibold tracking-tight md:text-3xl; }
   h2 { @apply text-lg font-semibold; }
   a { @apply text-marca-700; }
-  label { @apply mb-1 block text-sm font-medium text-slate-700; }
+  label { @apply mb-1 block text-sm font-medium text-tinta; }
   input[type="text"], input[type="email"], input[type="password"], input[type="number"],
   input[type="date"], input[type="file"], select, textarea {
-    @apply w-full rounded-xl border-slate-300 bg-white text-base shadow-sm focus:border-marca-600 focus:ring-marca-600;
+    @apply w-full rounded-lg border-slate-300 bg-white text-base shadow-sm focus:border-marca-600 focus:ring-marca-600;
+  }
+  /* Selector de archivos: el botón «Examinar» del navegador con el estilo de la app. */
+  input[type="file"] {
+    @apply block cursor-pointer overflow-hidden border text-sm text-slate-600 file:mr-3 file:cursor-pointer file:border-0 file:border-r file:border-solid file:border-slate-300 file:bg-turquesa-100 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-turquesa-800 hover:file:bg-turquesa-200 focus:outline-none focus:ring-1;
   }
   input[type="checkbox"], input[type="radio"] { @apply text-marca-700 focus:ring-marca-600; }
   .errorlist { @apply mt-1 text-sm text-red-700; }
@@ -19,18 +39,30 @@
 }
 
 @layer components {
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold no-underline transition focus:outline-none focus:ring-2 focus:ring-marca-600 focus:ring-offset-2 disabled:opacity-50; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold no-underline transition focus:outline-none focus:ring-2 focus:ring-marca-600 focus:ring-offset-2 disabled:opacity-50; }
   .btn-primary { @apply btn bg-marca-700 text-white hover:bg-marca-800; }
-  .btn-secondary { @apply btn border border-slate-300 bg-white text-slate-800 hover:bg-slate-50; }
+  .btn-secondary { @apply btn border border-slate-300 bg-white text-tinta hover:bg-slate-50; }
   .btn-danger { @apply btn bg-red-700 text-white hover:bg-red-800; }
   .btn-sm { @apply px-3 py-2 text-sm; }
-  .card { @apply rounded-2xl border border-slate-200 bg-white p-4 shadow-sm; }
-  .badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold; }
+  .card { @apply rounded-2xl border border-slate-200 bg-white p-4 shadow-soft; }
+  /* Tarjeta destacada del panel (la cifra principal) y tarjeta de consejo. */
+  .card-hero { @apply rounded-2xl border border-transparent bg-lateral p-4 text-white shadow-soft; }
+  .card-hero.alerta { @apply border-red-700 bg-red-700; }
+  .card-tip { @apply rounded-xl border border-dashed border-turquesa-200 bg-turquesa-100 p-3 text-turquesa-800; }
+  .stat-label { @apply flex items-center gap-2 text-xs font-medium text-slate-500; }
+  .card-hero .stat-label { @apply text-white/80; }
+  .stat-note { @apply mt-1 text-xs text-slate-500; }
+  .card-hero .stat-note { @apply text-white/75; }
+  .section-title { @apply text-xs font-semibold uppercase tracking-wider text-slate-500; }
+  .stat-value { @apply mt-2 font-display text-xl font-semibold tabular-nums sm:text-2xl; }
+  .hero-value { @apply mt-2 font-display text-xl font-semibold tabular-nums sm:text-2xl; }
+  .pill { @apply inline-flex items-center gap-1.5 rounded-full bg-turquesa-100 px-2.5 py-1 text-xs font-medium text-turquesa-800 no-underline; }
+  .badge { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold; }
   .badge-viable { @apply badge bg-emerald-100 text-emerald-800; }
-  .badge-ajustado { @apply badge bg-amber-100 text-amber-800; }
+  .badge-ajustado { @apply badge bg-amber-50 text-amber-700; }
   .badge-no_viable { @apply badge bg-red-100 text-red-800; }
-  .badge-info { @apply badge bg-sky-100 text-sky-800; }
-  .badge-media { @apply badge bg-amber-100 text-amber-800; }
+  .badge-info { @apply badge bg-turquesa-100 text-turquesa-800; }
+  .badge-media { @apply badge bg-amber-50 text-amber-700; }
   .badge-alta { @apply badge bg-red-100 text-red-800; }
   .amount { @apply font-semibold tabular-nums; }
   .muted { @apply text-sm text-slate-500; }
@@ -38,13 +70,28 @@
   /* Campo que la IA no leyó con seguridad: revisar antes de confirmar. */
   .dudoso { @apply border-amber-500 bg-amber-50 ring-1 ring-amber-400; }
   .bar { @apply h-2 w-full overflow-hidden rounded-full bg-slate-200; }
-  .bar > span { @apply block h-2 rounded-full bg-marca-600; }
+  .bar > span { @apply block h-2 rounded-full bg-turquesa-500; }
   .bar.over > span { @apply bg-red-600; }
   .bar.warn > span { @apply bg-amber-500; }
   .choice-list ul, ul.choice-list, .choice-list > div { @apply grid gap-2; }
   .choice-inline > div { @apply auto-cols-fr grid-flow-col; }
-  .choice-list label { @apply mb-0 flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 font-normal; }
+  .choice-list label { @apply mb-0 flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white p-3 font-normal; }
   .choice-list label:has(input:checked) { @apply border-marca-600 bg-marca-50 font-semibold text-marca-800; }
-  .nav-item { @apply flex flex-1 flex-col items-center gap-0.5 py-2 text-xs text-slate-600 no-underline; }
+  /* Navegación: barra inferior (teléfono) y barra lateral (escritorio). */
+  .nav-item { @apply flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] text-slate-500 no-underline; }
   .nav-item[aria-current="page"] { @apply font-semibold text-marca-700; }
+  .side-link { @apply flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-lateral-texto no-underline transition-colors hover:bg-lateral-claro/60; }
+  .side-link[aria-current="page"] { @apply bg-lateral-claro font-semibold text-white; }
+  /* Espacio activo: resaltado en turquesa. */
+  .side-link[aria-current="true"] { @apply bg-turquesa-400 font-semibold text-marca-900 hover:bg-turquesa-400; }
+  .side-title { @apply mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-lateral-texto/60; }
+  .menu-item { @apply flex items-center gap-3 rounded-lg p-3 text-sm text-tinta no-underline hover:bg-slate-50; }
+  /* Formularios de las pantallas de acceso (los genera allauth con form.as_p). */
+  .entrada form p { @apply mb-4; }
+  .entrada form label { @apply mb-1; }
+  .entrada form .helptext { @apply mt-1 block text-xs text-slate-500; }
+  .entrada form ul:not(.errorlist) { @apply mt-1 list-disc pl-5 text-xs text-slate-500; }
+  .entrada h1 { @apply text-2xl; }
+  .entrada > p { @apply mt-1 text-sm text-slate-500; }
+  .entrada h1 + p { @apply mb-6; }
 }

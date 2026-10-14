@@ -149,6 +149,56 @@ class BusinessOnboardingExtraction(_Base):
     campos_dudosos: list[str] = Field(default_factory=list, max_length=40)
 
 
+# ---------------------------------------------------------------- asistente de espacios
+
+
+class AssistantTurn(_Base):
+    """Un turno del asistente que guía la creación de espacios: lo que dice y lo que entendió.
+
+    Solo propone: el servidor valida el borrador, decide la etapa y crea los espacios cuando la
+    persona confirma.
+    """
+
+    mensaje: str = Field(default="", max_length=600)
+    uso: Literal["persona", "negocio", "ambos"] | None = None
+    nombre_negocio: str | None = Field(default=None, max_length=80)
+    moneda: Literal["DOP", "USD"] | None = None
+    moneda_negocio: Literal["DOP", "USD"] | None = None
+
+
+class MovementTurn(_Base):
+    """Un turno de CentIA al registrar un movimiento: lo que dice y lo que entendió del mensaje.
+
+    Solo propone: el servidor empareja cuenta y categoría con las reales, decide qué falta y
+    guarda únicamente cuando la persona confirma.
+    """
+
+    mensaje: str = Field(default="", max_length=400)
+    tipo: (
+        Literal[
+            "gasto",
+            "ingreso",
+            "pago_deuda",
+            "compra_inventario",
+            "transferencia_interna",
+            "retiro_efectivo",
+        ]
+        | None
+    ) = None
+    monto: Decimal | None = Field(default=None, gt=0)
+    fecha: date | None = None
+    categoria: str | None = Field(default=None, max_length=60)
+    cuenta: str | None = Field(default=None, max_length=60)
+    descripcion: str | None = Field(default=None, max_length=140)
+
+
+class HelpAnswer(_Base):
+    """Respuesta del asistente a «¿cómo hago…?»: texto breve y destinos de un catálogo cerrado."""
+
+    mensaje: str = Field(min_length=1, max_length=500)
+    destinos: list[str] = Field(default_factory=list, max_length=3)
+
+
 # ---------------------------------------------------------------- comprobantes (OCR)
 
 

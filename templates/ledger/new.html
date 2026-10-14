@@ -1,32 +1,27 @@
 {% extends "base.html" %}
 {% load icons %}
 {% block title %}Registrar · Crecenta{% endblock %}
+{% block main_width %}max-w-5xl{% endblock %}
 {% block content %}
-  <h1>Registrar movimiento</h1>
-  {% if from_ai %}<p class="mt-2 rounded-xl bg-sky-50 p-3 text-sm text-sky-900">{% icon "sparkles" "mr-1 inline h-4 w-4" %}Esto es lo que entendimos. Revísalo y guarda.</p>{% endif %}
-  <form method="post" action="{% url 'ledger:new' ws=workspace.pk %}" class="card mt-4 space-y-4"
-        hx-post="{% url 'ledger:warnings' ws=workspace.pk %}" hx-trigger="change from:#id_amount, change from:#id_category, change from:input[name=kind]" hx-target="#avisos" hx-swap="innerHTML">
-    {% csrf_token %}
-    {% include "partials/form.html" %}
-    <div id="avisos" aria-live="polite"></div>
-    <button type="submit" class="btn-primary w-full">Guardar</button>
-  </form>
+  <div class="mb-6">
+    <h1>Registrar movimiento</h1>
+    <p class="mt-1 text-sm text-slate-500">Llena el formulario o cuéntaselo a CentIA: lo prepara por ti y tú solo confirmas.</p>
+  </div>
+  <div class="grid items-start gap-4 lg:grid-cols-2">
+    <div>
+      {% if from_ai %}<p class="card-tip mb-4 flex items-center gap-2 text-sm">{% icon "sparkles" "h-4 w-4 shrink-0" %}Esto es lo que entendimos. Revísalo y guarda.</p>{% endif %}
+      <form method="post" action="{% url 'ledger:new' ws=workspace.pk %}" class="card space-y-4 md:p-5"
+            hx-post="{% url 'ledger:warnings' ws=workspace.pk %}" hx-trigger="change from:#id_amount, change from:#id_category, change from:input[name=kind]" hx-target="#avisos" hx-swap="innerHTML">
+        {% csrf_token %}
+        {% include "partials/form.html" %}
+        <div id="avisos" aria-live="polite"></div>
+        <button type="submit" class="btn-primary w-full">Guardar</button>
+      </form>
+    </div>
 
-  <section id="texto" class="card mt-6 space-y-3">
-    <h2 class="flex items-center gap-2">{% icon "keyboard" "h-5 w-5" %}Escribir o dictar</h2>
-    <form method="post" action="{% url 'ledger:from_text' ws=workspace.pk %}" class="space-y-3">
-      {% csrf_token %}
-      {{ text_form.texto.label_tag }}
-      {{ text_form.texto }}
-      <input type="hidden" name="via" id="via" value="texto">
-      <div class="flex gap-2">
-        <button type="submit" class="btn-secondary flex-1">Interpretar</button>
-        <div x-data="voiceRecorder" data-url="{% url 'onboarding:voice' ws=workspace.pk %}" data-target="id_texto" data-via="via" class="flex-1">
-          <button type="button" class="btn-secondary w-full" x-show="supported" @click="toggle" :disabled="busy">{% icon "mic" "h-5 w-5" %}<span x-text="label">Dictar</span></button>
-          <p class="text-xs text-red-700" x-show="error" x-text="error"></p>
-        </div>
-      </div>
-    </form>
-    <a class="btn-secondary w-full" href="{% url 'receipts:index' ws=workspace.pk %}">{% icon "camera" "h-5 w-5" %}Subir foto de un comprobante</a>
-  </section>
+    <div id="texto" class="space-y-4">
+      {% include "ledger/_centia.html" %}
+      <a class="btn-secondary w-full" href="{% url 'receipts:index' ws=workspace.pk %}">{% icon "camera" "h-5 w-5" %}Subir foto de un comprobante</a>
+    </div>
+  </div>
 {% endblock %}

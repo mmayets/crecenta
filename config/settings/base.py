@@ -157,7 +157,10 @@ if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
     SOCIALACCOUNT_PROVIDERS["google"] = {
         "APPS": [{"client_id": GOOGLE_CLIENT_ID, "secret": GOOGLE_CLIENT_SECRET, "key": ""}],
         "SCOPE": ["profile", "email"],
+        # Google verifica el correo: quien ya tiene cuenta con ese correo entra a la misma.
+        "EMAIL_AUTHENTICATION": True,
     }
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 SOCIALACCOUNT_ENABLED_GOOGLE = bool(SOCIALACCOUNT_PROVIDERS)
 
 # ------------------------------------------------------------------ idioma y zona horaria
