@@ -120,7 +120,7 @@ def test_filtros_y_csv_de_auditoria(admin_client, user):
     AuditEvent.objects.create(user_email="otra@example.com", kind=Kind.ACCESO,
                               action="inicio_fallido", description="Fallido",
                               status=401)  # fmt: skip
-    html = admin_client.get(reverse("panel:audit"), {"usuario": "ana@"}).content.decode()
+    html = admin_client.get(reverse("panel:audit"), {"usuario": "ariel@"}).content.decode()
     assert 'data-evento="ledger:new"' in html and 'data-evento="inicio_fallido"' not in html
     html = admin_client.get(reverse("panel:audit"), {"resultado": "errores"}).content.decode()
     assert 'data-evento="inicio_fallido"' in html and 'data-evento="ledger:new"' not in html

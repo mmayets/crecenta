@@ -1,53 +1,111 @@
 {% extends "base.html" %}
-{% load static icons %}
+{% load static icons socialaccount %}
 {% block title %}Crecenta · Tus finanzas y las de tu negocio, con Sophia{% endblock %}
 {% block head %}<meta name="description" content="Crecenta te dice cuánto puedes gastar hoy, arma tu plan del mes y te ayuda a saber cuánto gana tu negocio, con Sophia, tu asistente de IA.">{% endblock %}
 {% block body %}
 <div data-landing data-login-url="{% url 'account_login' %}">
-  {# Navegación #}
-  <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
-    <div class="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
-      <a href="{% url 'home' %}" class="flex items-center gap-2 text-tinta no-underline">{% include "partials/logo.html" %}</a>
-      <nav class="ml-6 hidden items-center gap-5 text-sm md:flex" aria-label="Secciones">
+  {# Navegación: entrar y registrarse siempre visibles, también en el teléfono #}
+  <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6">
+      {# En pantallas muy angostas queda solo la marca, para que los botones de acceso respiren. #}
+      <a href="{% url 'home' %}" class="flex shrink-0 items-center gap-2 text-tinta no-underline [&>span]:hidden min-[420px]:[&>span]:inline">{% include "partials/logo.html" %}</a>
+      <nav class="ml-6 hidden items-center gap-6 text-sm lg:flex" aria-label="Secciones">
         <a class="text-slate-600 no-underline hover:text-tinta" href="#funciones">Funciones</a>
-        <a class="text-slate-600 no-underline hover:text-tinta" href="#sophia">Sophia</a>
+        <a class="inline-flex items-center gap-1.5 text-slate-600 no-underline hover:text-tinta" href="#sophia">Conoce a Sophia <span class="rounded bg-turquesa-100 px-1 text-[10px] font-semibold text-turquesa-800">IA</span></a>
         <a class="text-slate-600 no-underline hover:text-tinta" href="#precios">Precios</a>
         <a class="text-slate-600 no-underline hover:text-tinta" href="#preguntas">Preguntas</a>
       </nav>
       <div class="ml-auto flex items-center gap-2">
-        <a class="btn-secondary btn-sm" href="{% url 'account_login' %}" data-testid="entrar">Iniciar sesión</a>
-        <a class="btn-primary btn-sm hidden sm:inline-flex" href="{% url 'account_signup' %}">Crear cuenta gratis</a>
+        <a class="btn whitespace-nowrap border-2 border-marca-700 px-3 py-2 text-sm text-marca-700 hover:bg-marca-50 sm:px-4" href="{% url 'account_login' %}" data-testid="entrar">{% icon "log-in" "h-4 w-4" %}<span class="sm:hidden">Entrar</span><span class="hidden sm:inline">Iniciar sesión</span></a>
+        <a class="btn whitespace-nowrap bg-turquesa-400 px-3 py-2 text-sm text-marca-900 hover:opacity-90 sm:px-4" href="{% url 'account_signup' %}" data-testid="registrarse">{% icon "user-plus" "h-4 w-4" %}<span class="hidden sm:inline">Crear cuenta gratis</span><span class="sm:hidden">Registrarse</span></a>
       </div>
     </div>
   </header>
 
   <main id="contenido">
     {# Portada #}
-    <section class="bg-lateral text-lateral-texto">
-      <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-24">
+    <section class="relative overflow-hidden bg-lateral text-lateral-texto">
+      {# Brillo decorativo de fondo (solo CSS) #}
+      <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_85%_80%,rgba(59,184,167,0.28),transparent_60%),radial-gradient(40%_50%_at_10%_10%,rgba(63,102,176,0.25),transparent_60%)]" aria-hidden="true"></div>
+      <div class="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-10 pt-14 sm:px-6 lg:grid-cols-2 lg:pt-20">
         <div>
-          <p class="pill bg-white/10 text-turquesa-400">{% include "partials/sophia_avatar.html" with clase="h-5 w-5" %}Con Sophia, tu asistente de IA</p>
-          <h1 class="mt-5 text-4xl leading-tight text-white md:text-5xl">Sabe cuánto puedes gastar hoy y cuánto gana de verdad tu negocio.</h1>
-          <p class="mt-5 max-w-xl text-lg text-lateral-texto/80">Crecenta ordena tu dinero personal y el de tu emprendimiento por separado, arma tu plan del mes y te avisa antes de que el presupuesto se salga de control.</p>
-          <div class="mt-8 flex flex-wrap gap-3">
-            <a class="btn bg-turquesa-400 px-6 py-3 text-base text-marca-900 hover:opacity-90" href="{% url 'account_signup' %}">Empezar gratis{% icon "arrow-right" "h-5 w-5" %}</a>
-            <a class="btn border border-white/30 px-6 py-3 text-base text-white hover:bg-white/10" href="{% url 'account_login' %}">Ya tengo cuenta</a>
-          </div>
-          <p class="mt-4 text-sm text-lateral-texto/60">Sin tarjeta de crédito · RD$ y US$ · Funciona en el teléfono, incluso sin conexión</p>
-        </div>
-        {# Vista previa ilustrativa (cifras de ejemplo) #}
-        <div class="relative" aria-hidden="true">
-          <div class="rounded-2xl bg-white p-5 text-tinta shadow-2xl">
-            <p class="text-xs text-slate-500">Ejemplo · Mis finanzas</p>
-            <div class="mt-3 grid grid-cols-2 gap-3">
-              <div class="card-hero"><p class="stat-label">{% icon "shopping-bag" "h-4 w-4" %}Disponible para gastar</p><p class="hero-value">RD$13,850</p><p class="stat-note">≈ RD$690 por día</p></div>
-              <div class="card"><p class="stat-label">{% icon "wallet" "h-4 w-4" %}En tus cuentas</p><p class="stat-value">RD$24,700</p><p class="stat-note">Efectivo y bancos</p></div>
+          <p class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-turquesa-400">
+            <span class="grid h-7 w-7 place-items-center rounded-full bg-white/10">{% icon "lightbulb" "h-3.5 w-3.5" %}</span>Menos estrés. Más claridad.
+          </p>
+          <h1 class="mt-5 text-5xl leading-[1.05] text-white md:text-6xl">Tu dinero,<br>más claro.<br><span class="text-turquesa-400">Tu vida, más libre.</span></h1>
+          <p class="mt-6 max-w-xl text-lg text-white/90">Sabe cuánto puedes gastar hoy y cuánto gana de verdad tu negocio. Sin enredos, sin adivinar.</p>
+          <p class="mt-3 max-w-xl text-sm text-lateral-texto/70">Tus finanzas personales y tu emprendimiento, en orden. Con Sophia, tu asistente de inteligencia artificial.</p>
+
+          {# Acceso: registrarse o entrar en un toque #}
+          <div class="mt-8 max-w-lg rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur" data-testid="acceso-portada">
+            <div class="grid gap-3 sm:grid-cols-2">
+              <a class="btn whitespace-nowrap bg-turquesa-400 py-3 text-base text-marca-900 hover:opacity-90" href="{% url 'account_signup' %}">{% icon "user-plus" "h-5 w-5" %}Crear cuenta gratis</a>
+              <a class="btn border-2 border-white/80 py-3 text-base text-white hover:bg-white/10" href="{% url 'account_login' %}">{% icon "log-in" "h-5 w-5" %}Iniciar sesión</a>
             </div>
-            <div class="mt-3 rounded-lg border border-slate-200 p-3 text-sm"><span class="badge-media">{% icon "triangle-alert" "h-3.5 w-3.5" %}Atención</span> <span class="font-semibold">Restaurantes va al 93 %</span><p class="mt-1 text-slate-500">Limítalo hasta tu próximo cobro.</p></div>
-            <div class="mt-3 flex items-center gap-2 rounded-lg bg-turquesa-100 p-3 text-sm font-medium text-turquesa-800">{% include "partials/sophia_avatar.html" with clase="h-6 w-6" %}«Gasté 350 en el colmado» y Sophia lo registra</div>
+            {% if google_login %}
+              <form method="post" action="{% provider_login_url 'google' process='login' %}" class="mt-3">
+                {% csrf_token %}
+                <button type="submit" class="btn w-full bg-white py-3 text-base text-tinta hover:bg-slate-100" data-testid="google-portada">
+                  <svg class="h-5 w-5 shrink-0" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                  Continuar con Google
+                </button>
+              </form>
+            {% endif %}
+            <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-lateral-texto/70">
+              <li class="flex items-center gap-1">{% icon "check" "h-3.5 w-3.5 text-turquesa-400" %}Sin tarjeta de crédito</li>
+              <li class="flex items-center gap-1">{% icon "check" "h-3.5 w-3.5 text-turquesa-400" %}RD$ y US$</li>
+              <li class="flex items-center gap-1">{% icon "check" "h-3.5 w-3.5 text-turquesa-400" %}A tu ritmo</li>
+            </ul>
+          </div>
+        </div>
+
+        {# Vista de ejemplo del panel (cifras ilustrativas) #}
+        <div class="relative" aria-hidden="true">
+          <p class="mb-3 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-wider text-lateral-texto/70"><span class="h-1.5 w-1.5 rounded-full bg-turquesa-400"></span>Tu tranquilidad, en números<span class="h-px flex-1 bg-white/15"></span></p>
+          <div class="rounded-2xl bg-white p-5 text-tinta shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+              <p class="flex items-center gap-2 font-semibold">{% include "partials/sophia_avatar.html" with clase="h-7 w-7" %}Mi dinero</p>
+              <p class="flex items-center gap-1 text-[11px] text-slate-500"><span class="h-1.5 w-1.5 rounded-full bg-turquesa-500"></span>Vista de ejemplo</p>
+            </div>
+            <p class="mt-3 text-[11px] text-slate-500">Todo en orden, todo a tu alcance</p>
+            <div class="flex items-center justify-between"><p class="flex items-center gap-1.5 font-display text-xl font-semibold">Hola, Ariel {% icon "hand" "h-4 w-4 text-amber-500" %}</p><span class="grid h-8 w-8 place-items-center rounded-full bg-turquesa-100 text-xs font-semibold text-turquesa-800">{% icon "user" "h-4 w-4" %}</span></div>
+            <div class="mt-3 grid grid-cols-2 rounded-lg bg-slate-100 p-1 text-xs"><span class="flex items-center justify-center gap-1 rounded-md bg-white py-1.5 font-medium shadow-sm">{% icon "wallet" "h-3.5 w-3.5" %}Personal</span><span class="flex items-center justify-center gap-1 py-1.5 text-slate-500">{% icon "briefcase" "h-3.5 w-3.5" %}Mi negocio</span></div>
+            <div class="mt-3 rounded-xl bg-lateral p-4 text-white">
+              <div class="flex items-center justify-between text-xs"><span class="flex items-center gap-1.5">{% icon "wallet" "h-3.5 w-3.5" %}Disponible para gastar</span><span class="flex items-center gap-1 rounded bg-white/10 px-1.5 py-0.5 text-turquesa-400">{% icon "trending-up" "h-3 w-3" %}Vas bien</span></div>
+              <p class="mt-2 font-display text-3xl font-semibold tabular-nums">RD$13,850<span class="text-lg text-white/70">.00</span></p>
+              <div class="mt-1 flex items-end justify-between gap-3">
+                <p class="text-[11px] text-white/70">≈ RD$693 por día</p>
+                <svg class="h-10 w-40" viewBox="0 0 160 40" fill="none" aria-hidden="true"><polyline points="0,36 18,32 34,34 52,26 70,28 88,20 106,22 124,14 142,15 160,6" stroke="#3bb8a7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="mt-3 grid grid-cols-2 divide-x divide-slate-200 text-sm">
+              <div class="pr-3"><p class="flex items-center gap-1 text-[11px] text-slate-500">{% icon "landmark" "h-3.5 w-3.5" %}En tus cuentas</p><p class="font-display text-lg font-semibold">RD$24,700</p><p class="text-[11px] text-slate-500">Efectivo y bancos</p></div>
+              <div class="pl-3"><p class="flex items-center gap-1 text-[11px] text-slate-500">{% icon "piggy-bank" "h-3.5 w-3.5" %}Tu ahorro del mes</p><p class="flex items-center gap-1 font-display text-lg font-semibold">RD$3,500 {% icon "trending-up" "h-4 w-4 text-turquesa-500" %}</p><p class="text-[11px] text-slate-500">Un paso más hacia tu meta</p></div>
+            </div>
+            <div class="mt-3 flex items-center gap-3 rounded-lg bg-amber-50 p-3 text-xs">{% icon "triangle-alert" "h-4 w-4 shrink-0 text-amber-600" %}<div class="flex-1"><p class="font-semibold">Un ojo en restaurantes</p><p class="text-slate-500">Has usado el 93 % de tu presupuesto.</p></div>{% icon "chevron-right" "h-4 w-4 text-slate-400" %}</div>
+            <div class="mt-2 flex items-center gap-3 rounded-lg border border-slate-200 p-3 text-xs">{% include "partials/sophia_avatar.html" with clase="h-7 w-7" %}<div class="flex-1"><p class="font-semibold">Sophia está contigo</p><p class="text-slate-500">«Gasté 350 en el colmado»</p></div>{% icon "audio-lines" "h-5 w-5 text-turquesa-500" %}</div>
+          </div>
+          <div class="absolute -bottom-5 -right-2 flex items-center gap-3 rounded-xl bg-white px-4 py-3 text-tinta shadow-xl sm:-right-6">
+            <span class="grid h-8 w-8 place-items-center rounded-full bg-turquesa-100 text-turquesa-700">{% icon "circle-check" "h-4 w-4" %}</span>
+            <div class="text-xs"><p class="font-semibold">Vas por buen camino</p><p class="text-slate-500">Tu dinero tiene un plan.</p></div>
+            {% icon "lightbulb" "h-4 w-4 text-turquesa-600" %}
           </div>
         </div>
       </div>
+      <div class="relative mx-auto flex max-w-6xl items-center justify-between gap-4 border-t border-white/10 px-4 py-5 text-sm sm:px-6">
+        <p class="text-lateral-texto/70">Menos cuentas en tu cabeza. <span class="font-semibold text-white">Más espacio para ti.</span></p>
+        <a class="hidden items-center gap-2 text-lateral-texto/80 no-underline hover:text-white sm:inline-flex" href="#funciones">Sigue explorando{% icon "arrow-right" "h-4 w-4" %}</a>
+      </div>
+    </section>
+
+    {# Franja de confianza #}
+    <section class="border-b border-slate-200 bg-marca-50/60">
+      <ul class="mx-auto grid max-w-6xl gap-3 px-4 py-4 text-sm text-slate-600 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+        <li class="flex items-center gap-2">{% icon "shield-check" "h-4 w-4 shrink-0 text-marca-700" %}Tu información, protegida</li>
+        <li class="flex items-center gap-2">{% icon "wallet" "h-4 w-4 shrink-0 text-marca-700" %}Personal y negocio, separados</li>
+        <li class="flex items-center gap-2">{% icon "audio-lines" "h-4 w-4 shrink-0 text-marca-700" %}Habla, escribe o toma una foto</li>
+        <li class="flex items-center gap-2">{% icon "check" "h-4 w-4 shrink-0 text-marca-700" %}Hecho para tu día a día</li>
+      </ul>
     </section>
 
     {# Funciones #}
@@ -79,27 +137,43 @@
       </div>
     </section>
 
-    {# Sophia #}
-    <section id="sophia" class="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6">
-      <div class="grid items-center gap-10 lg:grid-cols-2">
+    {# Conoce a Sophia #}
+    <section id="sophia" class="scroll-mt-20 bg-turquesa-50">
+      <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2">
         <div>
-          <p class="section-title">Tu asistente</p>
-          <h2 class="mt-2 font-display text-3xl font-semibold">Sophia te acompaña en cada paso</h2>
-          <p class="mt-4 text-slate-600">Te guía para crear tus espacios, prepara tus movimientos a partir de lo que le cuentas, te recomienda qué hacer en cada pantalla y responde cómo hacer las cosas en la app.</p>
+          <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-turquesa-700">{% icon "lightbulb" "h-4 w-4" %}Conoce a Sophia</p>
+          <h2 class="mt-4 font-display text-4xl font-semibold leading-tight">Tu dinero tiene mucho que decir. <span class="text-turquesa-700">Ella te ayuda a escucharlo.</span></h2>
+          <p class="mt-5 max-w-lg text-slate-600">Una asistente que entiende tu día a día. Registra gastos, aclara tus números y te ayuda a mantener el rumbo, sin que tengas que saber de finanzas.</p>
           <ul class="mt-6 space-y-3 text-sm">
             <li class="flex gap-2">{% icon "circle-check" "h-5 w-5 shrink-0 text-turquesa-600" %}Nada se guarda sin que lo confirmes.</li>
-            <li class="flex gap-2">{% icon "circle-check" "h-5 w-5 shrink-0 text-turquesa-600" %}Las cifras las calcula la app, no la IA: Sophia explica, no inventa.</li>
+            <li class="flex gap-2">{% icon "circle-check" "h-5 w-5 shrink-0 text-turquesa-600" %}Las cifras las calcula la app: Sophia explica, no inventa.</li>
             <li class="flex gap-2">{% icon "circle-check" "h-5 w-5 shrink-0 text-turquesa-600" %}La IA solo se usa si tú la activas.</li>
           </ul>
+          <a class="btn mt-8 border border-slate-200 bg-white px-6 py-3 text-base text-tinta shadow-soft hover:bg-slate-50" href="{% url 'account_signup' %}" data-testid="conversar-sophia">Conversar con Sophia{% icon "arrow-up-right" "h-4 w-4" %}</a>
         </div>
-        <div class="card md:p-6" aria-hidden="true">
-          <div class="flex items-center gap-2 border-b border-slate-200 pb-3">{% include "partials/sophia_avatar.html" with clase="h-9 w-9" %}<p class="font-semibold">Sophia</p></div>
-          <ol class="mt-4 space-y-3 text-sm">
-            <li class="flex justify-end"><p class="max-w-[85%] rounded-2xl rounded-br-sm bg-marca-700 px-3 py-2 text-white">Pagué 1,250 en el supermercado ayer</p></li>
-            <li><p class="max-w-[90%] rounded-2xl rounded-tl-sm bg-slate-100 px-3 py-2">Anoté: gasto de RD$1,250.00 en Alimentación. ¿Con qué cuenta fue?</p></li>
-            <li class="flex justify-end"><p class="rounded-2xl rounded-br-sm bg-marca-700 px-3 py-2 text-white">Banco Popular</p></li>
-            <li><p class="max-w-[90%] rounded-2xl rounded-tl-sm bg-slate-100 px-3 py-2">Listo. Revísalo y pulsa «Guardar».</p></li>
-          </ol>
+        <div class="rounded-2xl bg-white p-5 shadow-xl" aria-hidden="true">
+          <div class="flex items-center gap-3 border-b border-slate-200 pb-4">
+            {% include "partials/sophia_avatar.html" with clase="h-10 w-10" %}
+            <div class="flex-1"><p class="font-semibold">Sophia</p><p class="flex items-center gap-1 text-xs text-slate-500"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Tu asistente financiera</p></div>
+            {% icon "lightbulb" "h-5 w-5 text-turquesa-600" %}
+          </div>
+          <div class="mt-5 flex justify-end"><p class="max-w-[75%] rounded-2xl rounded-br-sm bg-lateral px-4 py-3 text-sm text-white">Gasté 350 en el colmado<span class="mt-1 block text-right text-[10px] text-white/60">10:42</span></p></div>
+          <div class="mt-4 flex items-start gap-2">
+            {% include "partials/sophia_avatar.html" with clase="h-7 w-7" %}
+            <div class="min-w-0 flex-1 text-sm">
+              <p>¡Listo! Lo registré en <strong>Alimentación</strong>.</p>
+              <div class="mt-2 rounded-xl border border-slate-200 p-3">
+                <div class="flex items-center justify-between gap-2"><span class="flex items-center gap-2">{% icon "shopping-bag" "h-4 w-4 text-slate-500" %}Colmado</span><span class="font-semibold tabular-nums">RD$350.00</span></div>
+                <p class="mt-1 flex items-center gap-1 text-xs text-turquesa-700">{% icon "check" "h-3.5 w-3.5" %}Registrado</p>
+              </div>
+              <p class="mt-3 flex items-center gap-1">Te quedan <strong class="tabular-nums">RD$13,500</strong> disponibles este mes. Vas bien {% icon "thumbs-up" "h-4 w-4 text-amber-500" %}</p>
+            </div>
+          </div>
+          <div class="mt-5 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-400">
+            <span class="flex-1">Cuéntale a Sophia…</span>
+            {% icon "audio-lines" "h-4 w-4" %}
+            <span class="grid h-7 w-7 place-items-center rounded-lg bg-turquesa-400 text-marca-900">{% icon "arrow-up-right" "h-4 w-4" %}</span>
+          </div>
         </div>
       </div>
     </section>
@@ -143,7 +217,7 @@
       <div class="grid gap-4 md:grid-cols-3">
         <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-marca-50 text-marca-700">{% icon "shield-check" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">Tus datos son tuyos</h3><p class="mt-1 text-sm text-slate-500">Descárgalos cuando quieras o elimina tu cuenta y todo lo que contiene.</p></div>
         <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-marca-50 text-marca-700">{% icon "lock" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">Espacios separados</h3><p class="mt-1 text-sm text-slate-500">Tu dinero personal y el de tu negocio no se mezclan; tu equipo solo ve lo que su rol permite.</p></div>
-        <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-marca-50 text-marca-700">{% icon "sparkles" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">IA con tu permiso</h3><p class="mt-1 text-sm text-slate-500">Sin números de cuenta ni documentos: solo lo necesario, y solo si activas la IA.</p></div>
+        <div class="card md:p-5"><span class="grid h-10 w-10 place-items-center rounded-xl bg-marca-50 text-marca-700">{% icon "lightbulb" "h-5 w-5" %}</span><h3 class="mt-4 font-semibold">IA con tu permiso</h3><p class="mt-1 text-sm text-slate-500">Sin números de cuenta ni documentos: solo lo necesario, y solo si activas la IA.</p></div>
       </div>
     </section>
 

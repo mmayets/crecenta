@@ -32,7 +32,7 @@ uv run python manage.py preparar_bd_local   # crea usuario y base, migra y carga
 uv run python manage.py importar_parametros .env.local.example   # resto → tabla parameters
 uv run python manage.py runserver
 # http://localhost:8000  ·  demo@crecenta.app / Demo-Crecenta-2026
-# vendedora de Dulces Ana: vendedor@crecenta.app (misma contraseña)
+# vendedora de Dulces Ariel: vendedor@crecenta.app (misma contraseña)
 ```
 
 En PyCharm las configuraciones de ejecución ya vienen en `.run/` ("1 · Preparar base de datos
@@ -46,7 +46,7 @@ Requiere Python 3.12, PostgreSQL 16, Redis y [uv](https://docs.astral.sh/uv/).
 uv sync
 cp config/db.example.py config/db.py   # ponga su usuario, clave y base
 uv run python manage.py migrate
-uv run python manage.py seed_demo      # persona RD$50,000 + negocio Dulces Ana con ventas
+uv run python manage.py seed_demo      # persona RD$50,000 + negocio Dulces Ariel con ventas
 uv run python manage.py runserver
 uv run celery -A config worker -l info # explicaciones con IA, lectura de comprobantes, alertas
 uv run celery -A config beat -l info   # alertas diarias

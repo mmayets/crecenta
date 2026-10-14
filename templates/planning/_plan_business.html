@@ -24,7 +24,7 @@
     <p class="card mt-4 flex items-center gap-2" role="status">{% icon "refresh-cw" "h-5 w-5 animate-spin text-marca-700" %}Preparando la explicación de tu plan…</p>
   {% elif plan.ai_narrative %}
     <section class="card mt-4 space-y-3" aria-label="Explicación">
-      <p class="flex gap-2">{% icon "sparkles" "h-5 w-5 shrink-0 text-marca-700" %}<span>{{ plan.ai_narrative.resumen }}</span></p>
+      <p class="flex gap-2">{% icon "lightbulb" "h-5 w-5 shrink-0 text-marca-700" %}<span>{{ plan.ai_narrative.resumen }}</span></p>
       {% for rec in plan.ai_narrative.recomendaciones %}
         <article class="rounded-xl bg-slate-50 p-3">
           <h3 class="font-semibold">{{ rec.titulo }}{% if rec.es_proyeccion %} <span class="badge-info">Proyección</span>{% endif %}</h3>

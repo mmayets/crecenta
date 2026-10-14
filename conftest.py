@@ -8,7 +8,7 @@ from apps.workspaces.services.workspaces import create_workspace
 
 @pytest.fixture
 def user(db):
-    return UserFactory(email="ana@example.com")
+    return UserFactory(email="ariel@example.com")
 
 
 @pytest.fixture
@@ -23,7 +23,7 @@ def personal_ws(user):
 
 @pytest.fixture
 def business_ws(user):
-    return create_workspace(user, "business", name="Dulces Ana")
+    return create_workspace(user, "business", name="Dulces Ariel")
 
 
 @pytest.fixture

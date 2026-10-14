@@ -60,10 +60,10 @@ def test_configuracion_y_consentimiento(client, user):
     client.force_login(user)
     html = client.get(reverse("accounts:settings")).content.decode()
     assert "Qué compartimos con la IA" in html and "Nunca números de cuenta" in html
-    client.post(reverse("accounts:settings"), {"first_name": "Ana", "ai_consent": "on"})
+    client.post(reverse("accounts:settings"), {"first_name": "Ariel", "ai_consent": "on"})
     user.refresh_from_db()
-    assert user.first_name == "Ana" and user.ai_consent and user.ai_consent_at
-    client.post(reverse("accounts:settings"), {"first_name": "Ana"})
+    assert user.first_name == "Ariel" and user.ai_consent and user.ai_consent_at
+    client.post(reverse("accounts:settings"), {"first_name": "Ariel"})
     user.refresh_from_db()
     assert not user.ai_consent
 
@@ -78,7 +78,7 @@ def test_exportar_todo(client, user, datos):
     assert "datos.json" in names
     assert any(n.startswith("comprobantes/") for n in names)
     data = json.loads(archive.read("datos.json"))
-    assert data["usuario"]["correo"] == "ana@example.com"
+    assert data["usuario"]["correo"] == "ariel@example.com"
     (espacio,) = data["espacios"]
     assert espacio["movimientos"][0]["description"] == "Colmado Juan"
     assert len(espacio["categorias"]) == 22 and espacio["comprobantes"]
@@ -98,7 +98,7 @@ def test_eliminar_cuenta(
     )
     assert response.status_code == 200 and User.objects.filter(pk=user.pk).exists()
     response = client.post(
-        reverse("accounts:delete"), {"confirm_email": "ana@example.com", "password": "incorrecta"}
+        reverse("accounts:delete"), {"confirm_email": "ariel@example.com", "password": "incorrecta"}
     )
     assert "La contraseña no es correcta" in response.content.decode()
     assert User.objects.filter(pk=user.pk).exists()
@@ -107,7 +107,7 @@ def test_eliminar_cuenta(
     with django_capture_on_commit_callbacks(execute=True):
         response = client.post(
             reverse("accounts:delete"),
-            {"confirm_email": "ANA@example.com", "password": "Clave-Segura-2026"},
+            {"confirm_email": "ARIEL@example.com", "password": "Clave-Segura-2026"},
         )
     assert response["Location"] == reverse("account_login")
     assert not User.objects.filter(pk=user.pk).exists()
@@ -124,7 +124,7 @@ def test_cuenta_sin_contrasena_solo_confirma_correo(client, user):
     user.save()
     client.force_login(user)
     assert "Tu contraseña" not in client.get(reverse("accounts:delete")).content.decode()
-    client.post(reverse("accounts:delete"), {"confirm_email": "ana@example.com"})
+    client.post(reverse("accounts:delete"), {"confirm_email": "ariel@example.com"})
     assert not User.objects.filter(pk=user.pk).exists()
 
 

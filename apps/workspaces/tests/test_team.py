@@ -51,7 +51,7 @@ def test_reglas_de_invitacion(user, other_user, personal_ws, business_ws, carla)
     with pytest.raises(ValidationError):
         invitar(business_ws, user, role="owner")
     with pytest.raises(ValidationError):
-        invitar(business_ws, user, email="ana@example.com")  # ya es miembro
+        invitar(business_ws, user, email="ariel@example.com")  # ya es miembro
     primera, _ = invitar(business_ws, user)
     segunda, token = invitar(business_ws, user, role=ADMIN)
     primera.refresh_from_db()
@@ -105,7 +105,7 @@ def test_pantalla_de_equipo(client, user, business_ws, carla):
     inv = Invitation.objects.get()
     assert "/invitacion/" in html and "solo se muestra ahora" in html
     assert inv.token_hash not in html  # se muestra el código, no su hash
-    response = client.post(url, {"email": "ana@example.com", "role": VENDEDOR})
+    response = client.post(url, {"email": "ariel@example.com", "role": VENDEDOR})
     assert response.status_code == 400 and "ya es parte" in response.content.decode()
     token = html.split("/invitacion/")[1].split("/")[0]
 

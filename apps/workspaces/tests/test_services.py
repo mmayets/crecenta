@@ -53,10 +53,10 @@ def test_uso(user, usage, kinds):
 
 
 def test_uso_es_idempotente(user):
-    create_workspaces_for_usage(user, "ambos", business_name="Dulces Ana")
+    create_workspaces_for_usage(user, "ambos", business_name="Dulces Ariel")
     assert create_workspaces_for_usage(user, "ambos") == []
     assert Workspace.objects.filter(owner=user).count() == 2
-    assert Workspace.objects.get(owner=user, kind="business").name == "Dulces Ana"
+    assert Workspace.objects.get(owner=user, kind="business").name == "Dulces Ariel"
 
 
 def test_uso_invalido(user):

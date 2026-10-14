@@ -15,6 +15,8 @@ const SAVED_URL = "{{ saved_url }}";
 const SYNC_TAG = "sync-movimientos";
 const QUICK_ENTRY = /\/e\/[0-9a-f-]+\/movimientos\/nuevo\/$/;
 const SALE_ENTRY = /\/e\/[0-9a-f-]+\/ventas\/nueva\/$/;
+// Estáticos con hash en el nombre (producción: app.3f2a1c9d8e7b.css): nunca cambian.
+const HASHED = /\.[0-9a-f]{12}\.\w+$/;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -42,7 +44,8 @@ self.addEventListener("fetch", (event) => {
   }
   if (request.method !== "GET") return;
   if (url.pathname.startsWith("/static/")) {
-    event.respondWith(cacheFirst(request));
+    // Sin hash (desarrollo) el mismo nombre puede traer otro contenido: primero la red.
+    event.respondWith(HASHED.test(url.pathname) ? cacheFirst(request) : networkFirstStatic(request));
   } else if (request.mode === "navigate") {
     event.respondWith(networkFirst(request));
   }
@@ -54,6 +57,16 @@ async function cacheFirst(request) {
   const response = await fetch(request);
   if (response.ok) (await caches.open(STATIC_CACHE)).put(request, response.clone());
   return response;
+}
+
+async function networkFirstStatic(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) (await caches.open(STATIC_CACHE)).put(request, response.clone());
+    return response;
+  } catch (error) {
+    return (await caches.match(request)) || Response.error();
+  }
 }
 
 async function networkFirst(request) {

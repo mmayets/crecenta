@@ -257,9 +257,9 @@ def test_validaciones_de_deudas(business_ws, user):
     cxc = register_receivable(
         business_ws,
         user,
-        DebtData(concept="Saldo anterior", amount=D("2500"), counterpart_name="Ana"),
+        DebtData(concept="Saldo anterior", amount=D("2500"), counterpart_name="Ariel"),
     )
-    assert cxc.sale is None and cxc.customer.name == "Ana" and Payable.objects.count() == 0
+    assert cxc.sale is None and cxc.customer.name == "Ariel" and Payable.objects.count() == 0
 
 
 def test_anular_venta(business_ws, user, bizcocho, caja):

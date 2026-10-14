@@ -164,14 +164,14 @@ def test_crea_el_espacio_personal_con_todo_lo_respondido(logged, user):
 
 def test_crea_el_negocio(logged, user):
     walk(logged, [
-        ("uso", "negocio"), ("moneda", "USD"), ("nombre_negocio", "Dulces Ana"),
+        ("uso", "negocio"), ("moneda", "USD"), ("nombre_negocio", "Dulces Ariel"),
         ("actividad", "Repostería"), ("modelo", "productos"), ("producto", "Bizcocho"),
         ("precio", "850"), ("costo", None), ("dinero_negocio", "20,000"),
         ("gastos_negocio", "15,000"),
     ])  # fmt: skip
     logged.post(reverse("asistente:first_space_create"))
     ws = Workspace.objects.get(owner=user)
-    assert (ws.kind, ws.name, ws.currency) == ("business", "Dulces Ana", "USD")
+    assert (ws.kind, ws.name, ws.currency) == ("business", "Dulces Ariel", "USD")
     assert BusinessProfile.objects.get(workspace=ws).activity == "Repostería"
     product = Product.objects.for_workspace(ws).get()
     assert (product.name, product.price, product.unit_cost) == ("Bizcocho", D("850"), D("0"))
@@ -180,7 +180,7 @@ def test_crea_el_negocio(logged, user):
 
 
 def test_ambos_crea_los_dos_espacios(logged, user):
-    flow = [("uso", "ambos"), *PERSONAL_FLOW[1:], ("nombre_negocio", "Dulces Ana"),
+    flow = [("uso", "ambos"), *PERSONAL_FLOW[1:], ("nombre_negocio", "Dulces Ariel"),
             ("actividad", "Repostería"), ("modelo", "servicios"), ("producto", "Clase"),
             ("precio", "1,500"), ("costo", "300"), ("dinero_negocio", None),
             ("gastos_negocio", None)]  # fmt: skip

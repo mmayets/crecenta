@@ -1,4 +1,4 @@
-"""Negocio de demostración "Dulces Ana" (repostería), cargado con los servicios reales.
+"""Negocio de demostración "Dulces Ariel" (repostería), cargado con los servicios reales.
 
 - Perfil sin ITBIS (vende sin comprobante fiscal), metas: margen 30 %, ganancia RD$15,000,
   reserva RD$5,000 y retiro mensual de RD$10,000.

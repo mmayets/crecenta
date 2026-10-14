@@ -249,7 +249,7 @@ Cada paso cierra con `make check` (ruff, mypy, pytest con cobertura ≥ 90 % en 
 | B7 | Alertas de negocio | Un test por regla |
 | B8 | Onboarding de negocio (wizard + conversacional) | Datos mínimos → primer plan de negocio |
 | B9 | Interfaz de negocio | Tests de vistas + revisión en Chromium (sin errores de CSP) |
-| B10 | Cierre: demo ampliada (ventas de Dulces Ana), seguridad, documentación | `seed_demo` con indicadores reales; aislamiento cubre todas las rutas nuevas |
+| B10 | Cierre: demo ampliada (ventas de Dulces Ariel), seguridad, documentación | `seed_demo` con indicadores reales; aislamiento cubre todas las rutas nuevas |
 
 ---
 
@@ -282,7 +282,7 @@ Cada paso cierra con `make check` (ruff, mypy, pytest con cobertura ≥ 90 % en 
 | Un test por regla de alerta de negocio | `apps/alerts/tests/test_rules_business.py` (4 reglas) y `test_evaluate_business.py` (las cuatro desde la base, sin duplicar, autorresolución, preferencias). |
 | Datos mínimos → primer plan de negocio (paso a paso y conversacional) | `apps/onboarding/tests/test_business.py::test_paso_a_paso_hasta_el_primer_plan` y `test_conversacional_extrae_confirma_y_genera_plan`. |
 | Interfaz del negocio sin errores de CSP | Tests de vistas (`apps/business/tests/test_views.py`) y revisión en Chromium a 390 × 844 de 11 pantallas, incluidas la calculadora y el aviso de retiro con htmx: sin errores de consola ni violaciones de CSP (decisión 165). |
-| `seed_demo` con indicadores reales | `apps/core/tests/test_seed_demo.py::test_demo_completa` (Dulces Ana con tres productos, ventas de contado y crédito de dos meses, cobro parcial, compra a crédito, retiro hacia la persona y plan del negocio "ajustado") y `test_seed_dates.py` (funciona el día 1, el 28 de febrero y el 31). |
+| `seed_demo` con indicadores reales | `apps/core/tests/test_seed_demo.py::test_demo_completa` (Dulces Ariel con tres productos, ventas de contado y crédito de dos meses, cobro parcial, compra a crédito, retiro hacia la persona y plan del negocio "ajustado") y `test_seed_dates.py` (funciona el día 1, el 28 de febrero y el 31). |
 | Aislamiento: todas las rutas nuevas | `tests/test_aislamiento.py` (todas las rutas contra un espacio ajeno, inexistente y sin sesión) y `tests/test_aislamiento_negocio.py` (rutas contra el *negocio* de otra persona, objetos ajenos en la URL y en los formularios). |
 
 Comandos: `make check` (ruff, mypy, pytest con cobertura, `check --deploy`) y `make e2e`.

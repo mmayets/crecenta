@@ -2,9 +2,11 @@
 
 import hashlib
 import json
+import os
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.staticfiles import finders
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
@@ -70,6 +72,17 @@ def manifest(request: HttpRequest) -> JsonResponse:
     return response
 
 
+def _static_fingerprint() -> str:
+    """Fecha de modificación y tamaño de los estáticos que guarda el service worker."""
+    parts = []
+    for path in PRECACHE_STATIC:
+        found = finders.find(path)
+        if found:
+            stat = os.stat(found)
+            parts.append(f"{path}:{stat.st_mtime_ns}:{stat.st_size}")
+    return "|".join(parts)
+
+
 def _precache_urls() -> list[str]:
     return [
         reverse("pwa:offline"),
@@ -82,8 +95,11 @@ def _precache_urls() -> list[str]:
 @never_cache
 def service_worker(request: HttpRequest) -> HttpResponse:
     urls = _precache_urls()
-    # La versión cambia sola cuando cambian los archivos (en producción llevan hash en el nombre).
-    version = hashlib.sha256(("|".join(urls) + settings.APP_VERSION).encode()).hexdigest()[:12]
+    # La versión cambia sola cuando cambian los archivos: en producción llevan hash en el nombre;
+    # en desarrollo el nombre no cambia, así que también cuenta la fecha y el tamaño de cada uno.
+    version = hashlib.sha256(
+        ("|".join(urls) + settings.APP_VERSION + _static_fingerprint()).encode()
+    ).hexdigest()[:12]
     body = render_to_string(
         "pwa/sw.js",
         {

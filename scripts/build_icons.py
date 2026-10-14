@@ -37,7 +37,7 @@ ICONS = [
     "chevron-right",
     "chevron-left",
     "info",
-    "sparkles",
+    "lightbulb",
     "file-text",
     "landmark",
     "credit-card",
@@ -66,6 +66,14 @@ ICONS = [
     "chart-column",
     "check",
     "chevron-down",
+    "log-in",
+    "user-plus",
+    "audio-lines",
+    "send",
+    "hand",
+    "thumbs-up",
+    "smile",
+    "plane",
 ]
 OUTPUT = Path(__file__).resolve().parent.parent / "templates" / "icons" / "sprite.svg"
 

@@ -38,7 +38,7 @@ def session_of(user):
             ["nombre_negocio", "moneda"],
             {"nombre_negocio": "Tienda La Esquina"},
         ),
-        ("se llama Dulces Ana.", ["uso"], {"nombre_negocio": "Dulces Ana"}),
+        ("se llama Dulces Ariel.", ["uso"], {"nombre_negocio": "Dulces Ariel"}),
         ("Pesos (RD$)", ["moneda"], {"moneda": "DOP"}),
         ("no sé", ["uso"], {}),
     ],
@@ -66,20 +66,20 @@ def test_sin_consentimiento_funciona_con_reglas_y_crea_al_confirmar(client, user
     assert session.stage == Stage.CHAT and session.draft == {"uso": "ambos"}
     assert session.messages[-1]["texto"] == assistant.QUESTIONS["nombre_negocio"]
 
-    say(client, "Dulces Ana")
+    say(client, "Dulces Ariel")
     say(client, "Pesos (RD$)")
     session.refresh_from_db()
     assert session.stage == Stage.SUMMARY
     # Conversar nunca crea: hace falta el botón.
     assert not Workspace.objects.filter(owner=user).exists()
     page = client.get(CHAT).content.decode()
-    assert 'data-testid="resumen"' in page and "Dulces Ana" in page
+    assert 'data-testid="resumen"' in page and "Dulces Ariel" in page
 
     response = client.post(reverse("asistente:create"))
     assert response["Location"] == CHAT
     negocio = Workspace.objects.get(owner=user, kind="business")
     personal = Workspace.objects.get(owner=user, kind="personal")
-    assert (negocio.name, negocio.currency, personal.currency) == ("Dulces Ana", "DOP", "DOP")
+    assert (negocio.name, negocio.currency, personal.currency) == ("Dulces Ariel", "DOP", "DOP")
     session.refresh_from_db()
     assert session.stage == Stage.FILLING
     assert session.queue == [str(personal.pk), str(negocio.pk)]
@@ -103,12 +103,12 @@ def test_con_ia_usa_lo_que_entendio_y_su_mensaje(client, user):
         {
             "mensaje": "¡Qué rico! ¿En qué moneda cobras?",
             "uso": "negocio",
-            "nombre_negocio": "Dulces Ana",
+            "nombre_negocio": "Dulces Ariel",
         }
     )
-    say(client, "vendo postres, el negocio se llama Dulces Ana")
+    say(client, "vendo postres, el negocio se llama Dulces Ariel")
     session = session_of(user)
-    assert session.draft == {"uso": "negocio", "nombre_negocio": "Dulces Ana"}
+    assert session.draft == {"uso": "negocio", "nombre_negocio": "Dulces Ariel"}
     assert session.messages[-1]["texto"] == "¡Qué rico! ¿En qué moneda cobras?"
 
     # La IA dice que todo está listo, pero el servidor decide: con moneda ya hay resumen.
@@ -132,7 +132,7 @@ def test_ia_caida_degrada_a_reglas(client, user):
 
 def test_corregir_en_el_resumen(client, user):
     client.force_login(user)
-    for text in ("Mi negocio", "Dulces Ana", "pesos"):
+    for text in ("Mi negocio", "Dulces Ariel", "pesos"):
         say(client, text)
     say(client, "mejor en dólares")
     session = session_of(user)
@@ -150,7 +150,7 @@ def test_no_duplica_un_espacio_que_ya_existe(client, user, personal_ws):
         "espacio:dashboard", args=[personal_ws.pk]
     )
     # «Ambos» crea solo lo que falta.
-    for text in ("Ambos", "Dulces Ana", "pesos"):
+    for text in ("Ambos", "Dulces Ariel", "pesos"):
         say(client, text)
     client.post(reverse("asistente:create"))
     assert Workspace.objects.filter(owner=user).count() == 2
@@ -192,9 +192,9 @@ def test_anonimo_va_a_login(client):
 
 def test_cada_persona_ve_solo_su_conversacion(client, user, other_user):
     client.force_login(user)
-    say(client, "se llama Dulces Ana")
+    say(client, "se llama Dulces Ariel")
     client.force_login(other_user)
-    assert "Dulces Ana" not in client.get(CHAT).content.decode()
+    assert "Dulces Ariel" not in client.get(CHAT).content.decode()
 
 
 # ---------------------------------------------------------------- llenado guiado
@@ -259,7 +259,7 @@ def test_llenado_sin_datos_no_deja_nada_pendiente(client, user, filling):
 
 def test_saltar_un_espacio_pasa_al_siguiente(client, user):
     client.force_login(user)
-    for text in ("Ambos", "Dulces Ana", "pesos"):
+    for text in ("Ambos", "Dulces Ariel", "pesos"):
         say(client, text)
     client.post(reverse("asistente:create"))
     negocio = Workspace.objects.get(owner=user, kind="business")

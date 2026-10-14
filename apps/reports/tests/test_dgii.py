@@ -99,7 +99,7 @@ def test_archivo_607(negocio):
     ws, banco = negocio
     venta(ws, banco, ncf="B0100000001", customer_name="Ferretería Sol", customer_tax_id="101123456")
     venta(ws, ncf="B0200000001")  # consumidor final, en efectivo
-    venta(ws, payment="credito", account=None, customer_name="Ana", ncf="E310000000001")
+    venta(ws, payment="credito", account=None, customer_name="Ariel", ncf="E310000000001")
     venta(ws)  # sin NCF
     f = sales_607(ws, *OCT)
     assert f.missing_ncf == 1 and f.missing_tax_id == 2 and len(f.rows) == 3

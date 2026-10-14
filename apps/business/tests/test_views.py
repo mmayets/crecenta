@@ -189,7 +189,7 @@ def test_calculadora_de_precios(logged, negocio):
 def test_por_cobrar_y_por_pagar(logged, negocio):
     caja = Account.objects.get(workspace=negocio)
     nueva = {"client_uuid": str(uuid.uuid4()), "concept": "Saldo viejo", "amount": "2500",
-             "counterpart_name": "Ana"}  # fmt: skip
+             "counterpart_name": "Ariel"}  # fmt: skip
     logged.post(u("receivables", negocio), nueva)
     cxc = Receivable.objects.get()
     html = logged.get(u("receivables", negocio)).content.decode()

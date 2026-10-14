@@ -96,14 +96,14 @@ STEPS: dict[str, Step] = {
              placeholder="Ej.: 4,000", skip_label="No gasto en eso"),
         Step("ahorro", "Tus gastos", CARDS, "¿Quieres ahorrar para algo?", "", (
             Option("Fondo de emergencia", "Un fondo de emergencia", "shield-check"),
-            Option("Un viaje", "Un viaje", "sparkles"),
+            Option("Un viaje", "Un viaje", "plane"),
             Option("Comprar algo", "Comprar algo", "shopping-bag"),
             Option("no", "Ahora no", "clock"),
         ), columns=2),
         Step("monto_ahorro", "Tus gastos", AMOUNT, "¿Cuánto quieres apartar cada mes?",
              placeholder="Ej.: 3,000"),
         Step("nombre_negocio", "Tu negocio", TEXT, "¿Cómo se llama tu negocio?",
-             placeholder="Ej.: Dulces Ana"),
+             placeholder="Ej.: Dulces Ariel"),
         Step("actividad", "Tu negocio", TEXT, "¿A qué se dedica?",
              placeholder="Ej.: repostería, salón de belleza, colmado"),
         Step("modelo", "Tu negocio", CARDS, "¿Qué vendes?", "", (

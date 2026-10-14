@@ -19,6 +19,7 @@ def test_inicio_anonimo_ve_la_pagina_publica_con_precios(client):
     assert response.status_code == 200
     assert "RD$199" in html and "RD$449" in html and "RD$1,990" in html
     assert reverse("account_login") in html and reverse("account_signup") in html
+    assert 'data-testid="acceso-portada"' in html and "Conoce a Sophia" in html
 
 
 def test_la_pwa_instalada_abre_el_login(client):
@@ -32,12 +33,12 @@ def test_elegir_uso_crea_espacios(client, user):
     assert "¿Para qué usarás la app?" in page.content.decode()
     response = client.post(
         reverse("workspaces:usage"),
-        {"usage": "ambos", "currency": "DOP", "business_name": "Dulces Ana"},
+        {"usage": "ambos", "currency": "DOP", "business_name": "Dulces Ariel"},
     )
     personal = Workspace.objects.get(owner=user, kind="personal")
     # Un espacio personal nuevo continúa con el onboarding.
     assert response["Location"] == reverse("onboarding:index", kwargs={"ws": personal.pk})
-    assert Workspace.objects.get(owner=user, kind="business").name == "Dulces Ana"
+    assert Workspace.objects.get(owner=user, kind="business").name == "Dulces Ariel"
 
 
 def test_elegir_solo_negocio_va_al_tablero(client, user):
@@ -75,7 +76,7 @@ def test_tablero_muestra_promesa_segun_tipo(client, user, personal_ws, business_
     negocio = client.get(reverse("espacio:dashboard", kwargs={"ws": business_ws.pk}))
     html = negocio.content.decode()
     assert "Conoce tus costos" in html
-    assert "Dulces Ana · Negocio" in html
+    assert "Dulces Ariel · Negocio" in html
 
 
 def test_selector_solo_muestra_espacios_propios(client, user, personal_ws, other_ws):
@@ -95,4 +96,4 @@ def test_selector_vacio(client, user):
 def test_str_membresia(user, personal_ws):
     from apps.workspaces.models import Membership
 
-    assert str(Membership.objects.get(workspace=personal_ws)) == "ana@example.com · Mis finanzas"
+    assert str(Membership.objects.get(workspace=personal_ws)) == "ariel@example.com · Mis finanzas"

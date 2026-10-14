@@ -7,13 +7,13 @@ User = get_user_model()
 
 
 def test_crear_usuario_normaliza_correo():
-    user = User.objects.create_user("Ana@Example.COM", "clave-segura-123")
-    assert user.email == "ana@example.com"
+    user = User.objects.create_user("Ariel@Example.COM", "clave-segura-123")
+    assert user.email == "ariel@example.com"
     assert user.check_password("clave-segura-123")
     assert not user.is_staff
-    assert str(user) == "ana@example.com"
-    assert user.get_short_name() == "ana"
-    assert user.get_full_name() == "ana@example.com"
+    assert str(user) == "ariel@example.com"
+    assert user.get_short_name() == "ariel"
+    assert user.get_full_name() == "ariel@example.com"
 
 
 def test_correo_obligatorio():
@@ -29,8 +29,8 @@ def test_superusuario():
 
 
 def test_consentimiento_ia():
-    user = User.objects.create_user("ana@example.com", "clave-segura-123", first_name="Ana")
-    assert user.get_short_name() == "Ana"
+    user = User.objects.create_user("ariel@example.com", "clave-segura-123", first_name="Ariel")
+    assert user.get_short_name() == "Ariel"
     assert not user.ai_consent
     user.set_ai_consent(True)
     user.refresh_from_db()
@@ -54,9 +54,9 @@ def test_registro_con_correo(client):
 
 
 def test_inicio_de_sesion_con_correo(client):
-    User.objects.create_user("ana@example.com", "Clave-Segura-2026")
+    User.objects.create_user("ariel@example.com", "Clave-Segura-2026")
     response = client.post(
-        reverse("account_login"), {"login": "ana@example.com", "password": "Clave-Segura-2026"}
+        reverse("account_login"), {"login": "ariel@example.com", "password": "Clave-Segura-2026"}
     )
     assert response.status_code == 302
     assert response["Location"] == reverse("home")

@@ -132,9 +132,9 @@ def test_editar_venta_y_aviso_sin_existencias(logged, business_ws, refresco, caj
     form_html = logged.get(edit_url).content.decode()
     assert "Editar venta" in form_html and 'value="2' in form_html
     logged.post(edit_url, {**data, "cantidad_1": "1", "payment": "credito", "account": "",
-                           "customer_name": "Ana"})  # fmt: skip
+                           "customer_name": "Ariel"})  # fmt: skip
     sale.refresh_from_db()
-    assert sale.total == D("120.00") and sale.receivable.customer.name == "Ana"
+    assert sale.total == D("120.00") and sale.receivable.customer.name == "Ariel"
     collect_receivable(business_ws, user, sale.receivable, "10", caja, timezone.localdate())
     assert logged.get(edit_url)["Location"] == u("sale_detail", business_ws, sale_id=sale.pk)
     libre = register_sale(business_ws, user, SaleData(

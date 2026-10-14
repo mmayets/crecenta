@@ -47,7 +47,7 @@ def test_demo_completa():
     product = Product.objects.for_workspace(business).get(name="Bizcocho de vainilla (1 lb)")
     assert (product.unit_cost, product.price) == (Decimal("600.00"), Decimal("857.14"))
     assert product.components.count() == 3
-    assert str(BusinessProfile.objects.get()) == "Dulces Ana · Repostería"
+    assert str(BusinessProfile.objects.get()) == "Dulces Ariel · Repostería"
 
     # Negocio con indicadores reales (pase lo que pase con la fecha de hoy).
     snapshot = business_snapshot(business, timezone.localdate())

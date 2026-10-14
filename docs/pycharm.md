@@ -62,7 +62,7 @@ Esto, usando la cuenta administradora:
 1. crea el usuario `crecenta` (con permiso para crear la base de los tests) si no existe;
 2. crea la base `crecenta` (UTF-8) si no existe;
 3. aplica las migraciones;
-4. carga la demo (persona RD$50,000 y el negocio "Dulces Ana").
+4. carga la demo (persona RD$50,000 y el negocio "Dulces Ariel").
 
 Puede repetirse sin problema: lo que ya existe no se toca. Desde la terminal es lo mismo:
 

@@ -27,9 +27,15 @@ def home(request: HttpRequest) -> HttpResponse:
     if not request.user.is_authenticated:
         if request.GET.get("origen") == "pwa":
             return redirect("account_login")
+        from django.conf import settings
+
         from apps.core.plans import PLANS
 
-        return render(request, "public/home.html", {"plans": PLANS})
+        return render(
+            request,
+            "public/home.html",
+            {"plans": PLANS, "google_login": settings.SOCIALACCOUNT_ENABLED_GOOGLE},
+        )
     workspace = default_workspace(request.user, request.session.get(SESSION_KEY))
     if workspace is None:
         return redirect("asistente:first_space")

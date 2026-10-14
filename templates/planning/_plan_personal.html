@@ -19,7 +19,7 @@
     <p class="card mt-4 flex items-center gap-2" role="status">{% icon "refresh-cw" "h-5 w-5 animate-spin text-marca-700" %}Preparando la explicación de tu plan…</p>
   {% elif plan.ai_narrative %}
     <section class="card mt-4 space-y-3" aria-label="Explicación">
-      <p class="flex gap-2">{% icon "sparkles" "h-5 w-5 shrink-0 text-marca-700" %}<span>{{ plan.ai_narrative.resumen }}</span></p>
+      <p class="flex gap-2">{% icon "lightbulb" "h-5 w-5 shrink-0 text-marca-700" %}<span>{{ plan.ai_narrative.resumen }}</span></p>
       {% for rec in plan.ai_narrative.recomendaciones %}
         <article class="rounded-xl bg-slate-50 p-3">
           <h3 class="font-semibold">{{ rec.titulo }}{% if rec.es_proyeccion %} <span class="badge-info">Proyección</span>{% endif %}</h3>
@@ -38,7 +38,7 @@
     <ul class="card mt-2 divide-y p-0">
       {% for line in c.lineas %}
         <li class="flex items-center gap-3 px-4 py-3">
-          {% if line.tipo == "compromiso" or line.tipo == "deuda" %}{% icon "calendar" "h-5 w-5 text-slate-500" %}{% elif line.tipo == "ahorro" %}{% icon "piggy-bank" "h-5 w-5 text-marca-700" %}{% elif line.tipo == "reserva" %}{% icon "shield-check" "h-5 w-5 text-sky-700" %}{% elif line.tipo == "discrecional" %}{% icon "sparkles" "h-5 w-5 text-amber-600" %}{% else %}{% icon "wallet" "h-5 w-5 text-slate-500" %}{% endif %}
+          {% if line.tipo == "compromiso" or line.tipo == "deuda" %}{% icon "calendar" "h-5 w-5 text-slate-500" %}{% elif line.tipo == "ahorro" %}{% icon "piggy-bank" "h-5 w-5 text-marca-700" %}{% elif line.tipo == "reserva" %}{% icon "shield-check" "h-5 w-5 text-sky-700" %}{% elif line.tipo == "discrecional" %}{% icon "smile" "h-5 w-5 text-amber-600" %}{% else %}{% icon "wallet" "h-5 w-5 text-slate-500" %}{% endif %}
           <span class="flex-1">{{ line.nombre }}{% if line.vencimientos %}<span class="muted block">vence {% for v in line.vencimientos %}{{ v|slice:"8:" }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% endif %}</span>
           <span class="amount">{{ line.monto|money:cur }}</span>
         </li>

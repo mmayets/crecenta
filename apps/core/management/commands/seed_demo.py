@@ -2,8 +2,8 @@
 
 - Persona: el caso RD$50,000 (cobro el día 1), movimientos del mes en curso, ahorro apartado y un
   plan aceptado.
-- Vendedora "vendedor@crecenta.app" (misma contraseña) con rol vendedor en Dulces Ana (Fase 4).
-- Negocio "Dulces Ana": repostería con tres productos (el bizcocho de costo RD$600 a RD$857.14,
+- Vendedora "vendedor@crecenta.app" (misma contraseña) con rol vendedor en Dulces Ariel (Fase 4).
+- Negocio "Dulces Ariel": repostería con tres productos (el bizcocho de costo RD$600 a RD$857.14,
   margen del 30 %), gastos fijos, metas, ventas de contado y a crédito de este mes y del anterior,
   un cobro parcial, una compra a crédito, un retiro hacia la persona y una propuesta de plan del
   negocio (ver `apps/business/services/demo.py`).
@@ -64,16 +64,16 @@ class Command(BaseCommand):
         if existing and not reset:
             self.stdout.write(f"La demo ya existe ({email}). Usa --reset para recrearla.")
             return
-        if existing and not existing.owned_workspaces.filter(name="Dulces Ana").exists():
+        if existing and not existing.owned_workspaces.filter(name="Dulces Ariel").exists():
             raise CommandError(f"{email} no es una cuenta de demostración; no se borrará.")
         if existing:
             existing.owned_workspaces.all().delete()
             existing.delete()
 
         with transaction.atomic():
-            user = User.objects.create_user(email, password, first_name="Ana")
+            user = User.objects.create_user(email, password, first_name="Ariel")
             personal, business = create_workspaces_for_usage(
-                user, "ambos", business_name="Dulces Ana"
+                user, "ambos", business_name="Dulces Ariel"
             )
             seller = self._seller(business, password)
             today = timezone.localdate()
@@ -91,7 +91,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Demo lista."))
         self.stdout.write(f"  Correo: {email}\n  Contraseña: {password}")
         if seller is not None:
-            self.stdout.write(f"  Vendedora de Dulces Ana: {seller.email} (misma contraseña)")
+            self.stdout.write(f"  Vendedora de Dulces Ariel: {seller.email} (misma contraseña)")
         self.stdout.write(
             f"  Plan personal: {plan.plan_status} · Plan del negocio: "
             f"{business_plan.plan_status} · Producto: "
