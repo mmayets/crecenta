@@ -3,6 +3,7 @@
   <a role="menuitem" class="menu-item" href="{% url 'business:sale_new' ws=ws %}">{% icon "shopping-cart" "h-5 w-5 text-emerald-600" %}Venta</a>
   <a role="menuitem" class="menu-item" href="{% url 'business:receivables' ws=ws %}">{% icon "hand-coins" "h-5 w-5 text-emerald-600" %}Cobro a un cliente</a>
 {% elif current_workspace.is_business %}
+  <a role="menuitem" class="menu-item font-semibold" href="{% url 'ledger:sophia' ws=ws %}">{% include "partials/sophia_avatar.html" with clase="h-5 w-5" %}Pedírselo a Sophia</a>
   <a role="menuitem" class="menu-item" href="{% url 'business:sale_new' ws=ws %}">{% icon "shopping-cart" "h-5 w-5 text-emerald-600" %}Venta</a>
   <a role="menuitem" class="menu-item" href="{% url 'ledger:new' ws=ws %}">{% icon "arrow-up-right" "h-5 w-5 text-red-600" %}Gasto</a>
   <a role="menuitem" class="menu-item" href="{% url 'business:purchase_new' ws=ws %}">{% icon "package" "h-5 w-5" %}Compra de mercancía</a>
@@ -12,9 +13,9 @@
   {% if can_propietario %}<a role="menuitem" class="menu-item" href="{% url 'business:owner' ws=ws %}">{% icon "arrow-left-right" "h-5 w-5" %}Retiro o aporte</a>{% endif %}
   <a role="menuitem" class="menu-item" href="{% url 'receipts:index' ws=ws %}">{% icon "camera" "h-5 w-5" %}Foto de comprobante</a>
 {% else %}
+  <a role="menuitem" class="menu-item font-semibold" href="{% url 'ledger:sophia' ws=ws %}">{% include "partials/sophia_avatar.html" with clase="h-5 w-5" %}Pedírselo a Sophia</a>
   <a role="menuitem" class="menu-item" href="{% url 'ledger:new' ws=ws %}">{% icon "arrow-up-right" "h-5 w-5 text-red-600" %}Gasto</a>
   <a role="menuitem" class="menu-item" href="{% url 'ledger:new' ws=ws %}?tipo=ingreso">{% icon "arrow-down-left" "h-5 w-5 text-emerald-600" %}Ingreso</a>
-  <a role="menuitem" class="menu-item" href="{% url 'ledger:new' ws=ws %}#texto">{% icon "sparkles" "h-5 w-5 text-turquesa-600" %}Pedírselo a CentIA</a>
   <a role="menuitem" class="menu-item" href="{% url 'receipts:index' ws=ws %}">{% icon "camera" "h-5 w-5" %}Foto de comprobante</a>
   <a role="menuitem" class="menu-item" href="{% url 'ledger:transfer' ws=ws %}">{% icon "arrow-left-right" "h-5 w-5" %}Transferencia</a>
 {% endif %}

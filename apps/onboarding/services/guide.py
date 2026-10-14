@@ -408,7 +408,8 @@ def _seller(workspace: Workspace, user: User, today: date) -> list[Suggestion]:
 PAGE_TIPS = {
     "espacio:dashboard": "Este es tu resumen. La tarjeta azul es la cifra que más importa hoy.",
     "ledger:movements": "Aquí está todo lo que entró y salió. Cambia de mes con las flechas.",
-    "ledger:new": "Anota el monto y la categoría, o cuéntaselo a CentIA y solo confirmas.",
+    "ledger:new": "Anota el monto y la categoría. Si prefieres, Sophia lo prepara por ti.",
+    "ledger:sophia": "Dile a Sophia qué pasó; revisa la tarjeta del movimiento y pulsa «Guardar».",
     "ledger:transfer": "Mover dinero entre tus cuentas no cuenta como gasto ni como ingreso.",
     "ledger:accounts": "Tus cuentas y su saldo. Marca como ahorro las que no debes gastar.",
     "ledger:categories": "Las categorías deciden en qué grupo del plan cae cada gasto.",

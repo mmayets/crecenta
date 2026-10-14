@@ -167,7 +167,7 @@ class AssistantTurn(_Base):
 
 
 class MovementTurn(_Base):
-    """Un turno de CentIA al registrar un movimiento: lo que dice y lo que entendió del mensaje.
+    """Un turno de Sophia al registrar un movimiento: lo que dice y lo que entendió del mensaje.
 
     Solo propone: el servidor empareja cuenta y categoría con las reales, decide qué falta y
     guarda únicamente cuando la persona confirma.

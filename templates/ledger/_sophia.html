@@ -1,19 +1,19 @@
-{% load icons money %}{# Chat de CentIA para registrar un movimiento. htmx lo reemplaza entero en cada turno. #}
-<section id="centia" class="card flex flex-col p-0" aria-label="CentIA">
+{% load icons money %}{# Chat de Sophia para registrar un movimiento. htmx lo reemplaza entero en cada turno. #}
+<section id="sophia" class="card flex flex-col p-0" aria-label="Sophia">
   <div class="flex items-center gap-2 border-b border-slate-200 px-4 py-3 md:px-5">
-    <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-turquesa-100 text-turquesa-800">{% icon "sparkles" "h-4 w-4" %}</span>
+    {% include "partials/sophia_avatar.html" with clase="h-9 w-9" %}
     <div class="min-w-0 flex-1">
-      <h2 class="text-base leading-tight">CentIA</h2>
+      <h2 class="text-base leading-tight">Sophia</h2>
       <p class="text-xs text-slate-500">Cuéntame el movimiento y lo preparo por ti</p>
     </div>
-    <form method="post" action="{% url 'ledger:centia_restart' ws=workspace.pk %}" hx-post="{% url 'ledger:centia_restart' ws=workspace.pk %}" hx-target="#centia" hx-swap="outerHTML">
+    <form method="post" action="{% url 'ledger:sophia_restart' ws=workspace.pk %}" hx-post="{% url 'ledger:sophia_restart' ws=workspace.pk %}" hx-target="#sophia" hx-swap="outerHTML">
       {% csrf_token %}
       <button class="rounded-md p-2 text-slate-500 hover:bg-slate-100">{% icon "refresh-cw" "h-4 w-4" "Empezar de nuevo" %}</button>
     </form>
   </div>
 
-  <ol class="max-h-[22rem] min-h-[8rem] flex-1 space-y-3 overflow-y-auto p-4 md:px-5" data-scroll-bottom aria-live="polite">
-    {% for m in centia.messages %}
+  <ol class="max-h-[55vh] min-h-[14rem] flex-1 space-y-3 overflow-y-auto p-4 md:px-5" data-scroll-bottom aria-live="polite">
+    {% for m in sophia.messages %}
       {% if m.rol == "usuario" %}
         <li class="flex justify-end"><p class="max-w-[85%] whitespace-pre-line rounded-2xl rounded-br-sm bg-marca-700 px-3 py-2 text-sm text-white">{{ m.texto }}</p></li>
       {% else %}
@@ -25,9 +25,9 @@
     {% endfor %}
   </ol>
 
-  {% if centia_proposal %}
-    {% with p=centia_proposal %}
-    <div class="mx-4 mb-3 rounded-xl border border-turquesa-200 bg-turquesa-50 p-3 md:mx-5" data-testid="centia-propuesta">
+  {% if sophia_proposal %}
+    {% with p=sophia_proposal %}
+    <div class="mx-4 mb-3 rounded-xl border border-turquesa-200 bg-turquesa-50 p-3 md:mx-5" data-testid="sophia-propuesta">
       <p class="section-title">Movimiento listo para guardar</p>
       <dl class="mt-2 space-y-1 text-sm">
         <div class="flex justify-between gap-3"><dt class="text-slate-500">{{ p.tipo }}</dt><dd class="amount {% if p.kind == 'ingreso' %}text-emerald-700{% endif %}">{{ p.monto|money:workspace.currency }}</dd></div>
@@ -38,28 +38,28 @@
       </dl>
       {% if p.avisos %}<div class="mt-3 space-y-2">{% include "ledger/_warnings.html" with warnings=p.avisos %}</div>{% endif %}
       <div class="mt-3 grid grid-cols-2 gap-2">
-        <form method="post" action="{% url 'ledger:centia_save' ws=workspace.pk %}" hx-post="{% url 'ledger:centia_save' ws=workspace.pk %}" hx-target="#centia" hx-swap="outerHTML" hx-disabled-elt="find button">
+        <form method="post" action="{% url 'ledger:sophia_save' ws=workspace.pk %}" hx-post="{% url 'ledger:sophia_save' ws=workspace.pk %}" hx-target="#sophia" hx-swap="outerHTML" hx-disabled-elt="find button">
           {% csrf_token %}
-          <input type="hidden" name="client_uuid" value="{{ centia_uuid }}">
-          <button class="btn-primary w-full" data-testid="centia-guardar">{% icon "circle-check" "h-4 w-4" %}Guardar</button>
+          <input type="hidden" name="client_uuid" value="{{ sophia_uuid }}">
+          <button class="btn-primary w-full" data-testid="sophia-guardar">{% icon "circle-check" "h-4 w-4" %}Guardar</button>
         </form>
-        <a class="btn-secondary" href="{% url 'ledger:new' ws=workspace.pk %}?centia=1">{% icon "pencil" "h-4 w-4" %}Editar</a>
+        <a class="btn-secondary" href="{% url 'ledger:new' ws=workspace.pk %}?sophia=1">{% icon "pencil" "h-4 w-4" %}Editar</a>
       </div>
     </div>
     {% endwith %}
   {% endif %}
 
   <div class="border-t border-slate-200 p-4 md:px-5">
-    {% if centia_replies %}
-      <form method="post" action="{% url 'ledger:centia' ws=workspace.pk %}" hx-post="{% url 'ledger:centia' ws=workspace.pk %}" hx-target="#centia" hx-swap="outerHTML" class="mb-3 flex flex-wrap gap-2">
+    {% if sophia_replies %}
+      <form method="post" action="{% url 'ledger:sophia' ws=workspace.pk %}" hx-post="{% url 'ledger:sophia' ws=workspace.pk %}" hx-target="#sophia" hx-swap="outerHTML" class="mb-3 flex flex-wrap gap-2">
         {% csrf_token %}
-        {% for option in centia_replies %}<button name="texto" value="{{ option }}" class="btn-secondary btn-sm">{{ option }}</button>{% endfor %}
+        {% for option in sophia_replies %}<button name="texto" value="{{ option }}" class="btn-secondary btn-sm">{{ option }}</button>{% endfor %}
       </form>
     {% endif %}
-    <form method="post" action="{% url 'ledger:centia' ws=workspace.pk %}" hx-post="{% url 'ledger:centia' ws=workspace.pk %}" hx-target="#centia" hx-swap="outerHTML" hx-disabled-elt="find button[type=submit]" class="flex items-end gap-2">
+    <form method="post" action="{% url 'ledger:sophia' ws=workspace.pk %}" hx-post="{% url 'ledger:sophia' ws=workspace.pk %}" hx-target="#sophia" hx-swap="outerHTML" hx-disabled-elt="find button[type=submit]" class="flex items-end gap-2">
       {% csrf_token %}
-      <label for="id_texto" class="sr-only">Mensaje para CentIA</label>
-      <textarea id="id_texto" name="texto" rows="2" maxlength="500" required class="text-sm" placeholder="{% if centia_proposal %}¿Algo que corregir? Ej.: eran 450{% else %}Ej.: gasté 350 en el colmado ayer{% endif %}"></textarea>
+      <label for="id_texto" class="sr-only">Mensaje para Sophia</label>
+      <textarea id="id_texto" name="texto" rows="2" maxlength="500" required autofocus class="text-sm" placeholder="{% if sophia_proposal %}¿Algo que corregir? Ej.: eran 450{% else %}Ej.: gasté 350 en el colmado ayer{% endif %}"></textarea>
       <div class="flex shrink-0 flex-col gap-2">
         <div x-data="voiceRecorder" data-url="{% url 'onboarding:voice' ws=workspace.pk %}" data-target="id_texto">
           <button type="button" class="btn-secondary btn-sm w-full" x-show="supported" @click="toggle" :disabled="busy">{% icon "mic" "h-4 w-4" %}<span x-text="label">Dictar</span></button>
@@ -68,6 +68,6 @@
         <button type="submit" class="btn-primary btn-sm">{% icon "arrow-right" "h-4 w-4" %}Enviar</button>
       </div>
     </form>
-    {% if centia_ai_off %}<p class="mt-2 text-xs text-slate-500">Sin el uso de IA activado entiendo frases sencillas. <a class="underline" href="{% url 'accounts:settings' %}">Activarla</a></p>{% endif %}
+    {% if sophia_ai_off %}<p class="mt-2 text-xs text-slate-500">Sin el uso de IA activado entiendo frases sencillas. <a class="underline" href="{% url 'accounts:settings' %}">Activarla</a></p>{% endif %}
   </div>
 </section>

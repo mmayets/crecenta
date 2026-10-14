@@ -96,7 +96,7 @@ function scrollChats(event) {
   document.querySelectorAll("[data-scroll-bottom]").forEach((el) => { el.scrollTop = el.scrollHeight; });
   // Solo tras un turno del propio chat (otros intercambios de htmx no deben mover el cursor).
   const chat = event && event.type === "htmx:afterSettle" && event.target.closest
-    ? event.target.closest("#asistente, #centia")
+    ? event.target.closest("#asistente, #sophia")
     : null;
   const input = chat ? chat.querySelector("textarea") : null;
   if (input) input.focus();

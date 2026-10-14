@@ -1,27 +1,19 @@
 {% extends "base.html" %}
 {% load icons %}
 {% block title %}Registrar · Crecenta{% endblock %}
-{% block main_width %}max-w-5xl{% endblock %}
 {% block content %}
-  <div class="mb-6">
-    <h1>Registrar movimiento</h1>
-    <p class="mt-1 text-sm text-slate-500">Llena el formulario o cuéntaselo a CentIA: lo prepara por ti y tú solo confirmas.</p>
-  </div>
-  <div class="grid items-start gap-4 lg:grid-cols-2">
-    <div>
-      {% if from_ai %}<p class="card-tip mb-4 flex items-center gap-2 text-sm">{% icon "sparkles" "h-4 w-4 shrink-0" %}Esto es lo que entendimos. Revísalo y guarda.</p>{% endif %}
-      <form method="post" action="{% url 'ledger:new' ws=workspace.pk %}" class="card space-y-4 md:p-5"
-            hx-post="{% url 'ledger:warnings' ws=workspace.pk %}" hx-trigger="change from:#id_amount, change from:#id_category, change from:input[name=kind]" hx-target="#avisos" hx-swap="innerHTML">
-        {% csrf_token %}
-        {% include "partials/form.html" %}
-        <div id="avisos" aria-live="polite"></div>
-        <button type="submit" class="btn-primary w-full">Guardar</button>
-      </form>
-    </div>
-
-    <div id="texto" class="space-y-4">
-      {% include "ledger/_centia.html" %}
-      <a class="btn-secondary w-full" href="{% url 'receipts:index' ws=workspace.pk %}">{% icon "camera" "h-5 w-5" %}Subir foto de un comprobante</a>
-    </div>
-  </div>
+  <h1>Registrar movimiento</h1>
+  {% if from_ai %}
+    <p class="card-tip mt-4 flex items-center gap-2 text-sm">{% include "partials/sophia_avatar.html" with clase="h-6 w-6" %}Esto es lo que entendimos. Revísalo y guarda.</p>
+  {% else %}
+    <a id="texto" class="card-tip mt-4 flex items-center gap-2 text-sm font-medium no-underline" href="{% url 'ledger:sophia' ws=workspace.pk %}">{% include "partials/sophia_avatar.html" with clase="h-6 w-6" %}¿Prefieres contárselo a Sophia? Ella lo prepara y tú solo confirmas.{% icon "arrow-right" "ml-auto h-4 w-4 shrink-0" %}</a>
+  {% endif %}
+  <form method="post" action="{% url 'ledger:new' ws=workspace.pk %}" class="card mt-4 space-y-4 md:p-5"
+        hx-post="{% url 'ledger:warnings' ws=workspace.pk %}" hx-trigger="change from:#id_amount, change from:#id_category, change from:input[name=kind]" hx-target="#avisos" hx-swap="innerHTML">
+    {% csrf_token %}
+    {% include "partials/form.html" %}
+    <div id="avisos" aria-live="polite"></div>
+    <button type="submit" class="btn-primary w-full">Guardar</button>
+  </form>
+  <a class="btn-secondary mt-4 w-full" href="{% url 'receipts:index' ws=workspace.pk %}">{% icon "camera" "h-5 w-5" %}Subir foto de un comprobante</a>
 {% endblock %}

@@ -1,4 +1,4 @@
-"""CentIA en «Registrar movimiento»: la persona cuenta el movimiento en un chat y CentIA arma el
+"""Sophia en «Registrar movimiento»: la persona cuenta el movimiento en un chat y Sophia arma el
 borrador, pregunta lo que falta y lo deja listo para guardar.
 
 La IA solo propone lo que entendió de cada mensaje (`MovementTurn`); el servidor empareja cuenta y
@@ -29,7 +29,7 @@ from apps.ledger.models import Account, Category
 from apps.ledger.services.categories import SYNONYMS, match_account, match_category, normalize
 from apps.workspaces.models import Workspace
 
-NAME = "CentIA"
+NAME = "Sophia"
 MAX_TURNS = 30
 MAX_TEXT = 500
 HISTORY = 6
@@ -60,7 +60,7 @@ def new_state(workspace: Workspace, user: User) -> dict[str, Any]:
         "turns": 0,
         "messages": [
             {
-                "rol": "centia",
+                "rol": "sophia",
                 "texto": f"Soy {NAME}. Cuéntame el movimiento con tus palabras, por ejemplo "
                 f"{example}, y yo lo preparo para que solo tengas que confirmarlo.",
                 "enlaces": [],
@@ -70,7 +70,7 @@ def new_state(workspace: Workspace, user: User) -> dict[str, Any]:
 
 
 def _say(state: dict[str, Any], text: str, links: list[dict[str, str]] | None = None) -> None:
-    state["messages"].append({"rol": "centia", "texto": text, "enlaces": links or []})
+    state["messages"].append({"rol": "sophia", "texto": text, "enlaces": links or []})
 
 
 def kinds(workspace: Workspace) -> dict[str, str]:
@@ -147,7 +147,7 @@ def proposal(workspace: Workspace, state: dict[str, Any]) -> dict[str, Any] | No
 
 
 def form_initial(state: dict[str, Any]) -> dict[str, Any]:
-    """Valores para abrir el formulario con lo que CentIA ya entendió."""
+    """Valores para abrir el formulario con lo que Sophia ya entendió."""
     draft = state["draft"]
     initial = {
         "kind": draft.get("kind"),
@@ -238,7 +238,7 @@ def interpret_by_rules(text: str, pending: list[str], context: dict[str, Any]) -
 
 def _history(state: dict[str, Any]) -> str:
     lines = [
-        f"{NAME if m['rol'] == 'centia' else 'Persona'}: {m['texto']}"
+        f"{NAME if m['rol'] == 'sophia' else 'Persona'}: {m['texto']}"
         for m in state["messages"][-HISTORY - 1 : -1]
     ]
     return "\n".join(lines) or "(sin mensajes previos)"
@@ -314,8 +314,8 @@ def take_turn(
     result = run_structured(
         workspace=workspace,
         user=user,
-        purpose="centia_movimiento",
-        prompt_name="centia_movimiento",
+        purpose="sophia_movimiento",
+        prompt_name="sophia_movimiento",
         context=context,
         schema=MovementTurn,
         fallback=lambda: interpret_by_rules(text, pending, context),
@@ -381,7 +381,7 @@ def _reply(state: dict[str, Any], workspace: Workspace, ai_message: str | None) 
 
 
 def _form_url(workspace: Workspace) -> str:
-    return reverse("ledger:new", args=[workspace.pk]) + "?centia=1"
+    return reverse("ledger:new", args=[workspace.pk]) + "?sophia=1"
 
 
 # ---------------------------------------------------------------- guardar

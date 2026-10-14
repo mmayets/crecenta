@@ -22,7 +22,7 @@ CONTEXTS = {
     "onboarding_negocio": {"hoy": "2026-10-12", "texto": "vendo bizcochos"},
     "comprobante_ocr": {"hoy": "2026-10-12", "categorias": ["Alimentación"]},
     "registro_rapido": {"hoy": "2026-10-12", "texto": "x", "categorias": [], "cuentas": []},
-    "centia_movimiento": {
+    "sophia_movimiento": {
         "hoy": "2026-10-12",
         "tipos": {"gasto": "Gasto"},
         "categorias": ["Alimentación"],

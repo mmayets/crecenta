@@ -1,65 +1,77 @@
-"""Genera los íconos de la PWA en static/icons/ (requiere Pillow solo para generarlos).
+"""Genera los íconos de la PWA y las versiones livianas de los logos (Pillow solo para generarlos).
 
 Uso: uv run --with pillow python scripts/build_pwa_icons.py
-Diseño: fondo verde azulado de la marca y barras ascendentes con una flecha (crecer).
+
+Fuentes (originales, no se modifican):
+- static/logos/crecenta_logo.png: marca de la app, turquesa sobre fondo transparente.
+- static/logos/sophia_logo.png: Sophia, círculo turquesa sobre un cuadrado blanco.
+
+Salida:
+- static/icons/: íconos de la PWA (marca sobre azul marino) y favicon (marca sobre transparente).
+- static/logos/crecenta-marca.png: marca liviana para la interfaz.
+- static/logos/sophia-avatar.png: Sophia recortado en círculo (sin el cuadrado blanco).
 """
 
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-OUT = Path(__file__).resolve().parent.parent / "static" / "icons"
-TEAL = (15, 118, 110, 255)
-WHITE = (255, 255, 255, 255)
+ROOT = Path(__file__).resolve().parent.parent / "static"
+ICONS = ROOT / "icons"
+LOGOS = ROOT / "logos"
+NAVY = (16, 34, 74, 255)
 
 
-def draw_mark(size: int, safe: float) -> Image.Image:
+def fitted(logo: Image.Image, box: int) -> Image.Image:
+    """El logo escalado para caber en un cuadrado de `box` px, sin deformarlo."""
+    ratio = box / max(logo.size)
+    return logo.resize((round(logo.width * ratio), round(logo.height * ratio)), Image.LANCZOS)
+
+
+def icon(logo: Image.Image, size: int, safe: float, background=NAVY) -> Image.Image:
     """`safe`: fracción del lado reservada como margen (los íconos maskable necesitan ~10 %)."""
-    scale = 4  # sobremuestreo para bordes suaves
-    s = size * scale
-    img = Image.new("RGBA", (s, s), TEAL)
-    d = ImageDraw.Draw(img)
-    inner = s * (1 - 2 * safe)
-    x0 = y0 = s * safe
-    bar_w = inner * 0.16
-    gap = inner * 0.08
-    base = y0 + inner * 0.86
-    heights = [0.22, 0.34, 0.48]
-    left = x0 + inner * 0.16
-    for i, h in enumerate(heights):
-        bx = left + i * (bar_w + gap)
-        d.rounded_rectangle(
-            [bx, base - inner * h, bx + bar_w, base], radius=bar_w * 0.3, fill=WHITE
-        )
-    # Flecha ascendente por encima de las barras, con la punta orientada según la línea.
-    ax0, ay0 = x0 + inner * 0.12, y0 + inner * 0.40
-    tip = (x0 + inner * 0.86, y0 + inner * 0.10)
-    dx, dy = tip[0] - ax0, tip[1] - ay0
-    length = (dx * dx + dy * dy) ** 0.5
-    ux, uy = dx / length, dy / length
-    px, py = -uy, ux
-    head = inner * 0.17
-    bx, by = tip[0] - ux * head, tip[1] - uy * head
-    d.line([(ax0, ay0), (bx, by)], fill=WHITE, width=int(inner * 0.075))
-    d.polygon(
-        [
-            tip,
-            (bx + px * head * 0.6, by + py * head * 0.6),
-            (bx - px * head * 0.6, by - py * head * 0.6),
-        ],
-        fill=WHITE,
-    )
-    return img.resize((size, size), Image.LANCZOS)
+    canvas = Image.new("RGBA", (size, size), background or (0, 0, 0, 0))
+    mark = fitted(logo, round(size * (1 - 2 * safe)))
+    canvas.alpha_composite(mark, ((size - mark.width) // 2, (size - mark.height) // 2))
+    return canvas
+
+
+def sophia_circle(source: Image.Image, size: int) -> Image.Image:
+    """Recorta el círculo de Sophia y deja transparente lo que queda fuera de él."""
+    rgb = source.convert("RGB")
+    # El círculo es lo que no es blanco; su alto da el diámetro (el borde derecho viene recortado).
+    colored = rgb.point(lambda v: 255 if v < 235 else 0).convert("L")
+    left, top, right, bottom = colored.getbbox()
+    diameter = bottom - top
+    cx, cy = left + diameter / 2, top + diameter / 2
+    box = (round(cx - diameter / 2), round(cy - diameter / 2),
+           round(cx + diameter / 2), round(cy + diameter / 2))  # fmt: skip
+    # Lo que el original dejó fuera de la imagen se rellena con el turquesa del propio círculo.
+    teal = rgb.getpixel((round(cx), top + max(4, diameter // 40)))
+    square = Image.new("RGBA", (diameter, diameter), (*teal, 255))
+    # Solo se copia hasta donde llega el círculo en el original; a la derecha hay un borde blanco.
+    visible = source.convert("RGBA").crop((box[0], box[1], min(box[2], right - 3), box[3]))
+    square.alpha_composite(visible)
+    scale = 4  # sobremuestreo para un borde suave
+    mask = Image.new("L", (diameter * scale, diameter * scale), 0)
+    ImageDraw.Draw(mask).ellipse([0, 0, diameter * scale - 1, diameter * scale - 1], fill=255)
+    square.putalpha(mask.resize(square.size, Image.LANCZOS))
+    return square.resize((size, size), Image.LANCZOS)
 
 
 def main() -> None:
-    OUT.mkdir(parents=True, exist_ok=True)
-    draw_mark(192, 0.12).save(OUT / "icon-192.png")
-    draw_mark(512, 0.12).save(OUT / "icon-512.png")
-    draw_mark(512, 0.2).save(OUT / "icon-maskable-512.png")
-    draw_mark(180, 0.14).convert("RGB").save(OUT / "apple-touch-icon.png")
-    draw_mark(32, 0.08).save(OUT / "favicon-32.png")
-    print("íconos generados en", OUT)
+    ICONS.mkdir(parents=True, exist_ok=True)
+    logo = Image.open(LOGOS / "crecenta_logo.png").convert("RGBA")
+    icon(logo, 192, 0.16).save(ICONS / "icon-192.png", optimize=True)
+    icon(logo, 512, 0.16).save(ICONS / "icon-512.png", optimize=True)
+    icon(logo, 512, 0.24).save(ICONS / "icon-maskable-512.png", optimize=True)
+    icon(logo, 180, 0.18).convert("RGB").save(ICONS / "apple-touch-icon.png", optimize=True)
+    icon(logo, 32, 0.02, background=None).save(ICONS / "favicon-32.png", optimize=True)
+    fitted(logo, 192).save(LOGOS / "crecenta-marca.png", optimize=True)
+
+    sophia = Image.open(LOGOS / "sophia_logo.png")
+    sophia_circle(sophia, 160).save(LOGOS / "sophia-avatar.png", optimize=True)
+    print("Íconos y logos generados.")
 
 
 if __name__ == "__main__":

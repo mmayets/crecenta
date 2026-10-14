@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load icons %}
+{% block title %}Sophia · Registrar · Crecenta{% endblock %}
+{% block main_width %}max-w-2xl{% endblock %}
+{% block content %}
+  <div class="mb-6">
+    <h1>Registra con Sophia</h1>
+    <p class="mt-1 text-sm text-slate-500">Cuéntale qué pasó con tu dinero. Sophia te pregunta lo que falte y te muestra el movimiento antes de guardarlo.</p>
+  </div>
+  {% include "ledger/_sophia.html" %}
+  <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+    <a class="inline-flex items-center gap-1" href="{% url 'ledger:new' ws=workspace.pk %}?sophia=1">{% icon "pencil" "h-4 w-4" %}Prefiero el formulario</a>
+    <a class="inline-flex items-center gap-1" href="{% url 'receipts:index' ws=workspace.pk %}">{% icon "camera" "h-4 w-4" %}Subir foto de un comprobante</a>
+    <a class="inline-flex items-center gap-1" href="{% url 'ledger:movements' ws=workspace.pk %}">{% icon "arrow-left-right" "h-4 w-4" %}Ver movimientos</a>
+  </div>
+{% endblock %}

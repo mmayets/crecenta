@@ -1,7 +1,7 @@
 {% load icons %}{# Contenido del asistente permanente. htmx lo carga en cada página; la tira y la insignia van «fuera de banda». #}
 <div class="flex items-center gap-2">
-  <span class="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-turquesa-100 text-turquesa-800">{% icon "sparkles" "h-4 w-4" %}</span>
-  <h2 class="text-base">CentIA <span class="text-sm font-normal text-slate-500">· tu asistente</span></h2>
+  {% include "partials/sophia_avatar.html" with clase="h-8 w-8" %}
+  <h2 class="text-base">Sophia <span class="text-sm font-normal text-slate-500">· tu asistente</span></h2>
 </div>
 {% if tip %}<p class="mt-2 text-sm text-slate-600" data-testid="consejo">{{ tip }}</p>{% endif %}
 
@@ -30,11 +30,11 @@
   <input type="text" id="id_pregunta" name="pregunta" maxlength="300" required placeholder="Ej.: ¿cómo registro un pago?" class="text-sm">
   <button class="btn-primary btn-sm shrink-0" aria-label="Preguntar">{% icon "chevron-right" "h-4 w-4" %}</button>
 </form>
-<a class="mt-3 inline-block text-xs underline" href="{% url 'asistente:chat' %}">Crear otro espacio con CentIA</a>
+<a class="mt-3 inline-block text-xs underline" href="{% url 'asistente:chat' %}">Crear otro espacio con Sophia</a>
 
 <div id="asistente-tira" hx-swap-oob="innerHTML">{% if top %}
   <div x-data="tira" data-key="{{ top.key }}" x-show="shown" class="flex items-center gap-3 border-b border-turquesa-200 bg-turquesa-100 px-4 py-2 text-sm text-turquesa-800 sm:px-6 lg:px-10" data-testid="tira">
-    {% icon "sparkles" "h-4 w-4 shrink-0 text-turquesa-600" %}
+    {% include "partials/sophia_avatar.html" with clase="h-5 w-5" %}
     <p class="min-w-0 flex-1 truncate"><span class="font-semibold">{{ top.title }}</span><span class="hidden text-slate-600 lg:inline"> · {{ top.text }}</span></p>
     <a class="btn-primary btn-sm shrink-0" href="{{ top.url }}">{{ top.action }}</a>
     <button type="button" class="shrink-0 rounded-full p-1 text-slate-500 hover:bg-turquesa-100" @click="dismiss">{% icon "x" "h-4 w-4" "Ocultar" %}</button>

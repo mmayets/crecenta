@@ -45,7 +45,7 @@
       {% if can_finanzas %}
         <a class="side-link" href="{% url 'alerts:index' ws=ws %}" {% if "alerts:" in name %}aria-current="page"{% endif %}>{% icon "bell" "h-4 w-4" %}<span class="flex-1">Alertas</span>{% if new_alerts %}<span class="rounded-full bg-turquesa-400 px-1.5 text-[11px] font-bold text-marca-900" aria-label="{{ new_alerts }} nuevas">{{ new_alerts }}</span>{% endif %}</a>
       {% endif %}
-      <button type="button" class="side-link" data-open-assistant>{% icon "sparkles" "h-4 w-4" %}<span class="flex-1">CentIA</span></button>
+      <button type="button" class="side-link" data-open-assistant>{% include "partials/sophia_avatar.html" with clase="h-5 w-5 -mx-0.5" %}<span class="flex-1">Sophia</span></button>
       <a class="side-link" href="{% url 'espacio:settings' ws=ws %}" {% if name == "espacio:settings" or name == "espacio:team" %}aria-current="page"{% endif %}>{% icon "settings" "h-4 w-4" %}<span class="flex-1">Configuración</span></a>
     </nav>
   {% else %}

@@ -84,7 +84,7 @@ def start(user: User) -> AssistantSession:
     session = AssistantSession(user=user)
     name = user.first_name.strip()
     owned = _owned(user)
-    greeting = f"¡Hola{', ' + name if name else ''}! Soy CentIA, tu asistente en Crecenta. "
+    greeting = f"¡Hola{', ' + name if name else ''}! Soy Sophia, tu asistente en Crecenta. "
     if owned:
         names = ", ".join(f"«{w.name}»" for w in owned)
         session.say(f"{greeting}Ya tienes {names}. ¿Qué espacio nuevo quieres crear?")
@@ -188,7 +188,7 @@ def interpret_by_rules(text: str, pending: list[str]) -> AssistantTurn:
 
 def _history(session: AssistantSession) -> str:
     lines = [
-        f"{'CentIA' if m['rol'] == 'asistente' else 'Persona'}: {m['texto']}"
+        f"{'Sophia' if m['rol'] == 'asistente' else 'Persona'}: {m['texto']}"
         for m in session.messages[-HISTORY - 1 : -1]
     ]
     return "\n".join(lines) or "(sin mensajes previos)"

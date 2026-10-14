@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from apps.ai.providers import FakeProvider, ProviderError
 from apps.ledger.models import Account, Category, Transaction
-from apps.ledger.services import centia
+from apps.ledger.services import sophia
 from apps.ledger.services.recording import create_account
 
 pytestmark = pytest.mark.django_db
@@ -31,11 +31,11 @@ def url(name, ws):
 
 
 def say(client, ws, text):
-    return client.post(url("centia", ws), {"texto": text})
+    return client.post(url("sophia", ws), {"texto": text})
 
 
 def state_of(client, ws):
-    return client.session[f"centia:{ws.pk}"]
+    return client.session[f"sophia:{ws.pk}"]
 
 
 # ---------------------------------------------------------------- reglas (sin IA)
@@ -64,7 +64,7 @@ def state_of(client, ws):
     ],
 )  # fmt: skip
 def test_reglas_entienden_frases_simples(text, pending, expected):
-    turn = centia.interpret_by_rules(text, pending, CONTEXT)
+    turn = sophia.interpret_by_rules(text, pending, CONTEXT)
     found = {k: v for k, v in turn.model_dump().items() if v}
     assert found == expected
 
@@ -72,10 +72,26 @@ def test_reglas_entienden_frases_simples(text, pending, expected):
 # ---------------------------------------------------------------- chat
 
 
-def test_la_pagina_muestra_a_centia(logged, personal_ws):
-    html = logged.get(url("new", personal_ws)).content.decode()
-    assert 'id="centia"' in html and "Soy CentIA" in html
+def test_la_pantalla_de_sophia_no_muestra_el_formulario(logged, personal_ws):
+    html = logged.get(url("sophia", personal_ws)).content.decode()
+    assert 'id="sophia"' in html and "Soy Sophia" in html
     assert "Sin el uso de IA activado" in html
+    assert 'id="id_amount"' not in html  # solo Sophia guía el proceso
+    # Para empezar ofrece los tipos de movimiento como botones.
+    assert 'value="Gasto"' in html and 'value="Ingreso"' in html
+    # El formulario, a su vez, solo enlaza a Sophia.
+    form_page = logged.get(url("new", personal_ws)).content.decode()
+    assert 'id="sophia"' not in form_page and url("sophia", personal_ws) in form_page
+
+
+def test_sophia_es_la_primera_opcion_de_registrar(logged, personal_ws, business_ws):
+    for ws in (personal_ws, business_ws):
+        html = logged.get(reverse("espacio:dashboard", kwargs={"ws": ws.pk})).content.decode()
+        menu = html.split('role="menu"')[1]
+        assert menu.index("Pedírselo a Sophia") < menu.index(
+            'role="menuitem"', menu.index("Sophia")
+        )
+        assert menu.index(url("sophia", ws)) < menu.index(url("new", ws))
 
 
 def test_sin_ia_arma_el_movimiento_y_solo_guarda_al_confirmar(logged, user, personal_ws):
@@ -97,17 +113,17 @@ def test_sin_ia_arma_el_movimiento_y_solo_guarda_al_confirmar(logged, user, pers
     assert not Transaction.objects.for_workspace(personal_ws).exists()
     assert not FakeProvider.calls
 
-    page = logged.get(url("new", personal_ws)).content.decode()
-    assert 'data-testid="centia-propuesta"' in page and 'data-testid="centia-guardar"' in page
+    page = logged.get(url("sophia", personal_ws)).content.decode()
+    assert 'data-testid="sophia-propuesta"' in page and 'data-testid="sophia-guardar"' in page
 
     response = logged.post(
-        url("centia_save", personal_ws), {"client_uuid": "0d0f6f0e-8f0a-4b61-9a43-1b1c9d2f3a10"}
+        url("sophia_save", personal_ws), {"client_uuid": "0d0f6f0e-8f0a-4b61-9a43-1b1c9d2f3a10"}
     )
     assert response["Location"] == url("movements", personal_ws)
     tx = Transaction.objects.for_workspace(personal_ws).get()
     assert (tx.amount, tx.kind, tx.category, tx.account) == (D("350.00"), "gasto", comida, efectivo)
     # La conversación empieza de cero tras guardar.
-    assert f"centia:{personal_ws.pk}" not in logged.session
+    assert f"sophia:{personal_ws.pk}" not in logged.session
 
 
 def test_pregunta_lo_que_falta_con_opciones(logged, personal_ws):
@@ -118,12 +134,12 @@ def test_pregunta_lo_que_falta_con_opciones(logged, personal_ws):
     assert state["messages"][-1]["texto"] == "Anoté: gasto. ¿De cuánto fue?"
 
     say(logged, personal_ws, "1,800")
-    html = logged.get(url("new", personal_ws)).content.decode()
+    html = logged.get(url("sophia", personal_ws)).content.decode()
     assert "¿Con qué cuenta fue?" in html
     assert 'value="Banco Popular"' in html and 'value="Efectivo"' in html
 
     say(logged, personal_ws, "Banco Popular")
-    assert centia.missing(personal_ws, state_of(logged, personal_ws)["draft"]) == ["categoria"]
+    assert sophia.missing(personal_ws, state_of(logged, personal_ws)["draft"]) == ["categoria"]
     say(logged, personal_ws, "Sin categoría")
     state = state_of(logged, personal_ws)
     assert state["draft"]["category_skipped"] is True
@@ -183,29 +199,29 @@ def test_transferencia_se_deriva_a_su_pantalla(logged, personal_ws):
 
 def test_guardar_sin_propuesta_no_guarda(logged, personal_ws):
     say(logged, personal_ws, "compré algo")
-    logged.post(url("centia_save", personal_ws), {"client_uuid": ""})
+    logged.post(url("sophia_save", personal_ws), {"client_uuid": ""})
     assert not Transaction.objects.for_workspace(personal_ws).exists()
     assert "No pude guardarlo" in state_of(logged, personal_ws)["messages"][-1]["texto"]
 
 
 def test_editar_abre_el_formulario_con_el_borrador(logged, personal_ws):
     say(logged, personal_ws, "gasté 350 en el colmado")
-    html = logged.get(url("new", personal_ws) + "?centia=1").content.decode()
+    html = logged.get(url("new", personal_ws) + "?sophia=1").content.decode()
     assert 'value="350.00"' in html and "Esto es lo que entendimos" in html
 
 
 def test_reiniciar_y_htmx(logged, personal_ws):
     response = logged.post(
-        url("centia", personal_ws), {"texto": "gasté 350"}, headers={"HX-Request": "true"}
+        url("sophia", personal_ws), {"texto": "gasté 350"}, headers={"HX-Request": "true"}
     )
     html = response.content.decode()
-    assert html.lstrip().startswith('<section id="centia"') and "<html" not in html
-    logged.post(url("centia_restart", personal_ws))
-    assert f"centia:{personal_ws.pk}" not in logged.session
+    assert html.lstrip().startswith('<section id="sophia"') and "<html" not in html
+    logged.post(url("sophia_restart", personal_ws))
+    assert f"sophia:{personal_ws.pk}" not in logged.session
 
 
 def test_cada_espacio_tiene_su_conversacion(logged, personal_ws, business_ws):
     say(logged, personal_ws, "gasté 777 en el colmado")
-    assert f"centia:{business_ws.pk}" not in logged.session
-    html = logged.get(url("new", business_ws)).content.decode()
+    assert f"sophia:{business_ws.pk}" not in logged.session
+    html = logged.get(url("sophia", business_ws)).content.decode()
     assert "gasté 777" not in html and "al suplidor" in html

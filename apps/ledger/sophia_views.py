@@ -1,4 +1,4 @@
-"""Chat de CentIA en «Registrar movimiento» (ver `services/centia.py`).
+"""Chat de Sophia en «Registrar movimiento» (ver `services/sophia.py`).
 
 La conversación vive en la sesión, una por espacio; nada llega a la base hasta «Guardar».
 """
@@ -13,23 +13,23 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 
 from apps.core.ratelimit import hit
 from apps.workspaces.mixins import workspace_required
 from apps.workspaces.models import Workspace
 
-from .services import centia
+from .services import sophia
 
 
 def _key(workspace: Workspace) -> str:
-    return f"centia:{workspace.pk}"
+    return f"sophia:{workspace.pk}"
 
 
 def get_state(request: HttpRequest, workspace: Workspace) -> dict[str, Any]:
     state = request.session.get(_key(workspace))
     if not state:
-        state = centia.new_state(workspace, request.user)  # type: ignore[arg-type]
+        state = sophia.new_state(workspace, request.user)  # type: ignore[arg-type]
     return state
 
 
@@ -40,33 +40,36 @@ def _store(request: HttpRequest, workspace: Workspace, state: dict[str, Any] | N
         request.session[_key(workspace)] = state
 
 
-def centia_context(
+def sophia_context(
     request: HttpRequest, workspace: Workspace, state: dict[str, Any] | None = None
 ) -> dict[str, Any]:
-    """Lo que necesita `ledger/_centia.html` (también lo usa la vista del formulario)."""
+    """Lo que necesita `ledger/_sophia.html` (también lo usa la vista del formulario)."""
     state = state or get_state(request, workspace)
     return {
         "workspace": workspace,
-        "centia": state,
-        "centia_replies": centia.quick_replies(workspace, state),
-        "centia_proposal": centia.proposal(workspace, state),
-        "centia_ai_off": not request.user.ai_consent,  # type: ignore[union-attr]
-        "centia_uuid": uuid.uuid4(),
+        "sophia": state,
+        "sophia_replies": sophia.quick_replies(workspace, state),
+        "sophia_proposal": sophia.proposal(workspace, state),
+        "sophia_ai_off": not request.user.ai_consent,  # type: ignore[union-attr]
+        "sophia_uuid": uuid.uuid4(),
     }
 
 
 def _respond(request: HttpRequest, workspace: Workspace, state: dict[str, Any]) -> HttpResponse:
     if request.headers.get("HX-Request"):
-        return render(request, "ledger/_centia.html", centia_context(request, workspace, state))
-    return redirect(reverse("ledger:new", args=[workspace.pk]) + "#texto")
+        return render(request, "ledger/_sophia.html", sophia_context(request, workspace, state))
+    return redirect("ledger:sophia", ws=workspace.pk)
 
 
 @workspace_required
-@require_POST
+@require_http_methods(["GET", "POST"])
 def message(request: HttpRequest, workspace: Workspace) -> HttpResponse:
+    """GET: pantalla con Sophia sola, que guía todo el registro. POST: un turno del chat."""
     state = get_state(request, workspace)
-    if hit(f"centia:{request.user.pk}", settings.SYNC_RATE_LIMITS):
-        centia.take_turn(
+    if request.method == "GET":
+        return render(request, "ledger/sophia.html", sophia_context(request, workspace, state))
+    if hit(f"sophia:{request.user.pk}", settings.SYNC_RATE_LIMITS):
+        sophia.take_turn(
             state,
             workspace,
             request.user,  # type: ignore[arg-type]
@@ -83,9 +86,9 @@ def save(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     from .views import _save_quick  # misma ruta de guardado que el formulario
 
     state = get_state(request, workspace)
-    form = centia.build_form(state, workspace, request.POST.get("client_uuid", ""))
+    form = sophia.build_form(state, workspace, request.POST.get("client_uuid", ""))
     if (
-        centia.proposal(workspace, state)
+        sophia.proposal(workspace, state)
         and form.is_valid()
         and _save_quick(request, workspace, form)
     ):
@@ -99,14 +102,14 @@ def save(request: HttpRequest, workspace: Workspace) -> HttpResponse:
     errors = "; ".join(f"{' '.join(messages)}" for messages in form.errors.values())
     state["messages"].append(
         {
-            "rol": "centia",
+            "rol": "sophia",
             "texto": "No pude guardarlo"
             + (f": {errors}" if errors else ".")
             + " Corrígelo aquí o termina en el formulario.",
             "enlaces": [
                 {
                     "texto": "Abrir el formulario",
-                    "url": reverse("ledger:new", args=[workspace.pk]) + "?centia=1",
+                    "url": reverse("ledger:new", args=[workspace.pk]) + "?sophia=1",
                 }
             ],
         }

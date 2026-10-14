@@ -7,7 +7,7 @@
           <li class="flex justify-end"><p class="max-w-[85%] whitespace-pre-line rounded-2xl rounded-br-sm bg-marca-700 px-3 py-2 text-sm text-white">{{ m.texto }}</p></li>
         {% else %}
           <li class="flex items-start gap-2">
-            <span class="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-turquesa-100 text-turquesa-800">{% icon "sparkles" "h-4 w-4" %}</span>
+            {% include "partials/sophia_avatar.html" with clase="h-7 w-7" %}
             <div class="max-w-[85%]">
               <p class="whitespace-pre-line rounded-2xl rounded-tl-sm bg-slate-100 px-3 py-2 text-sm">{{ m.texto }}</p>
               {% if m.enlaces %}

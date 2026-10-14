@@ -16,7 +16,7 @@
     {% endfor %}
   </ul>
   <div class="mt-6 flex flex-wrap gap-2">
-    <a class="btn-primary" href="{% url 'asistente:chat' %}">{% icon "sparkles" "h-4 w-4" %}Crear con CentIA</a>
+    <a class="btn-primary" href="{% url 'asistente:chat' %}">{% include "partials/sophia_avatar.html" with clase="h-5 w-5" %}Crear con Sophia</a>
     <a class="btn-secondary" href="{% url 'workspaces:usage' %}">{% icon "plus" "h-4 w-4" %}Agregar con el formulario</a>
   </div>
 {% endblock %}

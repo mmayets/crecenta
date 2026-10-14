@@ -145,12 +145,12 @@ def _save_quick(request: HttpRequest, workspace: Workspace, form: QuickEntryForm
 @workspace_required
 @require_http_methods(["GET", "POST"])
 def new(request: HttpRequest, workspace: Workspace) -> HttpResponse:
-    from .centia_views import centia_context, get_state
-    from .services.centia import form_initial
+    from .services.sophia import form_initial
+    from .sophia_views import get_state
 
     initial = {"kind": request.GET.get("tipo", "gasto")}
-    from_centia = request.method == "GET" and "centia" in request.GET
-    if from_centia:  # «Editar» en el chat: el formulario abre con lo que CentIA entendió
+    from_sophia = request.method == "GET" and "sophia" in request.GET
+    if from_sophia:  # «Editar» en el chat: el formulario abre con lo que Sophia entendió
         initial.update(form_initial(get_state(request, workspace)))
     form = QuickEntryForm(request.POST or None, workspace=workspace, initial=initial)
     if request.method == "POST" and form.is_valid() and _save_quick(request, workspace, form):
@@ -159,10 +159,10 @@ def new(request: HttpRequest, workspace: Workspace) -> HttpResponse:
         request,
         "ledger/new.html",
         {
+            "workspace": workspace,
             "form": form,
             "text_form": FreeTextForm(),
-            "from_ai": from_centia,
-            **centia_context(request, workspace),
+            "from_ai": from_sophia,
         },
         status=400 if request.method == "POST" else 200,
     )
@@ -188,17 +188,10 @@ def from_text(request: HttpRequest, workspace: Workspace) -> HttpResponse:
         return redirect("ledger:transfer", ws=workspace.pk)
     form = QuickEntryForm(workspace=workspace, initial=initial)
     form.highlight(draft.doubtful)
-    from .centia_views import centia_context
-
     return render(
         request,
         "ledger/new.html",
-        {
-            "form": form,
-            "text_form": text_form,
-            "from_ai": True,
-            **centia_context(request, workspace),
-        },
+        {"workspace": workspace, "form": form, "text_form": text_form, "from_ai": True},
     )
 
 

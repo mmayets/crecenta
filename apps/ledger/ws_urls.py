@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import centia_views, views
+from . import sophia_views, views
 
 app_name = "ledger"
 
@@ -11,9 +11,9 @@ urlpatterns = [
     path("movimientos/transferir/", views.transfer, name="transfer"),
     path("movimientos/avisos/", views.warnings, name="warnings"),
     path("movimientos/sync/", views.sync, name="sync"),
-    path("movimientos/centia/", centia_views.message, name="centia"),
-    path("movimientos/centia/guardar/", centia_views.save, name="centia_save"),
-    path("movimientos/centia/reiniciar/", centia_views.restart, name="centia_restart"),
+    path("movimientos/sophia/", sophia_views.message, name="sophia"),
+    path("movimientos/sophia/guardar/", sophia_views.save, name="sophia_save"),
+    path("movimientos/sophia/reiniciar/", sophia_views.restart, name="sophia_restart"),
     path("movimientos/<uuid:tx_id>/eliminar/", views.delete, name="delete"),
     path("ajustes/cuentas/", views.accounts, name="accounts"),
     path("ajustes/cuentas/<uuid:account_id>/", views.accounts, name="account_edit"),

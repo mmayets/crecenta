@@ -25,6 +25,8 @@ PRECACHE_STATIC = [
     "vendor/alpine-csp-3.14.8.min.js",
     "icons/icon-192.png",
     "icons/favicon-32.png",
+    "logos/crecenta-marca.png",
+    "logos/sophia-avatar.png",
 ]
 
 

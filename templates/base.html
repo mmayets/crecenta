@@ -34,7 +34,7 @@
       {# Cabecera solo en teléfono y tableta: en escritorio la navegación vive en la barra lateral. #}
       <header class="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
         <a href="{% url 'workspaces:selector' %}" class="flex min-w-0 items-center gap-2 text-tinta no-underline" data-testid="espacio-activo">
-          <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-marca-800 text-turquesa-400">{% if current_workspace.is_business %}{% icon "building-2" "h-4 w-4" %}{% elif current_workspace %}{% icon "user" "h-4 w-4" %}{% else %}{% icon "trending-up" "h-4 w-4" %}{% endif %}</span>
+          <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-marca-800 text-turquesa-400">{% if current_workspace.is_business %}{% icon "building-2" "h-4 w-4" %}{% elif current_workspace %}{% icon "user" "h-4 w-4" %}{% else %}<img src="{% static 'logos/crecenta-marca.png' %}" alt="" width="20" height="16" class="h-4 w-auto">{% endif %}</span>
           <span class="truncate font-display font-semibold">{% if current_workspace %}{{ current_workspace.name }} · {{ current_workspace.get_kind_display }}{% else %}Crecenta{% endif %}</span>
           {% icon "chevron-down" "h-4 w-4 shrink-0 text-slate-400" %}
         </a>
@@ -44,7 +44,7 @@
           <a href="{% url 'accounts:settings' %}" class="rounded-md p-2 text-slate-600 hover:bg-slate-100">{% icon "user" "h-5 w-5" "Mi cuenta" %}</a>
         {% endif %}
       </header>
-      {% if current_workspace %}<div id="asistente-tira"></div>{% endif %}
+      {% if current_workspace and request.resolver_match.view_name != "ledger:sophia" %}<div id="asistente-tira"></div>{% endif %}
   {% endif %}
 
       <div id="estado-red" class="hidden bg-amber-100 px-4 py-2 text-center text-sm text-amber-900" role="status" aria-live="polite"></div>
@@ -91,16 +91,18 @@
         {% endif %}
       </div>
     </nav>
-    {# Asistente permanente: recomendaciones del momento y ayuda, en todas las pantallas del espacio. #}
+    {# Asistente permanente en todas las pantallas del espacio, menos en el chat de Sophia (taparía «Enviar»). #}
+    {% if name != "ledger:sophia" %}
     <div class="fixed bottom-24 right-4 z-40 lg:bottom-6 lg:right-6" x-data="menu" @keydown.escape="close" @abrir-asistente.window="toggle">
-      <div x-show="open" x-cloak @click.outside="close" class="absolute bottom-16 right-0 max-h-[70vh] w-[22rem] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-xl" role="dialog" aria-label="CentIA">
+      <div x-show="open" x-cloak @click.outside="close" class="absolute bottom-16 right-0 max-h-[70vh] w-[22rem] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-xl" role="dialog" aria-label="Sophia">
         <div id="asistente-guia" hx-get="{% url 'onboarding:guide' ws=ws %}?vista={{ name }}" hx-trigger="load" hx-swap="innerHTML"><p class="muted">Viendo qué te conviene hacer…</p></div>
       </div>
-      <button type="button" class="relative grid h-12 w-12 place-items-center rounded-full bg-turquesa-400 text-lateral shadow-xl ring-4 ring-white lg:h-14 lg:w-14" @click="toggle" aria-haspopup="dialog" aria-label="CentIA, tu asistente" data-testid="asistente">
-        {% icon "sparkles" "h-6 w-6" %}
+      <button type="button" class="relative grid h-12 w-12 place-items-center rounded-full bg-white shadow-xl ring-4 ring-white lg:h-14 lg:w-14" @click="toggle" aria-haspopup="dialog" aria-label="Sophia, tu asistente" data-testid="asistente">
+        {% include "partials/sophia_avatar.html" with clase="h-full w-full" %}
         <span id="asistente-insignia" class="absolute -right-1 -top-1 rounded-full bg-red-600 px-1.5 text-[10px] font-bold text-white empty:hidden"></span>
       </button>
     </div>
+    {% endif %}
     {% endwith %}
   {% endif %}
   {% endif %}
