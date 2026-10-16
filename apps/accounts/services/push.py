@@ -14,6 +14,7 @@ from typing import Any
 from django.conf import settings
 from django.db.models import QuerySet
 from django.templatetags.static import static
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import PushSubscription, User
@@ -26,7 +27,7 @@ TTL_SECONDS = 24 * 3600
 class PushMessage:
     title: str
     body: str
-    url: str = "/"
+    url: str = ""  # vacío: el inicio de la app
     tag: str = ""
 
     def payload(self) -> str:
@@ -34,7 +35,7 @@ class PushMessage:
             {
                 "title": self.title[:80],
                 "body": self.body[:240],
-                "url": self.url,
+                "url": self.url or reverse("home"),
                 "tag": self.tag,
                 "icon": static("icons/icon-192.png"),
                 "badge": static("icons/favicon-32.png"),

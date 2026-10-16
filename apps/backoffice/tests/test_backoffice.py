@@ -236,3 +236,23 @@ def test_finanzas_agregadas_por_moneda(user, personal_ws):
         Decimal("1200"),
         D - Decimal("1200"),
     )
+
+
+def test_con_prefijo_la_auditoria_omite_estaticos_y_los_enlaces_push_lo_llevan(
+    client, user, settings
+):
+    from django.urls import set_script_prefix
+
+    from apps.backoffice.forms import PushForm
+
+    settings.FORCE_SCRIPT_NAME = "/crecenta"
+    try:
+        client.force_login(user)
+        client.get("/sw.js")
+        assert not AuditEvent.objects.filter(kind=Kind.VISITA).exists()
+        set_script_prefix("/crecenta/")
+        form = PushForm({"destino": "todos", "titulo": "t", "mensaje": "m",
+                         "enlace": "/cuenta/configuracion/"})  # fmt: skip
+        assert form.is_valid() and form.cleaned_data["enlace"] == "/crecenta/cuenta/configuracion/"
+    finally:
+        set_script_prefix("/")

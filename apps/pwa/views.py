@@ -41,8 +41,8 @@ def manifest(request: HttpRequest) -> JsonResponse:
         "description": "Organiza tu dinero, conoce cuánto puedes gastar y cuánto ganas.",
         "lang": "es-DO",
         "dir": "ltr",
-        "start_url": "/?origen=pwa",
-        "scope": "/",
+        "start_url": reverse("home") + "?origen=pwa",
+        "scope": reverse("home"),
         "display": "standalone",
         "orientation": "portrait",
         "background_color": "#f8fafb",
@@ -107,10 +107,11 @@ def service_worker(request: HttpRequest) -> HttpResponse:
             "precache_json": json.dumps(urls),
             "offline_url": reverse("pwa:offline"),
             "saved_url": reverse("pwa:offline_saved"),
+            "home_url": reverse("home"),
         },
     )
     response = HttpResponse(body, content_type="application/javascript; charset=utf-8")
-    response["Service-Worker-Allowed"] = "/"
+    response["Service-Worker-Allowed"] = reverse("home")  # "/" o "/crecenta/"
     return response
 
 

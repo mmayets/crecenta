@@ -235,6 +235,19 @@ class QuickEntry(_Base):
     confianza: dict[str, float] = Field(default_factory=dict)
 
 
+# ---------------------------------------------------------------- revisión del ahorro
+
+
+class RevisionAhorro(_Base):
+    """Sophia explica si el ahorro alcanza y cuál opción conviene. Las cifras las calcula la app."""
+
+    mensaje: str = Field(max_length=900)
+    motivos: list[str] = Field(default_factory=list, max_length=5)
+    metodo_recomendado: str = Field(max_length=20)
+    # «Saber más»: el 50/30/20 explicado con un ejemplo hecho con el ingreso de la persona.
+    explicacion_metodo: str = Field(default="", max_length=1500)
+
+
 SCHEMAS: dict[str, type[BaseModel]] = {
     s.__name__: s for s in (PlanNarrative, OnboardingExtraction, ReceiptExtraction, QuickEntry)
 }

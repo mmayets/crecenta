@@ -84,3 +84,4 @@ class TxSource(models.TextChoices):
     TEXTO = "texto", "Texto libre"
     COMPROBANTE = "comprobante", "Comprobante"
     OFFLINE = "offline", "Sin conexión"
+    AUTOMATICO = "automatico", "Automático"

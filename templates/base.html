@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#10224a">
   <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="sw-url" content="{% url 'pwa:service_worker' %}" data-scope="{% url 'home' %}">
   {% if vapid_public_key %}<meta name="vapid-key" content="{{ vapid_public_key }}">{% endif %}
   <title>{% block title %}{% block head_title %}Crecenta{% endblock %}{% endblock %}</title>
   <link rel="preload" href="{% static 'fonts/manrope-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
@@ -26,6 +27,15 @@
 <body class="min-h-screen">
   {% include "icons/sprite.svg" %}
   <a href="#contenido" class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-white focus:p-2">Saltar al contenido</a>
+  {# Instalar la app en el teléfono: app.js lo muestra solo si el navegador lo permite (Android) o en iPhone, y nunca dentro de la app instalada. #}
+  <div class="hidden bg-marca-800 px-4 py-2.5 text-white lg:hidden" data-install role="region" aria-label="Instalar la app">
+    <div class="mx-auto flex max-w-3xl items-center gap-3">
+      <img src="{% static 'icons/icon-192.png' %}" alt="" width="36" height="36" class="h-9 w-9 shrink-0 rounded-lg">
+      <p class="min-w-0 flex-1 text-sm leading-tight"><strong class="block">Instala Crecenta</strong><span class="text-xs text-slate-300" data-install-text>Ábrela como una app, también sin conexión.</span></p>
+      <button type="button" class="btn btn-sm shrink-0 bg-turquesa-400 text-marca-900" data-install-accept data-testid="instalar-app">{% icon "download" "h-4 w-4" %}Instalar</button>
+      <button type="button" class="shrink-0 rounded-md p-1 text-slate-300" data-install-close>{% icon "x" "h-5 w-5" "Ahora no" %}</button>
+    </div>
+  </div>
 
   {% block body %}
   {% if user.is_authenticated %}

@@ -100,7 +100,10 @@ def _has_data(workspace: Workspace, key: str) -> bool:
         "objetivos": lambda: BusinessGoal.objects.filter(workspace=ws).exists(),
         "preferencias": lambda: (
             Preference.objects.for_workspace(ws).exists()
-            or PersonalProfile.objects.filter(workspace=ws).exists()
+            # El perfil también guarda el registro automático: solo cuenta si tiene el ocio.
+            or PersonalProfile.objects.filter(
+                workspace=ws, discretionary_wish__isnull=False
+            ).exists()
         ),
     }
     return checks[key]()

@@ -309,12 +309,67 @@ document.addEventListener("htmx:afterSettle", scrollChats);
   }
 })();
 
+// Botón «Instalar» arriba, solo en teléfonos y tabletas. Android/Chrome avisa con
+// beforeinstallprompt; Safari en iPhone no, así que ahí se explican los pasos. Si la persona lo
+// cierra, no vuelve a salir en una semana.
+(function () {
+  const bar = document.querySelector("[data-install]");
+  if (!bar) return;
+  const standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+    || window.navigator.standalone === true;
+  const small = window.matchMedia && window.matchMedia("(max-width: 1023px)").matches;
+  if (standalone || !small) return;
+  const KEY = "crecenta-instalar-cerrado";
+  const WEEK = 7 * 24 * 3600 * 1000;
+  try {
+    if (Date.now() - Number(localStorage.getItem(KEY) || 0) < WEEK) return;
+  } catch (e) { /* sin almacenamiento: se muestra igual */ }
+
+  const accept = bar.querySelector("[data-install-accept]");
+  const text = bar.querySelector("[data-install-text]");
+  let deferred = null;
+  const show = () => bar.classList.remove("hidden");
+  const hide = () => bar.classList.add("hidden");
+
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferred = event;
+    show();
+  });
+  window.addEventListener("appinstalled", hide);
+
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (ios) show();
+
+  accept.addEventListener("click", async () => {
+    if (deferred) {
+      deferred.prompt();
+      const choice = await deferred.userChoice.catch(() => null);
+      deferred = null;
+      if (choice && choice.outcome === "accepted") hide();
+      return;
+    }
+    if (ios) {
+      text.textContent = "Toca el botón Compartir (el cuadro con la flecha) y luego «Agregar a pantalla de inicio».";
+      accept.classList.add("hidden");
+    }
+  });
+  bar.querySelector("[data-install-close]").addEventListener("click", () => {
+    try { localStorage.setItem(KEY, String(Date.now())); } catch (e) { /* sin almacenamiento */ }
+    hide();
+  });
+})();
+
 (function () {
   const sw = "serviceWorker" in navigator ? navigator.serviceWorker : null;
 
   if (sw) {
     window.addEventListener("load", () => {
-      sw.register("/sw.js", { scope: "/" }).catch(() => {});
+      // Dirección y alcance vienen de la plantilla: "/sw.js" o "/crecenta/sw.js" según dónde se publique.
+      const meta = document.querySelector('meta[name="sw-url"]');
+      if (!meta) return;
+      sw.register(meta.content, { scope: meta.dataset.scope }).catch(() => {});
     });
   }
 

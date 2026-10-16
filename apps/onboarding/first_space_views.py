@@ -12,7 +12,10 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
+from apps.core.money import fmt
+
 from .services import first_space as fs
+from .services import savings_review
 
 SYMBOLS = {"DOP": "RD$", "USD": "US$"}
 
@@ -45,10 +48,18 @@ def wizard(request: HttpRequest, step: str | None = None) -> HttpResponse:
     back_to_summary = request.GET.get("volver") == "resumen" or "volver" in request.POST
     error = None
     if request.method == "POST":
-        if "saltar" in request.POST and current.skip_label:
+        if "saltar" in request.POST and fs.skip_label_for(current, answers):
             value: Any = ""
+        elif "variable" in request.POST and current.kind == fs.FIXED:
+            value = fs.VARIABLE  # cambia cada mes: no se llena ni se anota solo
         else:
-            value, error = fs.clean_answer(current, request.POST.get("valor", ""), answers, user)  # type: ignore[arg-type]
+            value, error = fs.clean_answer(
+                current,
+                request.POST.get("valor", ""),
+                answers,
+                user,
+                request.POST,  # type: ignore[arg-type]
+            )
         if error is None:
             fs.save_answer(answers, step, value)
             request.session[fs.SESSION_KEY] = answers
@@ -57,25 +68,77 @@ def wizard(request: HttpRequest, step: str | None = None) -> HttpResponse:
                        back_to_summary)  # fmt: skip
 
     previous = fs.previous_step(answers, step)
-    return render(
-        request,
-        "onboarding/first_space.html",
-        {
-            "step": current,
-            "question": fs.question_for(current, answers),
-            "options": fs.options_for(current, answers, user),  # type: ignore[arg-type]
-            "columns": fs.columns_for(current, answers),
-            "progress": fs.progress(answers, step),
-            "previous": reverse("asistente:first_space_step", args=[previous])
-            if previous
-            else None,
-            "value": request.POST.get("valor") if error else answers.get(step),
-            "error": error,
-            "symbol": SYMBOLS.get(answers.get("moneda") or "DOP", "RD$"),
-            "back_to_summary": back_to_summary,
-        },
-        status=400 if error else 200,
-    )
+    context: dict[str, Any] = {
+        "step": current,
+        "question": fs.question_for(current, answers),
+        "skip_label": fs.skip_label_for(current, answers),
+        "variable_label": fs.VARIABLE_LABEL,
+        "options": fs.options_for(current, answers, user),  # type: ignore[arg-type]
+        "columns": fs.columns_for(current, answers),
+        "progress": fs.progress(answers, step),
+        "previous": reverse("asistente:first_space_step", args=[previous]) if previous else None,
+        "value": _posted(request, current) if error else answers.get(step),
+        "error": error,
+        "symbol": SYMBOLS.get(answers.get("moneda") or "DOP", "RD$"),
+        "back_to_summary": back_to_summary,
+        "days": range(1, 32),
+    }
+    if current.kind == fs.OTHERS:
+        saved = context["value"] if isinstance(context["value"], list) else []
+        context["other_rows"] = [
+            {"i": i, **(saved[i - 1] if i <= len(saved) else {})}
+            for i in range(1, fs.MAX_OTHERS + 1)
+        ]
+    if step == "monto_ahorro":
+        context["suggestion"] = savings_review.suggestion(answers)
+        # Aquí sin IA: el ejemplo sale de las mismas cifras, sin gastar una consulta.
+        context.update(_method_context(savings_review.build(answers, ignore_wanted=True)))
+    if current.kind == fs.REVIEW:
+        context.update(_review_context(request, answers))
+    return render(request, "onboarding/first_space.html", context, status=400 if error else 200)
+
+
+def _posted(request: HttpRequest, step: fs.Step) -> Any:
+    """Lo enviado, para volver a mostrarlo junto al error."""
+    if step.kind == fs.FIXED:
+        return {"monto": request.POST.get("valor", ""), "dia": request.POST.get("dia", "")}
+    if step.kind == fs.OTHERS:
+        return [
+            {
+                "nombre": request.POST.get(f"nombre_{i}", ""),
+                "monto": request.POST.get(f"valor_{i}", ""),
+                "dia": request.POST.get(f"dia_{i}", ""),
+            }
+            for i in range(1, fs.MAX_OTHERS + 1)
+        ]
+    return request.POST.get("valor")
+
+
+def _review_context(request: HttpRequest, answers: dict[str, Any]) -> dict[str, Any]:
+    review = savings_review.build(answers)
+    explanation, from_ai = savings_review.explain(review, request.user, request.session)  # type: ignore[arg-type]
+    currency = review.currency
+    return {
+        "review": review,
+        "review_rows": review.rule_503020(),
+        "review_figures": [
+            ("Ingreso del mes", fmt(review.income, currency)),
+            ("Gastos fijos", fmt(review.fixed, currency)),
+            ("Gastos del día a día", fmt(review.essentials, currency)),
+            ("Te queda libre", fmt(review.free, currency)),
+        ],
+        "explanation": explanation,
+        "from_ai": from_ai,
+        "recommended": explanation.metodo_recomendado,
+        **_method_context(review, explanation.explicacion_metodo if from_ai else ""),
+    }
+
+
+def _method_context(review: savings_review.Review, ai_text: str = "") -> dict[str, Any]:
+    """«Saber más del método 50/30/20»: Sophia lo explica con el ingreso de la persona."""
+    method = savings_review.method_example(review)
+    return {"method": method, "method_text": ai_text or method["texto"],
+            "method_from_ai": bool(ai_text)}  # fmt: skip
 
 
 def _summary(request: HttpRequest, answers: dict[str, Any], following: str) -> HttpResponse:
@@ -115,6 +178,7 @@ def create(request: HttpRequest) -> HttpResponse:
         messages.error(request, f"No pude crear tu espacio: {exc}")
         return _go(exc.step, back_to_summary=True)
     request.session.pop(fs.SESSION_KEY, None)
+    request.session.pop(savings_review.SESSION_KEY, None)
     names = " y ".join(f"«{w.name}»" for w in created)
     messages.success(request, f"¡Listo! Sophia preparó {names}. Este es tu panel.")
     return redirect("espacio:dashboard", ws=created[0].pk)
@@ -138,4 +202,5 @@ def new_space(request: HttpRequest) -> HttpResponse:
 @require_POST
 def restart(request: HttpRequest) -> HttpResponse:
     request.session.pop(fs.SESSION_KEY, None)
+    request.session.pop(savings_review.SESSION_KEY, None)
     return redirect("asistente:first_space")

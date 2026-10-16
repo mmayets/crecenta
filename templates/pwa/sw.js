@@ -12,6 +12,8 @@ const PAGES_CACHE = "crecenta-paginas";
 const PRECACHE = {{ precache_json|safe }};
 const OFFLINE_URL = "{{ offline_url }}";
 const SAVED_URL = "{{ saved_url }}";
+const HOME_URL = "{{ home_url }}";
+const STATIC_PREFIX = "{% get_static_prefix %}";
 const SYNC_TAG = "sync-movimientos";
 const QUICK_ENTRY = /\/e\/[0-9a-f-]+\/movimientos\/nuevo\/$/;
 const SALE_ENTRY = /\/e\/[0-9a-f-]+\/ventas\/nueva\/$/;
@@ -43,7 +45,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   if (request.method !== "GET") return;
-  if (url.pathname.startsWith("/static/")) {
+  if (url.pathname.startsWith(STATIC_PREFIX)) {
     // Sin hash (desarrollo) el mismo nombre puede traer otro contenido: primero la red.
     event.respondWith(HASHED.test(url.pathname) ? cacheFirst(request) : networkFirstStatic(request));
   } else if (request.mode === "navigate") {
@@ -179,13 +181,13 @@ self.addEventListener("push", (event) => {
     icon: data.icon,
     badge: data.badge,
     tag: data.tag || undefined,
-    data: { url: data.url || "/" },
+    data: { url: data.url || HOME_URL },
   }));
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = new URL((event.notification.data && event.notification.data.url) || "/", self.location.origin).href;
+  const url = new URL((event.notification.data && event.notification.data.url) || HOME_URL, self.location.origin).href;
   event.waitUntil((async () => {
     for (const client of await self.clients.matchAll({ type: "window", includeUncontrolled: true })) {
       if (client.url === url && "focus" in client) return client.focus();

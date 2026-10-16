@@ -1,6 +1,7 @@
 import re
 
 from django import forms
+from django.urls import get_script_prefix
 
 from apps.core.models import Parameter
 
@@ -80,7 +81,8 @@ class PushForm(forms.Form):
         link = self.cleaned_data.get("enlace", "").strip() or "/"
         if not link.startswith("/") or link.startswith("//"):
             raise forms.ValidationError("Usa una dirección de la app que empiece con /.")
-        return link
+        prefix = get_script_prefix()  # "/" o "/crecenta/"
+        return link if link.startswith(prefix) else prefix + link.lstrip("/")
 
     def clean(self) -> dict:
         data = super().clean()

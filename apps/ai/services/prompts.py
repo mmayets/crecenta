@@ -37,6 +37,7 @@ VERSIONS = {
     "asistente_espacios": "v1",
     "asistente_ayuda": "v1",
     "sophia_movimiento": "v1",
+    "sophia_ahorro": "v1",
 }
 _PLACEHOLDER = re.compile(r"\{\{\s*([a-z_]+)\s*\}\}")
 

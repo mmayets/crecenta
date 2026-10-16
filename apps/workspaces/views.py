@@ -1,9 +1,13 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from apps.ledger.models import Account
+from apps.personal.models import PersonalProfile
+from apps.personal.services.auto_record import record_due
 from apps.reports.services.business_dashboard import (
     build_business_dashboard,
     build_seller_dashboard,
@@ -80,6 +84,8 @@ def dashboard(request: HttpRequest, workspace: Workspace) -> HttpResponse:
         return render(
             request, "workspaces/dashboard_business.html", {"workspace": workspace, "d": business}
         )
+    # Si celery beat no corrió todavía hoy, el panel no debe mostrar el saldo sin el sueldo del día.
+    record_due(workspace, timezone.localdate())
     data = build_personal_dashboard(workspace, timezone.localdate())
     chart = {
         "labels": list(data.spending_by_group),
@@ -93,5 +99,36 @@ def dashboard(request: HttpRequest, workspace: Workspace) -> HttpResponse:
 
 
 @workspace_required(perm=VENDER)
+@require_http_methods(["GET", "POST"])
 def settings_hub(request: HttpRequest, workspace: Workspace) -> HttpResponse:
-    return render(request, "workspaces/settings.html", {"workspace": workspace})
+    context: dict = {"workspace": workspace}
+    if workspace.is_personal:
+        profile = PersonalProfile.objects.filter(workspace=workspace).first()
+        accounts = Account.objects.for_workspace(workspace).filter(
+            is_archived=False, is_savings=False
+        )
+        if request.method == "POST":
+            # Registro automático de cobros y pagos fijos (ver personal/services/auto_record.py).
+            enabled = request.POST.get("auto_record") == "on"
+            account = accounts.filter(pk=request.POST.get("auto_account") or None).first()
+            was_enabled = bool(profile and profile.auto_record)
+            PersonalProfile.objects.update_or_create(
+                workspace=workspace,
+                defaults={
+                    "auto_record": enabled,
+                    "auto_account": account,
+                    # Al encenderlo se empieza desde hoy: no se llenan meses pasados.
+                    "auto_since": timezone.localdate()
+                    if enabled and not was_enabled
+                    else (profile.auto_since if profile else None),
+                },
+            )
+            messages.success(
+                request,
+                "Listo: tu sueldo y tus pagos fijos se anotarán solos en su fecha."
+                if enabled
+                else "Listo: ya no se anotan solos tus cobros ni tus pagos fijos.",
+            )
+            return redirect("espacio:settings", ws=workspace.pk)
+        context.update({"profile": profile, "accounts": accounts})
+    return render(request, "workspaces/settings.html", context)

@@ -24,7 +24,7 @@ class AuditMiddleware:
     def __call__(self, request: HttpRequest) -> HttpResponse:
         started = time.monotonic()
         response = self.get_response(request)
-        if not request.path.startswith(SKIP_PREFIXES):
+        if not request.path_info.startswith(SKIP_PREFIXES):  # path_info: sin /crecenta
             self._log(request, response, int((time.monotonic() - started) * 1000))
         return response
 

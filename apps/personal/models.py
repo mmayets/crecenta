@@ -7,7 +7,7 @@ from django.db import models
 
 from apps.core.models import money_field
 from apps.core.periods import Frequency, IncomeInput
-from apps.ledger.models import Category
+from apps.ledger.models import Account, Category
 from apps.workspaces.models import Workspace, WorkspaceScopedModel
 
 from .services.types import DailyMode, Priority, SavingsFrequency
@@ -36,6 +36,18 @@ class PersonalProfile(models.Model):
         default=Decimal("0.10"),
         validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("0.5"))],
     )
+    # Registro automático: en su fecha, los cobros entran y los compromisos fijos salen de
+    # `auto_account` (ver `services/auto_record.py`). Nada anterior a `auto_since` se registra.
+    auto_record = models.BooleanField("registrar solos cobros y pagos fijos", default=False)
+    auto_account = models.ForeignKey(
+        Account,
+        verbose_name="cuenta del registro automático",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    auto_since = models.DateField("registrar desde", null=True, blank=True)
 
     class Meta:
         verbose_name = "perfil personal"

@@ -27,5 +27,23 @@
     <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'workspaces:selector' %}">{% icon "arrow-left-right" "h-5 w-5" %}<span class="flex-1">Cambiar de espacio</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
     <li><a class="flex items-center gap-3 p-4 text-slate-800 no-underline" href="{% url 'accounts:settings' %}">{% icon "shield-check" "h-5 w-5" %}<span class="flex-1">Configuración y privacidad</span>{% icon "chevron-right" "h-4 w-4" %}</a></li>
   </ul>
+  {% if workspace.is_personal %}
+    {# Registro automático: el sueldo entra y los pagos fijos salen solos en su fecha. #}
+    <form method="post" class="card mt-6 space-y-3" data-testid="registro-automatico">
+      {% csrf_token %}
+      <label class="flex items-start gap-3">
+        <input type="checkbox" name="auto_record" class="mt-1" {% if profile.auto_record %}checked{% endif %}>
+        <span><span class="block font-semibold">Anotar solos mi sueldo y mis pagos fijos</span><span class="block text-sm text-slate-500">El día de cobro entra tu ingreso y el día de cada pago fijo sale su monto. Los gastos que varían (como una luz que cambia cada mes) no se anotan solos.</span></span>
+      </label>
+      {% if accounts %}
+        <label class="block text-sm"><span class="font-semibold">Cuenta donde se anotan</span>
+          <select name="auto_account" class="mt-1">
+            {% for account in accounts %}<option value="{{ account.pk }}" {% if profile.auto_account_id == account.pk %}selected{% endif %}>{{ account.name }}</option>{% endfor %}
+          </select>
+        </label>
+      {% endif %}
+      <button class="btn-secondary w-full">Guardar</button>
+    </form>
+  {% endif %}
   <form method="post" action="{% url 'account_logout' %}" class="mt-6" data-logout>{% csrf_token %}<button class="btn-secondary w-full">{% icon "log-out" "h-5 w-5" %}Cerrar sesión</button></form>
 {% endblock %}

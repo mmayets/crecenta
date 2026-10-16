@@ -70,3 +70,42 @@ def test_base_enlaza_manifest_e_iconos(client, user, personal_ws):
     assert "apple-touch-icon" in html and "offline-queue.js" in html
     assert 'id="estado-red"' in html
     assert 'name="client_uuid"' in html
+
+
+def test_boton_instalar_arriba_en_todas_las_pantallas(client, user):
+    """Oculto de entrada: app.js lo muestra en el teléfono si se puede instalar."""
+    for html in (
+        client.get(reverse("home")).content.decode(),  # portada pública
+        client.get(reverse("account_login")).content.decode(),
+    ):
+        bar = html.index("data-install ")
+        assert html.index("<body") < bar < html.index('id="contenido"')
+        assert 'data-testid="instalar-app"' in html
+    client.force_login(user)
+    html = client.get(reverse("asistente:first_space"), follow=True).content.decode()
+    assert "data-install " in html  # también en el paso a paso de Sophia
+
+
+def test_publicada_bajo_un_prefijo(client, settings):
+    """En producción la app vive en /crecenta/: manifest, service worker y registro lo respetan."""
+    from django.urls import set_script_prefix
+
+    settings.FORCE_SCRIPT_NAME = "/crecenta"
+    settings.STATIC_URL = "/crecenta/static/"
+    # El servidor (WSGIHandler/ASGIHandler) fija el prefijo en cada petición a partir de
+    # FORCE_SCRIPT_NAME; el cliente de pruebas no lo hace, así que se fija aquí.
+    set_script_prefix("/crecenta/")
+    try:
+        manifest = client.get("/manifest.webmanifest").json()
+        assert manifest["start_url"] == "/crecenta/?origen=pwa"
+        assert manifest["scope"] == "/crecenta/"
+        response = client.get("/sw.js")
+        assert response["Service-Worker-Allowed"] == "/crecenta/"
+        body = response.content.decode()
+        assert 'const STATIC_PREFIX = "/crecenta/static/"' in body
+        assert '"/crecenta/static/css/app.css"' in body and 'const HOME_URL = "/crecenta/"' in body
+        html = client.get("/").content.decode()
+        assert 'content="/crecenta/sw.js" data-scope="/crecenta/"' in html
+        assert 'href="/crecenta/static/css/app.css"' in html
+    finally:
+        set_script_prefix("/")

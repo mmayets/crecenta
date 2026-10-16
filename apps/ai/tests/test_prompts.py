@@ -47,6 +47,11 @@ CONTEXTS = {
         "historial": "Asistente: ¿Qué quieres organizar?",
         "mensaje": "mi negocio",
     },
+    "sophia_ahorro": {
+        "cifras": {"ingreso_mensual": "RD$50,000.00", "estado": "holgado"},
+        "opciones": [{"codigo": "50_30_20", "monto": "RD$10,000.00", "factible": True}],
+        "ejemplo_metodo": {"filas": [{"nombre": "Ahorro", "monto": "RD$10,000.00"}]},
+    },
 }
 
 

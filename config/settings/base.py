@@ -224,6 +224,11 @@ CELERY_BEAT_SCHEDULE: dict = {
         "task": "alerts.evaluate_all",
         "schedule": crontab(hour=7, minute=0),
     },
+    # Antes de las alertas: así ya cuentan con el sueldo y los pagos fijos del día.
+    "registro-automatico": {
+        "task": "personal.auto_record_all",
+        "schedule": crontab(hour=6, minute=30),
+    },
 }
 
 # ------------------------------------------------------------------ IA
