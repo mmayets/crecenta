@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 
 
@@ -22,7 +23,10 @@ class Aplicacion(models.Model):
         help_text="Nombre de Bootstrap Icons sin el prefijo «bi-», p. ej. «chat-square-quote».",
     )
     color = models.CharField(max_length=20, choices=Color.choices, default=Color.POPIN)
-    url = models.URLField(blank=True, help_text="Dirección externa de la aplicación.")
+    url = models.URLField(
+        blank=True,
+        help_text="Dirección externa. Déjela vacía para usar el módulo interno con el mismo slug (popin, gth, presupuesto, sies).",
+    )
     disponible = models.BooleanField(default=True, help_text="Desmarque para mostrarla como «Próximamente».")
     orden = models.PositiveSmallIntegerField(default=0)
 
@@ -33,6 +37,20 @@ class Aplicacion(models.Model):
 
     def __str__(self) -> str:
         return self.nombre
+
+    @property
+    def es_externa(self) -> bool:
+        return bool(self.url)
+
+    @property
+    def enlace(self) -> str:
+        """URL externa si se configuró; si no, el módulo interno con el mismo slug (p. ej. /gth/)."""
+        if self.url:
+            return self.url
+        try:
+            return reverse(f"{self.slug}:inicio")
+        except NoReverseMatch:
+            return ""
 
 
 class Aviso(models.Model):
@@ -60,8 +78,8 @@ class Aviso(models.Model):
 
     @property
     def enlace(self) -> str:
-        if self.aplicacion and self.aplicacion.url:
-            return self.aplicacion.url
+        if self.aplicacion and self.aplicacion.enlace:
+            return self.aplicacion.enlace
         return self.url
 
     @classmethod
@@ -94,7 +112,7 @@ class Pendiente(models.Model):
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="pendientes")
     aplicacion = models.ForeignKey(Aplicacion, on_delete=models.CASCADE, related_name="pendientes")
     titulo = models.CharField("título", max_length=160)
-    url = models.URLField(blank=True)
+    url = models.CharField(max_length=300, blank=True, help_text="Ruta interna (/presupuesto/solicitudes/) o URL completa.")
     completado = models.BooleanField(default=False)
     creado = models.DateTimeField(auto_now_add=True)
 
@@ -106,7 +124,7 @@ class Pendiente(models.Model):
 
     @property
     def enlace(self) -> str:
-        return self.url or self.aplicacion.url
+        return self.url or self.aplicacion.enlace
 
 
 class EventoAgenda(models.Model):

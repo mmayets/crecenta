@@ -1,0 +1,5 @@
+<div class="suite-card kpi{% if oscuro %} kpi-dark{% endif %}">
+  <div class="kpi-label">{{ etiqueta }}</div>
+  <div class="kpi-value">{{ valor }}</div>
+  {% if nota %}<div class="kpi-note{% if tono %} is-{{ tono }}{% endif %}">{{ nota }}</div>{% endif %}
+</div>

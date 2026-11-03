@@ -1,0 +1,27 @@
+{% extends "modulo.html" %}
+{% block subtitulo %}Lo último que está pasando en la institución{% endblock %}
+{% block accion %}{% if perms.popin.add_comunicado %}<a href="{% url 'popin:nuevo' %}" class="btn btn-accent">Nuevo comunicado</a>{% endif %}{% endblock %}
+{% block modulo %}
+<div class="row g-3 mb-4">
+  <div class="col-12 col-md-4">{% include "portal/_kpi.html" with etiqueta="Publicados este mes" valor=kpi.publicados nota=kpi.variacion tono="ok" %}</div>
+  <div class="col-12 col-md-4">{% include "portal/_kpi.html" with etiqueta="Alcance promedio" valor=kpi.alcance nota="del personal" tono="ok" %}</div>
+  <div class="col-12 col-md-4">{% include "portal/_kpi.html" with etiqueta="Sin leer" valor=kpi.sin_leer nota=kpi.sin_leer|yesno:"Ponte al día,Estás al día" oscuro=True tono="accent" %}</div>
+</div>
+<div class="d-flex flex-column gap-3">
+  {% for c in comunicados %}
+    <article class="suite-card post{% if not c.leido %} is-unread{% endif %}">
+      <h2 class="post-title"><a href="{% url 'popin:detalle' c.pk %}" class="stretched-link-title">{{ c.titulo }}</a></h2>
+      <div class="post-area">{{ c.area }}</div>
+      <p class="post-text">{{ c.resumen }}</p>
+      <div class="post-actions">
+        <form method="post" action="{% url 'popin:me_gusta' c.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button class="post-btn{% if c.gustado %} is-on{% endif %}" aria-pressed="{{ c.gustado|yesno:'true,false' }}" aria-label="Me gusta"><i class="bi bi-heart{% if c.gustado %}-fill{% endif %}"></i> {{ c.n_me_gusta }}</button>
+        </form>
+        <a href="{% url 'popin:detalle' c.pk %}#comentarios" class="post-btn" aria-label="Comentarios"><i class="bi bi-chat"></i> {{ c.n_comentarios }}</a>
+      </div>
+    </article>
+  {% empty %}
+    <div class="suite-card panel empty text-center">No hay publicaciones en esta sección.</div>
+  {% endfor %}
+</div>
+{% endblock %}

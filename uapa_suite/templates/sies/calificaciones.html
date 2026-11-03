@@ -1,0 +1,19 @@
+{% extends "modulo.html" %}
+{% load suite %}
+{% block titulo %}Calificaciones{% endblock %}
+{% block subtitulo %}Publica las calificaciones de tus secciones{% endblock %}
+{% block accion %}{% include "sies/_boton_publicar.html" %}{% endblock %}
+{% block modulo %}
+<section class="suite-card panel">
+  {% for s in secciones %}
+    <div class="task">
+      <div class="flex-grow-1"><div class="task-title">{{ s.asignatura }} · Sec. {{ s.numero|stringformat:"02d" }}</div><div class="task-app">{{ s.codigo }} · {{ s.inscritos }} estudiantes</div></div>
+      {% estado s.calificaciones s.get_calificaciones_display %}
+      {% if s.calificaciones == "pendiente" %}
+      <form method="post" action="{% url 'sies:publicar' %}">{% csrf_token %}<input type="hidden" name="seccion" value="{{ s.pk }}"><input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button class="btn btn-sm btn-outline-suite">Publicar</button></form>
+      {% endif %}
+    </div>
+  {% empty %}<p class="empty">No tienes secciones activas.</p>{% endfor %}
+</section>
+{% endblock %}

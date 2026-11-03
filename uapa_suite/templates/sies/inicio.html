@@ -1,0 +1,21 @@
+{% extends "modulo.html" %}
+{% load suite %}
+{% block titulo %}Mis secciones{% endblock %}
+{% block subtitulo %}{% if trimestre %}Trimestre {{ trimestre }}{% else %}Sin secciones asignadas{% endif %}{% endblock %}
+{% block accion %}{% include "sies/_boton_publicar.html" %}{% endblock %}
+{% block modulo %}
+{% include "sies/_kpis.html" %}
+<section class="suite-card panel">
+  <div class="panel-head"><h2>Secciones del trimestre</h2><a href="{% url 'sies:exportar' %}" class="link-strong">Exportar</a></div>
+  <div class="table-responsive">
+  <table class="table suite-table align-middle mb-0">
+    <thead><tr><th>Código</th><th>Asignatura</th><th>Sección</th><th>Inscritos</th><th>Calificaciones</th></tr></thead>
+    <tbody>
+    {% for s in secciones %}
+      <tr><td class="codigo">{{ s.codigo }}</td><td>{{ s.asignatura }}</td><td>Sec. {{ s.numero|stringformat:"02d" }}</td><td>{{ s.inscritos }}</td><td>{% estado s.calificaciones s.get_calificaciones_display %}</td></tr>
+    {% empty %}<tr><td colspan="5" class="empty">No tienes secciones activas.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% load suite %}
+<div class="row g-3 mb-4">
+  <div class="col-12 col-sm-6 col-xl-3">{% include "portal/_kpi.html" with etiqueta="Presupuesto aprobado" valor=t.aprobado|rd nota=nota_anio oscuro=True tono="accent" %}</div>
+  <div class="col-12 col-sm-6 col-xl-3">{% include "portal/_kpi.html" with etiqueta="Ejecutado" valor=t.ejecutado|rd nota=nota_ejecutado tono="ok" %}</div>
+  <div class="col-12 col-sm-6 col-xl-3">{% include "portal/_kpi.html" with etiqueta="Comprometido" valor=t.comprometido|rd %}</div>
+  <div class="col-12 col-sm-6 col-xl-3">{% include "portal/_kpi.html" with etiqueta="Disponible" valor=t.disponible|rd %}</div>
+</div>

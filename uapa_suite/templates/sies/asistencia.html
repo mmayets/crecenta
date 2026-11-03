@@ -1,0 +1,13 @@
+{% extends "modulo.html" %}
+{% block titulo %}Asistencia{% endblock %}
+{% block subtitulo %}Promedio por sección en el trimestre{% endblock %}
+{% block modulo %}
+<section class="suite-card panel">
+  {% for s in secciones %}
+    <div class="progreso">
+      <div class="d-flex justify-content-between small"><span class="task-title">{{ s.asignatura }} · Sec. {{ s.numero|stringformat:"02d" }}</span><span>{{ s.asistencia }}%</span></div>
+      <div class="progress" role="progressbar" aria-label="Asistencia de {{ s.asignatura }}" aria-valuenow="{{ s.asistencia }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar bg-app-sies" style="width: {{ s.asistencia }}%"></div></div>
+    </div>
+  {% empty %}<p class="empty">No tienes secciones activas.</p>{% endfor %}
+</section>
+{% endblock %}

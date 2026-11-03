@@ -1,5 +1,5 @@
 {% if app.disponible %}
-<a href="{{ app.url|default:'#' }}" target="_blank" rel="noopener" class="suite-card app-card">
+<a href="{{ app.enlace|default:'#' }}"{% if app.es_externa %} target="_blank" rel="noopener"{% endif %} class="suite-card app-card">
   <i class="bi bi-arrow-up-right arrow"></i>
   <span class="app-icon bg-app-{{ app.color }}"><i class="bi bi-{{ app.icono }}"></i></span>
   <h3 class="app-name">{{ app.nombre }}</h3>

@@ -4,25 +4,27 @@
 <aside class="suite-sidebar offcanvas-md offcanvas-start" tabindex="-1" id="sidebar" aria-label="Navegación de la suite">
   <div class="offcanvas-body">
     <a href="{% url 'portal:inicio' %}" class="suite-logo" title="UAPA Suite"><img src="{% static 'img/logo-uapa.jpg' %}" alt="UAPA"></a>
-    <a href="{% url 'portal:inicio' %}" class="rail-link {% if request.resolver_match.url_name == 'inicio' %}active{% endif %}" title="Inicio" data-bs-toggle="tooltip" data-bs-placement="right"><i class="bi bi-house"></i></a>
+    <a href="{% url 'portal:inicio' %}" class="rail-link {% if request.resolver_match.app_name == 'portal' and request.resolver_match.url_name == 'inicio' %}active{% endif %}" title="Inicio" data-bs-toggle="tooltip" data-bs-placement="right"><i class="bi bi-house"></i></a>
     <div class="rail-divider"></div>
-    {% for app in suite_apps %}{% if app.disponible %}
-      <a href="{{ app.url|default:'#' }}" target="_blank" rel="noopener" class="rail-link" title="{{ app.nombre }}" data-bs-toggle="tooltip" data-bs-placement="right">
+    {% for app in suite_apps %}{% if app.disponible and app.enlace %}
+      <a href="{{ app.enlace }}"{% if app.es_externa %} target="_blank" rel="noopener"{% endif %} class="rail-link {% if modulo_slug == app.slug %}active{% endif %}" title="{{ app.nombre }}" data-bs-toggle="tooltip" data-bs-placement="right">
         <span class="rail-app bg-app-{{ app.color }}"><i class="bi bi-{{ app.icono }}"></i></span>
       </a>
     {% endif %}{% endfor %}
     <div class="rail-bottom">
-      <a href="{% url 'portal:pendientes' %}" class="rail-link {% if request.resolver_match.url_name == 'pendientes' %}active{% endif %}" title="Pendientes" data-bs-toggle="tooltip" data-bs-placement="right"><i class="bi bi-check2-square"></i></a>
-      <a href="#" class="rail-link" title="Ayuda" data-bs-toggle="tooltip" data-bs-placement="right"><i class="bi bi-info-circle"></i></a>
+      <button type="button" class="rail-link border-0 bg-transparent" data-bs-toggle="modal" data-bs-target="#info" title="Info" aria-label="Info"><i class="bi bi-info-circle"></i></button>
       {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="rail-link" title="Configuración" data-bs-toggle="tooltip" data-bs-placement="right"><i class="bi bi-gear"></i></a>{% endif %}
     </div>
   </div>
 </aside>
 
-<div class="suite-main">
+<div class="suite-main{% if modulo_slug %} con-subnav{% endif %}">
   <header class="suite-topbar d-flex align-items-center gap-3 px-3 px-md-4">
     <button class="icon-btn d-md-none" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-label="Abrir menú"><i class="bi bi-list"></i></button>
-    <a href="{% url 'portal:inicio' %}" class="suite-brand d-flex align-items-center gap-2"><i class="bi bi-grid"></i><span class="d-none d-sm-inline">UAPA Suite</span></a>
+    <nav class="suite-brand d-flex align-items-center gap-2" aria-label="Ruta">
+      <a href="{% url 'portal:inicio' %}" class="d-flex align-items-center gap-2"><i class="bi bi-grid"></i><span class="d-none d-sm-inline">UAPA Suite</span></a>
+      {% if modulo_app %}<i class="bi bi-chevron-right small"></i><a href="{{ modulo_app.enlace }}" class="crumb-actual">{{ modulo_app.nombre }}</a>{% endif %}
+    </nav>
     <div class="ms-auto d-flex align-items-center gap-2 gap-md-3">
       <button type="button" class="suite-search d-none d-md-flex" data-bs-toggle="modal" data-bs-target="#cmdk">
         <i class="bi bi-search"></i><span>Buscar en toda la suite…</span><kbd>⌘K</kbd>
@@ -69,9 +71,10 @@
       </div>
     </div>
   </header>
+  {% block subnav %}{% endblock %}
 
   <main class="suite-content mx-auto">
-    {% for m in messages %}<div class="alert alert-info">{{ m }}</div>{% endfor %}
+    {% for m in messages %}<div class="alert alert-suite alert-dismissible fade show" role="status">{{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>{% endfor %}
     {% block content %}{% endblock %}
   </main>
 
@@ -80,6 +83,19 @@
     <div>© Copyright {% now "Y" %} UAPA Suite Todos los Derechos Reservados</div>
     <div>Diseñado y Desarrollado por el <span class="lab">Laboratorio de IA y Big Data</span></div>
   </footer>
+</div>
+
+<div class="modal fade" id="info" tabindex="-1" aria-labelledby="info-titulo">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content info-modal text-center">
+      <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      <h2 class="h5 fw-bold mb-1" id="info-titulo">UAPA Suite</h2>
+      <p class="text-muted mb-4">Versión 1.0</p>
+      <p class="small mb-1">Universidad Abierta Para Adultos</p>
+      <p class="small mb-2">© Copyright {% now "Y" %} UAPA Suite Todos los Derechos Reservados</p>
+      <p class="small mb-0">Diseñado y Desarrollado por el <span class="lab">Laboratorio de IA y Big Data</span></p>
+    </div>
+  </div>
 </div>
 
 <div class="modal fade cmdk" id="cmdk" tabindex="-1" aria-label="Buscar en toda la suite">

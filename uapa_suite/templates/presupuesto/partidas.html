@@ -1,0 +1,21 @@
+{% extends "modulo.html" %}
+{% load suite %}
+{% block titulo %}Partidas {{ anio }}{% endblock %}
+{% block subtitulo %}Presupuesto por departamento{% endblock %}
+{% block accion %}<a href="{% url 'presupuesto:exportar_partidas' %}?anio={{ anio }}" class="btn btn-outline-suite"><i class="bi bi-download me-1"></i>Exportar</a>{% endblock %}
+{% block modulo %}
+{% include "presupuesto/_kpis.html" %}
+<section class="suite-card panel">
+  <div class="table-responsive">
+  <table class="table suite-table align-middle mb-0">
+    <thead><tr><th>Departamento</th><th class="text-end">Aprobado</th><th class="text-end">Ejecutado</th><th class="text-end">Comprometido</th><th style="width: 28%">Ejecución</th></tr></thead>
+    <tbody>
+    {% for d in departamentos %}
+      <tr><td class="fw-medium">{{ d.nombre }}</td><td class="text-end">{{ d.aprobado|rd }}</td><td class="text-end">{{ d.ejecutado|rd }}</td><td class="text-end">{{ d.comprometido|rd }}</td>
+        <td><div class="d-flex align-items-center gap-2"><div class="progress flex-grow-1" style="height: 8px"><div class="progress-bar bg-app-presupuesto" style="width: {{ d.porcentaje_ejecutado }}%"></div></div><span class="small">{{ d.porcentaje_ejecutado }}%</span></div></td></tr>
+    {% empty %}<tr><td colspan="5" class="empty">No hay partidas para {{ anio }}.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}

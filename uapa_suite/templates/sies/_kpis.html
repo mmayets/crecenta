@@ -1,0 +1,6 @@
+<div class="row g-3 mb-4">
+  <div class="col-12 col-sm-6 col-xl-3">{% include "portal/_kpi.html" with etiqueta="Secciones activas" valor=secciones|length %}</div>
+  <div class="col-12 col-sm-6 col-xl-3">{% include "portal/_kpi.html" with etiqueta="Estudiantes" valor=inscritos nota=nota_nuevos tono="ok" %}</div>
+  <div class="col-12 col-sm-6 col-xl-3">{% include "portal/_kpi.html" with etiqueta="Asistencia promedio" valor=asistencia_texto %}</div>
+  <div class="col-12 col-sm-6 col-xl-3">{% include "portal/_kpi.html" with etiqueta="Calificaciones por publicar" valor=por_publicar|length nota=nota_por_publicar oscuro=True tono="accent" %}</div>
+</div>

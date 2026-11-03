@@ -1,0 +1,6 @@
+<div class="progreso">
+  <div class="d-flex justify-content-between small"><span class="task-title">{{ i.capacitacion.nombre }}</span><span>{{ i.progreso }}%</span></div>
+  <div class="progress" role="progressbar" aria-label="Avance de {{ i.capacitacion.nombre }}" aria-valuenow="{{ i.progreso }}" aria-valuemin="0" aria-valuemax="100">
+    <div class="progress-bar" style="width: {{ i.progreso }}%"></div>
+  </div>
+</div>

@@ -21,7 +21,8 @@
     activo = -1;
     if (!items.length) { box.innerHTML = '<div class="empty px-2">Sin resultados.</div>'; return; }
     box.innerHTML = items.map((r) => {
-      const tag = r.url ? `a href="${esc(r.url)}" target="_blank" rel="noopener"` : "div";
+      const ext = /^https?:/.test(r.url) ? ' target="_blank" rel="noopener"' : "";
+      const tag = r.url ? `a href="${esc(r.url)}"${ext}` : "div";
       return `<${tag} class="cmdk-item"><span class="rail-app bg-app-${esc(r.color)}"><i class="bi bi-${esc(r.icono)}"></i></span>
         <span class="flex-grow-1"><span class="d-block fw-medium">${esc(r.titulo)}</span><span class="task-app">${esc(r.detalle)}</span></span>
         <span class="task-app">${esc(r.tipo)}</span></${tag.split(" ")[0]}>`;

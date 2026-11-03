@@ -27,6 +27,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.humanize",
     "portal",
+    "popin",
+    "gth",
+    "presupuesto",
+    "sies",
 ]
 
 MIDDLEWARE = [
@@ -98,3 +102,5 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = env_bool("DJANGO_SSL_REDIRECT", True)
+    SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SECONDS", "0"))

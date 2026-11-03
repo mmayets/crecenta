@@ -93,7 +93,7 @@ def buscar(request):
                 "resultados": [
                     *(
                         {"tipo": "Aplicación", "titulo": a.nombre, "detalle": a.descripcion,
-                         "url": a.url if a.disponible else "", "icono": a.icono, "color": a.color}
+                         "url": a.enlace if a.disponible else "", "icono": a.icono, "color": a.color}
                         for a in apps
                     ),
                     *(

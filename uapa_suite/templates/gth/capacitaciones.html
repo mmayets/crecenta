@@ -1,0 +1,12 @@
+{% extends "modulo.html" %}
+{% block titulo %}Capacitaciones{% endblock %}
+{% block subtitulo %}Tu avance en los cursos asignados{% endblock %}
+{% block modulo %}
+<section class="suite-card panel">
+  {% regroup inscripciones by anio as por_anio %}
+  {% for grupo in por_anio %}
+    <h2 class="section-title mt-2">{{ grupo.grouper }}</h2>
+    {% for i in grupo.list %}{% include "gth/_progreso.html" %}{% endfor %}
+  {% empty %}<p class="empty">No tienes capacitaciones registradas.</p>{% endfor %}
+</section>
+{% endblock %}

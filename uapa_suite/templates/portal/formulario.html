@@ -1,0 +1,18 @@
+{% extends "modulo.html" %}
+{% block modulo %}
+<form method="post" class="suite-card panel form-panel" novalidate>{% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  {% for f in form %}
+    <div class="mb-3">
+      {% if f.label %}<label class="form-label small fw-semibold" for="{{ f.id_for_label }}">{{ f.label }}</label>{% endif %}
+      {{ f.as_widget }}
+      {% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}
+      {% for e in f.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+    </div>
+  {% endfor %}
+  <div class="d-flex gap-2 mt-4">
+    <button class="btn btn-accent px-4">{{ boton }}</button>
+    <a href="{% url volver %}" class="btn btn-outline-suite">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

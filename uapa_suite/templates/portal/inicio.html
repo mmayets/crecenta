@@ -10,7 +10,7 @@
   <h2 class="hero-title">{{ aviso.titulo }}</h2>
   {% if aviso.texto %}<p class="hero-text">{{ aviso.texto }}</p>{% endif %}
   {% if aviso.texto_boton and aviso.enlace %}
-    <a href="{{ aviso.enlace }}" target="_blank" rel="noopener" class="btn btn-primary px-3">{{ aviso.texto_boton }} <i class="bi bi-arrow-up-right ms-1"></i></a>
+    <a href="{{ aviso.enlace }}" class="btn btn-primary px-3">{{ aviso.texto_boton }} <i class="bi bi-arrow-up-right ms-1"></i></a>
   {% endif %}
 </section>
 {% endif %}

@@ -1,0 +1,22 @@
+{% extends "modulo.html" %}
+{% load suite %}
+{% block accion %}<a href="{% url 'gth:nueva_solicitud' %}{% if request.resolver_match.url_name == 'vacaciones' %}?tipo=vacaciones{% endif %}" class="btn btn-accent">Nueva solicitud</a>{% endblock %}
+{% block modulo %}
+{% if request.resolver_match.url_name == 'vacaciones' and ficha %}
+<div class="row g-3 mb-4"><div class="col-12 col-md-4">{% include "portal/_kpi.html" with etiqueta="Días de vacaciones" valor=ficha.dias_vacaciones nota="disponibles" tono="ok" %}</div></div>
+{% endif %}
+<section class="suite-card panel">
+  <div class="table-responsive">
+  <table class="table suite-table align-middle mb-0">
+    <thead><tr><th>Solicitud</th><th>Tipo</th><th>Fechas</th><th>Enviada</th><th>Estado</th></tr></thead>
+    <tbody>
+    {% for s in solicitudes %}
+      <tr><td class="fw-medium">{{ s.descripcion }}</td><td>{{ s.get_tipo_display }}</td>
+        <td>{% if s.fecha_inicio %}{{ s.fecha_inicio|date:"j M" }}{% if s.fecha_fin %} – {{ s.fecha_fin|date:"j M Y" }}{% endif %}{% else %}—{% endif %}</td>
+        <td>{{ s.creada|date:"j M Y" }}</td><td>{% estado s.estado s.get_estado_display %}</td></tr>
+    {% empty %}<tr><td colspan="5" class="empty">No hay solicitudes.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}

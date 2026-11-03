@@ -1,0 +1,33 @@
+{% extends "modulo.html" %}
+{% load suite %}
+{% block titulo %}Mi espacio{% endblock %}
+{% block subtitulo %}Tus trámites y beneficios como colaborador{% endblock %}
+{% block accion %}<a href="{% url 'gth:nueva_solicitud' %}" class="btn btn-accent">Nueva solicitud</a>{% endblock %}
+{% block modulo %}
+<div class="row g-3 mb-4">
+  <div class="col-12 col-sm-6 col-xl-3">{% include "portal/_kpi.html" with etiqueta="Días de vacaciones" valor=ficha.dias_vacaciones|default_if_none:"—" nota="disponibles" tono="ok" %}</div>
+  <div class="col-12 col-sm-6 col-xl-3">{% include "portal/_kpi.html" with etiqueta="Horas de capacitación" valor=horas nota=meta_horas tono="ok" %}</div>
+  <div class="col-12 col-sm-6 col-xl-3">{% include "portal/_kpi.html" with etiqueta="Antigüedad" valor=antiguedad %}</div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    {% if not evaluacion %}{% include "portal/_kpi.html" with etiqueta=etiqueta_evaluacion valor="Sin asignar" oscuro=True %}
+    {% elif evaluacion.completada %}{% include "portal/_kpi.html" with etiqueta=etiqueta_evaluacion valor="Completada" oscuro=True %}
+    {% else %}{% include "portal/_kpi.html" with etiqueta=etiqueta_evaluacion valor="Pendiente" nota=vence_evaluacion oscuro=True tono="accent" %}{% endif %}
+  </div>
+</div>
+<div class="row g-4">
+  <div class="col-12 col-lg-6">
+    <section class="suite-card panel">
+      <div class="panel-head"><h2>Mis solicitudes</h2><a href="{% url 'gth:solicitudes' %}" class="link-strong">Historial</a></div>
+      {% for s in solicitudes %}
+        <div class="task"><div class="flex-grow-1 task-title">{{ s.descripcion }}</div>{% estado s.estado s.get_estado_display %}</div>
+      {% empty %}<p class="empty">Aún no has enviado solicitudes.</p>{% endfor %}
+    </section>
+  </div>
+  <div class="col-12 col-lg-6">
+    <section class="suite-card panel">
+      <div class="panel-head"><h2>Capacitaciones recomendadas</h2></div>
+      {% for i in capacitaciones %}{% include "gth/_progreso.html" %}{% empty %}<p class="empty">No hay capacitaciones recomendadas.</p>{% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}

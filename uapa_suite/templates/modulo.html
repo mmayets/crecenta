@@ -1,0 +1,36 @@
+{% extends "suite.html" %}
+{% block title %}{{ titulo|default:modulo_app.nombre }} · {{ modulo_app.nombre|default:"UAPA Suite" }}{% endblock %}
+{% block subnav %}
+<aside class="subnav" aria-label="Menú de {{ modulo_app.nombre }}">
+  <div class="subnav-head">
+    <span class="subnav-icon bg-app-{{ modulo_app.color|default:'popin' }}"><i class="bi bi-{{ modulo_app.icono|default:'grid' }}"></i></span>
+    <div class="min-w-0"><div class="subnav-name">{{ modulo_app.nombre }}</div><div class="subnav-desc">{{ modulo_app.descripcion }}</div></div>
+  </div>
+  <nav class="subnav-links">
+    {% for item in modulo_nav %}
+      <a href="{{ item.url }}" class="subnav-link {% if item.activo %}active{% endif %}" {% if item.activo %}aria-current="page"{% endif %}>
+        <span>{{ item.etiqueta }}</span>{% if item.badge %}<span class="subnav-badge">{{ item.badge }}</span>{% endif %}
+      </a>
+    {% endfor %}
+  </nav>
+  <div class="subnav-help">¿Necesitas ayuda con {{ modulo_app.nombre }}? <a href="#" data-bs-toggle="modal" data-bs-target="#guia">Ver guía</a></div>
+</aside>
+<div class="modal fade" id="guia" tabindex="-1" aria-labelledby="guia-titulo">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content info-modal">
+    <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+    <h2 class="h5 fw-bold mb-3" id="guia-titulo">Guía de {{ modulo_app.nombre }}</h2>
+    <p class="text-muted small mb-3">{{ modulo_app.descripcion }}. Estas son sus secciones:</p>
+    <ul class="small mb-0">{% for item in modulo_nav %}<li><a href="{{ item.url }}" class="link-strong">{{ item.etiqueta }}</a></li>{% endfor %}</ul>
+  </div></div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{% block titulo %}{{ titulo }}{% endblock %}</h1>
+    <p class="page-sub mb-0">{% block subtitulo %}{{ subtitulo }}{% endblock %}</p>
+  </div>
+  <div class="page-actions">{% block accion %}{% endblock %}</div>
+</div>
+{% block modulo %}{% endblock %}
+{% endblock %}

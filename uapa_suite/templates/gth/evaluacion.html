@@ -1,0 +1,12 @@
+{% extends "modulo.html" %}
+{% load suite %}
+{% block titulo %}Evaluación de desempeño{% endblock %}
+{% block subtitulo %}Tus períodos de evaluación{% endblock %}
+{% block modulo %}
+<section class="suite-card panel">
+  {% for e in evaluaciones %}
+    <div class="task"><div class="flex-grow-1"><div class="task-title">Evaluación {{ e.anio }}</div><div class="task-app">Vence el {{ e.vence|date:"j \d\e F \d\e Y" }}</div></div>
+      {% if e.completada %}{% estado "aprobado" "Completada" %}{% else %}{% estado "pendiente" "Pendiente" %}{% endif %}</div>
+  {% empty %}<p class="empty">No tienes evaluaciones asignadas.</p>{% endfor %}
+</section>
+{% endblock %}

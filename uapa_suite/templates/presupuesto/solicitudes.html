@@ -1,0 +1,33 @@
+{% extends "modulo.html" %}
+{% load suite %}
+{% block titulo %}Solicitudes de compra{% endblock %}
+{% block subtitulo %}Seguimiento y aprobación{% endblock %}
+{% block accion %}<a href="{% url 'presupuesto:nueva_solicitud' %}" class="btn btn-accent">Solicitud de compra</a>{% endblock %}
+{% block modulo %}
+<div class="btn-group flex-wrap mb-3" role="group" aria-label="Filtrar por estado">
+  <a href="?" class="btn btn-sm btn-outline-suite {% if not estado %}active{% endif %}">Todas</a>
+  {% for v, t in estados %}<a href="?estado={{ v }}" class="btn btn-sm btn-outline-suite {% if estado == v %}active{% endif %}">{{ t }}</a>{% endfor %}
+</div>
+<section class="suite-card panel">
+  <div class="table-responsive">
+  <table class="table suite-table align-middle mb-0">
+    <thead><tr><th>N.º</th><th>Descripción</th><th>Departamento</th><th class="text-end">Monto</th><th>Estado</th>{% if puede_decidir %}<th class="text-end">Acciones</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for s in solicitudes %}
+      <tr><td class="codigo">#{{ s.numero }}</td><td class="fw-medium">{{ s.descripcion }}<div class="task-app">{{ s.solicitante.get_full_name|default:s.solicitante.username|default:"—" }} · {{ s.creada|date:"j M Y" }}</div></td>
+        <td>{{ s.departamento.nombre }}</td><td class="text-end">{{ s.monto|rd }}</td><td>{% estado s.estado s.get_estado_display %}</td>
+        {% if puede_decidir %}<td class="text-end text-nowrap">
+          {% if s.estado == "pendiente" or s.estado == "en_curso" %}
+          <form method="post" action="{% url 'presupuesto:decidir' s.numero %}" class="d-inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button name="estado" value="aprobado" class="btn btn-sm btn-outline-suite"><i class="bi bi-check2"></i> Aprobar</button>
+            <button name="estado" value="rechazado" class="btn btn-sm btn-outline-suite"><i class="bi bi-x"></i> Rechazar</button>
+          </form>
+          {% endif %}
+        </td>{% endif %}
+      </tr>
+    {% empty %}<tr><td colspan="6" class="empty">No hay solicitudes.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}

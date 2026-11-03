@@ -1,0 +1,33 @@
+{% extends "modulo.html" %}
+{% load suite %}
+{% block titulo %}Ejecución presupuestaria {{ anio }}{% endblock %}
+{% block subtitulo %}Vista consolidada por departamento{% endblock %}
+{% block accion %}<a href="{% url 'presupuesto:nueva_solicitud' %}" class="btn btn-accent">Solicitud de compra</a>{% endblock %}
+{% block modulo %}
+{% include "presupuesto/_kpis.html" %}
+<div class="row g-4">
+  <div class="col-12 col-xl-8">
+    <section class="suite-card panel">
+      <div class="panel-head"><h2>Ejecución por departamento</h2><a href="{% url 'presupuesto:partidas' %}" class="link-strong">Detalle</a></div>
+      {% if departamentos %}
+      <div class="barras" role="img" aria-label="Porcentaje ejecutado por departamento: {% for d in departamentos %}{{ d.nombre }} {{ d.porcentaje_ejecutado }}%{% if not forloop.last %}, {% endif %}{% endfor %}">
+        {% for d in departamentos %}
+          <div class="barra-col" title="{{ d.nombre }}: {{ d.ejecutado|rd }} de {{ d.aprobado|rd }}">
+            <div class="barra-zona"><span class="barra-valor">{{ d.porcentaje_ejecutado }}%</span><div class="barra" style="height: {% widthratio d.porcentaje_ejecutado 100 100 %}%"></div></div>
+            <div class="barra-label">{{ d.nombre }}</div>
+          </div>
+        {% endfor %}
+      </div>
+      {% else %}<p class="empty">No hay departamentos registrados para {{ anio }}.</p>{% endif %}
+    </section>
+  </div>
+  <div class="col-12 col-xl-4">
+    <section class="suite-card panel">
+      <div class="panel-head"><h2>Solicitudes recientes</h2><a href="{% url 'presupuesto:solicitudes' %}" class="link-strong">Ver todas</a></div>
+      {% for s in solicitudes %}
+        <div class="task"><div class="flex-grow-1"><div class="task-title">#{{ s.numero }} {{ s.descripcion }}</div><div class="task-app">{{ s.monto|rd }}</div></div>{% estado s.estado s.get_estado_display %}</div>
+      {% empty %}<p class="empty">No hay solicitudes.</p>{% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}
