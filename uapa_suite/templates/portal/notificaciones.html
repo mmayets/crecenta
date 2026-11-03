@@ -1,0 +1,20 @@
+{% extends "suite.html" %}
+{% block title %}Notificaciones · UAPA Suite{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+  <div><h1 class="page-title">Notificaciones</h1><p class="page-sub mb-0">Lo último de tus aplicaciones.</p></div>
+  {% if suite_no_leidas %}
+  <form method="post" action="{% url 'portal:marcar_leidas' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-suite">Marcar todas como leídas</button></form>
+  {% endif %}
+</div>
+<section class="suite-card panel">
+  {% for n in notificaciones %}
+    <div class="task">
+      <span class="task-dot {% if n.aplicacion %}bg-app-{{ n.aplicacion.color }}{% else %}bg-secondary{% endif %}"></span>
+      <div class="flex-grow-1"><div class="task-title {% if not n.leida %}fw-semibold{% endif %}">{{ n.texto }}</div>
+      <div class="task-app">{{ n.aplicacion.nombre|default:"UAPA Suite" }} · hace {{ n.creada|timesince }}</div></div>
+      {% if not n.leida %}<span class="badge rounded-pill" style="background: var(--orange-soft); color: var(--foreground)">Nueva</span>{% endif %}
+    </div>
+  {% empty %}<div class="empty">No tienes notificaciones.</div>{% endfor %}
+</section>
+{% endblock %}

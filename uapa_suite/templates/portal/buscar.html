@@ -1,0 +1,15 @@
+{% extends "suite.html" %}
+{% block title %}Buscar · UAPA Suite{% endblock %}
+{% block content %}
+<h1 class="page-title">Buscar</h1>
+<form class="my-4" method="get"><div class="input-group" style="max-width: 560px">
+  <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+  <input class="form-control" name="q" value="{{ q }}" placeholder="Buscar en toda la suite…" autofocus>
+  <button class="btn btn-primary">Buscar</button></div></form>
+{% if q %}
+  {% if apps %}<h2 class="section-title">Aplicaciones</h2><div class="row g-3 mb-4">{% for app in apps %}<div class="col-12 col-sm-6 col-xl-3">{% include "portal/_app_card.html" %}</div>{% endfor %}</div>{% endif %}
+  {% if pendientes %}<h2 class="section-title">Pendientes</h2><section class="suite-card panel mb-4">{% for p in pendientes %}{% include "portal/_pendiente.html" %}{% endfor %}</section>{% endif %}
+  {% if eventos %}<h2 class="section-title">Agenda</h2><section class="suite-card panel mb-4">{% for e in eventos %}<div class="event"><span class="event-time">{{ e.inicio|time:"H:i" }}</span><span class="event-title">{{ e.titulo }} <span class="task-app">· {{ e.inicio|date:"j \d\e F" }}</span></span></div>{% endfor %}</section>{% endif %}
+  {% if not apps and not pendientes and not eventos %}<p class="empty">No encontramos resultados para «{{ q }}».</p>{% endif %}
+{% endif %}
+{% endblock %}

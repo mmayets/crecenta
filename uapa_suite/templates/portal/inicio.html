@@ -1,0 +1,51 @@
+{% extends "suite.html" %}
+{% block title %}Inicio · UAPA Suite{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ saludo }}, {{ primer_nombre }}</h1>
+<p class="page-sub mb-4">{{ hoy|date:"l, j \d\e F"|capfirst }} · Todo lo que necesitas, en un solo lugar.</p>
+
+{% if aviso %}
+<section class="hero mb-5">
+  <div class="hero-label">{{ aviso.etiqueta }}</div>
+  <h2 class="hero-title">{{ aviso.titulo }}</h2>
+  {% if aviso.texto %}<p class="hero-text">{{ aviso.texto }}</p>{% endif %}
+  {% if aviso.texto_boton and aviso.enlace %}
+    <a href="{{ aviso.enlace }}" target="_blank" rel="noopener" class="btn btn-primary px-3">{{ aviso.texto_boton }} <i class="bi bi-arrow-up-right ms-1"></i></a>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="mb-5">
+  <h2 class="section-title">Mis aplicaciones</h2>
+  <div class="row g-3">
+    {% for app in suite_apps %}
+      <div class="col-12 col-sm-6 col-xl-3">{% include "portal/_app_card.html" %}</div>
+    {% empty %}
+      <div class="col-12 empty">Aún no tienes aplicaciones asignadas.</div>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="row g-4">
+  <div class="col-12 col-lg-8">
+    <section class="suite-card panel">
+      <div class="panel-head"><h2>Pendientes en la suite</h2><a href="{% url 'portal:pendientes' %}" class="link-strong">Ver todo</a></div>
+      {% for p in pendientes %}{% include "portal/_pendiente.html" %}{% empty %}<div class="empty">¡Todo al día! No tienes pendientes.</div>{% endfor %}
+    </section>
+  </div>
+  <div class="col-12 col-lg-4">
+    <section class="suite-card panel">
+      <div class="panel-head"><h2>Agenda</h2></div>
+      {% for e in agenda %}
+        <div class="event">
+          <span class="event-time">{{ e.inicio|time:"H:i" }}</span>
+          <i class="bi bi-calendar3 text-muted"></i>
+          <span class="event-title">{{ e.titulo }}{% if e.lugar %} <span class="task-app">· {{ e.lugar }}</span>{% endif %}</span>
+        </div>
+      {% empty %}
+        <div class="empty">No hay eventos para hoy.</div>
+      {% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}

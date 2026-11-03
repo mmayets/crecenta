@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+{% block body %}
+<aside class="suite-sidebar offcanvas-md offcanvas-start" tabindex="-1" id="sidebar" aria-label="Navegación de la suite">
+  <div class="offcanvas-body">
+    <a href="{% url 'portal:inicio' %}" class="suite-logo" title="UAPA Suite"><img src="{% static 'img/logo-uapa.jpg' %}" alt="UAPA"></a>
+    <a href="{% url 'portal:inicio' %}" class="rail-link {% if request.resolver_match.url_name == 'inicio' %}active{% endif %}" title="Inicio" data-bs-toggle="tooltip" data-bs-placement="right"><i class="bi bi-house"></i></a>
+    <div class="rail-divider"></div>
+    {% for app in suite_apps %}{% if app.disponible %}
+      <a href="{{ app.url|default:'#' }}" target="_blank" rel="noopener" class="rail-link" title="{{ app.nombre }}" data-bs-toggle="tooltip" data-bs-placement="right">
+        <span class="rail-app bg-app-{{ app.color }}"><i class="bi bi-{{ app.icono }}"></i></span>
+      </a>
+    {% endif %}{% endfor %}
+    <div class="rail-bottom">
+      <a href="{% url 'portal:pendientes' %}" class="rail-link {% if request.resolver_match.url_name == 'pendientes' %}active{% endif %}" title="Pendientes" data-bs-toggle="tooltip" data-bs-placement="right"><i class="bi bi-check2-square"></i></a>
+      <a href="#" class="rail-link" title="Ayuda" data-bs-toggle="tooltip" data-bs-placement="right"><i class="bi bi-info-circle"></i></a>
+      {% if user.is_staff %}<a href="{% url 'admin:index' %}" class="rail-link" title="Configuración" data-bs-toggle="tooltip" data-bs-placement="right"><i class="bi bi-gear"></i></a>{% endif %}
+    </div>
+  </div>
+</aside>
+
+<div class="suite-main">
+  <header class="suite-topbar d-flex align-items-center gap-3 px-3 px-md-4">
+    <button class="icon-btn d-md-none" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-label="Abrir menú"><i class="bi bi-list"></i></button>
+    <a href="{% url 'portal:inicio' %}" class="suite-brand d-flex align-items-center gap-2"><i class="bi bi-grid"></i><span class="d-none d-sm-inline">UAPA Suite</span></a>
+    <div class="ms-auto d-flex align-items-center gap-2 gap-md-3">
+      <button type="button" class="suite-search d-none d-md-flex" data-bs-toggle="modal" data-bs-target="#cmdk">
+        <i class="bi bi-search"></i><span>Buscar en toda la suite…</span><kbd>⌘K</kbd>
+      </button>
+      <button type="button" class="icon-btn d-md-none" data-bs-toggle="modal" data-bs-target="#cmdk" aria-label="Buscar"><i class="bi bi-search"></i></button>
+
+      <div class="dropdown">
+        <button class="icon-btn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notificaciones">
+          <i class="bi bi-bell"></i>{% if suite_no_leidas %}<span class="dot"></span>{% endif %}
+        </button>
+        <div class="dropdown-menu dropdown-menu-end p-2" style="width: 320px">
+          <div class="d-flex justify-content-between align-items-center px-2 py-1">
+            <strong class="font-display">Notificaciones</strong>
+            {% if suite_no_leidas %}
+            <form method="post" action="{% url 'portal:marcar_leidas' %}">{% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button class="btn btn-link btn-sm p-0 link-strong">Marcar leídas</button>
+            </form>
+            {% endif %}
+          </div>
+          {% for n in suite_notificaciones %}
+            <div class="dropdown-item-text d-flex gap-2 py-2 {% if not n.leida %}fw-semibold{% endif %}">
+              <span class="task-dot mt-2 {% if n.aplicacion %}bg-app-{{ n.aplicacion.color }}{% else %}bg-secondary{% endif %}"></span>
+              <div><div class="small">{{ n.texto }}</div><div class="task-app">{{ n.creada|timesince }}</div></div>
+            </div>
+          {% empty %}
+            <div class="empty px-2">No tienes notificaciones.</div>
+          {% endfor %}
+          <div class="border-top mt-1 pt-2 px-2"><a href="{% url 'portal:notificaciones' %}" class="link-strong">Ver todas</a></div>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="btn p-0 border-0 d-flex align-items-center gap-2" data-bs-toggle="dropdown" aria-expanded="false">
+          <span class="avatar">{{ suite_usuario.iniciales }}</span>
+          <span class="text-start d-none d-lg-block"><span class="user-name d-block">{{ suite_usuario.nombre }}</span><span class="user-role">{{ suite_usuario.rol }}</span></span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><span class="dropdown-item-text small text-muted">{{ user.email|default:user.get_username }}</span></li>
+          {% if user.is_staff %}<li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="bi bi-gear me-2"></i>Administración</a></li>{% endif %}
+          <li><hr class="dropdown-divider"></li>
+          <li><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</button></form></li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <main class="suite-content mx-auto">
+    {% for m in messages %}<div class="alert alert-info">{{ m }}</div>{% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="suite-footer">
+    <div>Universidad Abierta Para Adultos</div>
+    <div>© Copyright {% now "Y" %} UAPA Suite Todos los Derechos Reservados</div>
+    <div>Diseñado y Desarrollado por el <span class="lab">Laboratorio de IA y Big Data</span></div>
+  </footer>
+</div>
+
+<div class="modal fade cmdk" id="cmdk" tabindex="-1" aria-label="Buscar en toda la suite">
+  <div class="modal-dialog modal-dialog-scrollable" style="margin-top: 12vh">
+    <div class="modal-content">
+      <form action="{% url 'portal:buscar' %}" method="get">
+        <input class="form-control cmdk-input" id="cmdk-input" name="q" placeholder="Buscar aplicaciones, pendientes, agenda…" autocomplete="off">
+      </form>
+      <div class="modal-body p-2" id="cmdk-results" data-url="{% url 'portal:buscar' %}">
+        <div class="empty px-2">Escribe para buscar. <span class="kbd">Esc</span> para cerrar.</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/suite.js' %}"></script>{% endblock %}

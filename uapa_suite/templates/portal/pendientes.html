@@ -1,0 +1,14 @@
+{% extends "suite.html" %}
+{% block title %}Pendientes · UAPA Suite{% endblock %}
+{% block content %}
+<h1 class="page-title">Pendientes</h1>
+<p class="page-sub mb-4">Tareas que te esperan en las aplicaciones de la suite.</p>
+<div class="btn-group mb-3" role="group" aria-label="Filtrar">
+  <a href="?estado=abiertos" class="btn btn-sm btn-outline-suite {% if estado == 'abiertos' %}active{% endif %}">Abiertos</a>
+  <a href="?estado=completados" class="btn btn-sm btn-outline-suite {% if estado == 'completados' %}active{% endif %}">Completados</a>
+  <a href="?estado=todos" class="btn btn-sm btn-outline-suite {% if estado == 'todos' %}active{% endif %}">Todos</a>
+</div>
+<section class="suite-card panel">
+  {% for p in pendientes %}{% include "portal/_pendiente.html" with completar=True %}{% empty %}<div class="empty">No hay pendientes en esta vista.</div>{% endfor %}
+</section>
+{% endblock %}

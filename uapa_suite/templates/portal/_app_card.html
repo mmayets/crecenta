@@ -1,0 +1,14 @@
+{% if app.disponible %}
+<a href="{{ app.url|default:'#' }}" target="_blank" rel="noopener" class="suite-card app-card">
+  <i class="bi bi-arrow-up-right arrow"></i>
+  <span class="app-icon bg-app-{{ app.color }}"><i class="bi bi-{{ app.icono }}"></i></span>
+  <h3 class="app-name">{{ app.nombre }}</h3>
+  <p class="app-desc">{{ app.descripcion }}</p>
+</a>
+{% else %}
+<div class="suite-card app-card is-soon" aria-disabled="true">
+  <span class="app-icon bg-app-{{ app.color }}"><i class="bi bi-{{ app.icono }}"></i></span>
+  <h3 class="app-name">{{ app.nombre }}</h3>
+  <p class="app-desc">Próximamente</p>
+</div>
+{% endif %}

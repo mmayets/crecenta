@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Acceso · UAPA Suite{% endblock %}
+{% block body %}
+<div class="login-wrap">
+  <div class="login-side d-none d-lg-flex flex-column justify-content-between">
+    <div class="d-flex align-items-center gap-3"><span class="suite-logo m-0"><img src="{% static 'img/logo-uapa.jpg' %}" alt="UAPA"></span><span class="fw-semibold">UAPA Suite</span></div>
+    <div style="max-width: 30rem">
+      <h1 class="mb-3">Todo lo que necesitas, en un solo lugar.</h1>
+      <p class="opacity-75">Comunicación, talento humano, presupuesto y vida estudiantil, con un solo acceso.</p>
+    </div>
+    <div class="small opacity-50">Universidad Abierta Para Adultos</div>
+    <div class="squares" aria-hidden="true">
+      <span style="width:90px;height:90px;right:60px;top:70px"></span>
+      <span style="width:46px;height:46px;right:170px;top:110px"></span>
+      <span style="width:56px;height:56px;right:150px;top:170px;opacity:.9"></span>
+      <span style="width:50px;height:50px;right:80px;top:180px;opacity:.85"></span>
+      <span style="width:34px;height:34px;right:230px;top:200px;opacity:.8"></span>
+      <span style="width:18px;height:18px;right:280px;top:240px;opacity:.7"></span>
+    </div>
+  </div>
+  <div class="login-form">
+    <div class="suite-card login-card">
+      <span class="suite-logo d-lg-none mb-3"><img src="{% static 'img/logo-uapa.jpg' %}" alt="UAPA"></span>
+      <h2 class="h3 fw-bold mb-1">Iniciar sesión</h2>
+      <p class="text-muted mb-4">Usa tu cuenta institucional.</p>
+      {% if form.errors %}<div class="alert alert-danger py-2 small">Usuario o contraseña incorrectos.</div>{% endif %}
+      <form method="post">{% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <div class="mb-3"><label class="form-label small fw-semibold" for="id_username">Usuario</label>
+          <input class="form-control" id="id_username" name="username" autocomplete="username" required autofocus value="{{ form.username.value|default:'' }}"></div>
+        <div class="mb-4"><label class="form-label small fw-semibold" for="id_password">Contraseña</label>
+          <input class="form-control" type="password" id="id_password" name="password" autocomplete="current-password" required></div>
+        <button class="btn btn-primary w-100 py-2">Entrar</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

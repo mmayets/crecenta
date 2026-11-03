@@ -1,0 +1,14 @@
+<div class="task">
+  <span class="task-dot bg-app-{{ p.aplicacion.color }}"></span>
+  <div class="flex-grow-1">
+    <div class="task-title {% if p.completado %}done{% endif %}">{{ p.titulo }}</div>
+    <div class="task-app">{{ p.aplicacion.nombre }}</div>
+  </div>
+  {% if completar %}
+  <form method="post" action="{% url 'portal:alternar_pendiente' p.pk %}">{% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button class="btn btn-sm btn-outline-suite">{% if p.completado %}Reabrir{% else %}<i class="bi bi-check2"></i> Hecho{% endif %}</button>
+  </form>
+  {% endif %}
+  {% if p.enlace %}<a href="{{ p.enlace }}" target="_blank" rel="noopener" class="link-strong">Abrir</a>{% endif %}
+</div>
