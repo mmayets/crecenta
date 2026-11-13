@@ -133,7 +133,7 @@ def manifiesto(request):
             "start_url": "/",
             "scope": "/",
             "display": "standalone",
-            "background_color": "#f7f8fb",
+            "background_color": "#ffffff",
             "theme_color": "#100e5b",
             "icons": iconos,
         },

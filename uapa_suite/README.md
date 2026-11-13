@@ -45,7 +45,7 @@ si la URL está vacía, se usa el módulo interno con el mismo slug.
 
 ### Icono de la aplicación
 
-`static/img/icono/` trae el icono de UAPA Suite: cuatro mosaicos sobre azul marino, uno por aplicación
+`static/img/icono/` trae el icono de UAPA Suite: cuatro mosaicos sobre fondo blanco (con un borde gris suave), uno por aplicación
 (SIES, Presupuesto, GTH y PopIn); el naranja, más grande y desplazado hacia arriba, retoma los cuadritos del
 logo. Incluye `icon.svg` (fuente), PNG de 192 y 512 px, versión *maskable* para Android,
 `apple-touch-icon.png` (180 px, opaco) y el favicon (`favicon.svg`, `favicon.ico`). El manifiesto
