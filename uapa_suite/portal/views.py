@@ -3,6 +3,8 @@ from datetime import timedelta
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import JsonResponse
+from django.templatetags.static import static
+from django.views.decorators.cache import cache_control
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -111,3 +113,30 @@ def buscar(request):
             }
         )
     return render(request, "portal/buscar.html", {"q": q, "apps": apps, "pendientes": pend, "eventos": eventos})
+
+
+@cache_control(max_age=86400, public=True)
+def manifiesto(request):
+    """Manifiesto web: permite instalar UAPA Suite como aplicación con su icono."""
+    iconos = [
+        {"src": static("img/icono/icon-192.png"), "sizes": "192x192", "type": "image/png", "purpose": "any"},
+        {"src": static("img/icono/icon-512.png"), "sizes": "512x512", "type": "image/png", "purpose": "any"},
+        {"src": static("img/icono/icon-maskable-512.png"), "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+        {"src": static("img/icono/icon.svg"), "sizes": "any", "type": "image/svg+xml", "purpose": "any"},
+    ]
+    return JsonResponse(
+        {
+            "name": "UAPA Suite",
+            "short_name": "UAPA Suite",
+            "description": "Todo lo que necesitas, en un solo lugar.",
+            "lang": "es",
+            "start_url": "/",
+            "scope": "/",
+            "display": "standalone",
+            "background_color": "#f7f8fb",
+            "theme_color": "#100e5b",
+            "icons": iconos,
+        },
+        content_type="application/manifest+json",
+        json_dumps_params={"ensure_ascii": False},
+    )

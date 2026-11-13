@@ -11,4 +11,5 @@ urlpatterns = [
     path("notificaciones/", views.notificaciones, name="notificaciones"),
     path("notificaciones/leidas/", views.marcar_leidas, name="marcar_leidas"),
     path("buscar/", views.buscar, name="buscar"),
+    path("manifest.webmanifest", views.manifiesto, name="manifiesto"),
 ]

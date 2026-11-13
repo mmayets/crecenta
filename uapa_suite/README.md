@@ -43,6 +43,16 @@ si la URL está vacía, se usa el módulo interno con el mismo slug.
 - **Administración** (`/admin/`) para gestionar aplicaciones, avisos, perfiles, pendientes, agenda y notificaciones.
   Si un perfil tiene aplicaciones asignadas, el usuario solo ve esas; si no, ve todas.
 
+### Icono de la aplicación
+
+`static/img/icono/` trae el icono de UAPA Suite: la «U» blanca sobre azul marino y cuatro cuadritos con los
+colores de PopIn, GTH, Presupuesto y SIES. Incluye `icon.svg` (fuente), PNG de 192 y 512 px, versión
+*maskable* para Android, `apple-touch-icon.png` (180 px, opaco) y un favicon simplificado (`favicon.svg` y
+`favicon.ico`) que se lee bien a 16–32 px. El manifiesto (`/manifest.webmanifest`) permite instalar la suite
+en el teléfono o el escritorio.
+
+![Icono](docs/icono-vista-previa.png)
+
 Bootstrap e iconos se sirven desde `static/vendor/` (sin depender de CDN). `static/css/suite.css`
 traduce los tokens del diseño a variables de Bootstrap.
 

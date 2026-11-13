@@ -61,3 +61,17 @@ class PortalTests(TestCase):
     def test_marcar_leidas(self):
         self.client.post(reverse("portal:marcar_leidas"))
         self.assertFalse(self.user.notificaciones.filter(leida=False).exists())
+
+
+class IconoTests(TestCase):
+    def test_manifiesto_publico_con_iconos(self):
+        r = self.client.get(reverse("portal:manifiesto"))
+        self.assertEqual(r["Content-Type"], "application/manifest+json")
+        datos = r.json()
+        self.assertEqual(datos["start_url"], "/")
+        self.assertIn("maskable", {i["purpose"] for i in datos["icons"]})
+
+    def test_base_enlaza_iconos(self):
+        r = self.client.get(reverse("login"))
+        self.assertContains(r, 'rel="manifest"')
+        self.assertContains(r, "img/icono/apple-touch-icon.png")
