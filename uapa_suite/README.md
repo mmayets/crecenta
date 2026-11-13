@@ -45,11 +45,11 @@ si la URL está vacía, se usa el módulo interno con el mismo slug.
 
 ### Icono de la aplicación
 
-`static/img/icono/` trae el icono de UAPA Suite: la «U» blanca sobre azul marino y cuatro cuadritos con los
-colores de PopIn, GTH, Presupuesto y SIES. Incluye `icon.svg` (fuente), PNG de 192 y 512 px, versión
-*maskable* para Android, `apple-touch-icon.png` (180 px, opaco) y un favicon simplificado (`favicon.svg` y
-`favicon.ico`) que se lee bien a 16–32 px. El manifiesto (`/manifest.webmanifest`) permite instalar la suite
-en el teléfono o el escritorio.
+`static/img/icono/` trae el icono de UAPA Suite: cuatro mosaicos sobre azul marino, uno por aplicación
+(SIES, Presupuesto, GTH y PopIn); el naranja, más grande y desplazado hacia arriba, retoma los cuadritos del
+logo. Incluye `icon.svg` (fuente), PNG de 192 y 512 px, versión *maskable* para Android,
+`apple-touch-icon.png` (180 px, opaco) y el favicon (`favicon.svg`, `favicon.ico`). El manifiesto
+(`/manifest.webmanifest`) permite instalar la suite en el teléfono o el escritorio.
 
 ![Icono](docs/icono-vista-previa.png)
 
