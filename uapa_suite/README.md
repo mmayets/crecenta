@@ -53,6 +53,15 @@ logo. Incluye `icon.svg` (fuente), PNG de 192 y 512 px, versión *maskable* para
 
 ![Icono](docs/icono-vista-previa.png)
 
+### Avatar del asistente de IA
+
+`static/img/asistente/` trae el avatar circular del asistente: un destello naranja grande y tres pequeños
+con los colores de las apps. `avatar.svg` (fondo azul marino, para interfaces claras), `avatar-claro.svg`
+(fondo blanco con borde suave), PNG de 512, 256, 96 y 48 px de cada uno, y `avatar-pensando.svg`, animado
+(los destellos titilan) para mostrar mientras el asistente responde.
+
+![Avatar del asistente](docs/avatar-asistente.png)
+
 Bootstrap e iconos se sirven desde `static/vendor/` (sin depender de CDN). `static/css/suite.css`
 traduce los tokens del diseño a variables de Bootstrap.
 
