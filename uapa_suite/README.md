@@ -62,6 +62,12 @@ con los colores de las apps. `avatar.svg` (fondo azul marino, para interfaces cl
 
 ![Avatar del asistente](docs/avatar-asistente.png)
 
+**Opción diagonal** (fondo blanco): los destellos crecen en diagonal hacia el naranja, como una estrella
+fugaz y como los cuadritos del logo. `avatar-diagonal.svg`, PNG de 512, 256, 96 y 48 px, y
+`avatar-diagonal-pensando.svg`, animado (la estela se enciende en secuencia).
+
+![Avatar diagonal](docs/avatar-asistente-diagonal.png)
+
 Bootstrap e iconos se sirven desde `static/vendor/` (sin depender de CDN). `static/css/suite.css`
 traduce los tokens del diseño a variables de Bootstrap.
 
